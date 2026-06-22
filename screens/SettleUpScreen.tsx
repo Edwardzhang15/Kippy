@@ -4,6 +4,7 @@ import {
   Platform,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   View,
@@ -13,130 +14,19 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { HomeStackParamList } from '../navigation/types';
 import { recordSettlement } from '../db';
-import { colors, fontSizes, radii } from '../theme';
+import { getCachedRates, convertAmount } from '../currencyRates';
+import { type ColorPalette, fontSizes, radii } from '../theme';
 import { getAvatarColor, getInitials, getCurrencySymbol, formatAmount } from '../utils';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'SettleUp'>;
 
-export default function SettleUpScreen({ route, navigation }: Props) {
-  const { t } = useTranslation();
-  const { groupId, memberId, memberName, balance, avatarIndex, currency } = route.params;
+const SETTLE_CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 
-  const [settling, setSettling] = useState(false);
-  const [settled,  setSettled]  = useState(false);
-
-  const checkScale   = useRef(new Animated.Value(0)).current;
-  const checkOpacity = useRef(new Animated.Value(0)).current;
-  const buttonOpacity = useRef(new Animated.Value(1)).current;
-
-  const isOwed    = balance > 0;
-  const absAmount = formatAmount(Math.abs(balance), currency);
-  const sym       = getCurrencySymbol(currency);
-  const isZero    = balance === 0;
-
-  const handleSettle = async () => {
-    if (settling || isZero) return;
-    setSettling(true);
-
-    const today = new Date().toISOString().split('T')[0];
-    await recordSettlement(groupId, memberId, balance, today);
-
-    // Fade out button, then scale in checkmark
-    Animated.timing(buttonOpacity, {
-      toValue: 0,
-      duration: 150,
-      useNativeDriver: true,
-    }).start(() => {
-      setSettled(true);
-      Animated.parallel([
-        Animated.spring(checkScale, {
-          toValue: 1,
-          tension: 55,
-          friction: 5,
-          useNativeDriver: true,
-        }),
-        Animated.timing(checkOpacity, {
-          toValue: 1,
-          duration: 200,
-          useNativeDriver: true,
-        }),
-      ]).start(() => {
-        setTimeout(() => navigation.goBack(), 650);
-      });
-    });
-  };
-
-  return (
-    <SafeAreaView style={styles.safe}>
-      {/* Header */}
-      <View style={styles.header}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
-          <Ionicons name="close" size={24} color={colors.textPrimary} />
-        </Pressable>
-        <Text style={styles.headerTitle}>{t('settleUp.title')}</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
-      {/* Main content */}
-      <View style={styles.content}>
-        {/* Avatar */}
-        <View style={[styles.avatar, { backgroundColor: getAvatarColor(avatarIndex) }]}>
-          <Text style={styles.avatarText}>{getInitials(memberName)}</Text>
-        </View>
-
-        <Text style={styles.memberName}>{memberName}</Text>
-
-        {isZero ? (
-          <View style={styles.chip}>
-            <Ionicons name="checkmark-circle" size={16} color={colors.sage} />
-            <Text style={[styles.chipText, { color: colors.sage }]}>{t('settleUp.alreadySettled')}</Text>
-          </View>
-        ) : (
-          <>
-            <View style={styles.chip}>
-              <Text style={styles.chipText}>
-                {isOwed ? t('settleUp.getsBack') : t('settleUp.owes')}
-              </Text>
-            </View>
-
-            <Text style={[styles.balanceAmount, { color: isOwed ? colors.sage : colors.coral }]}>
-              {isOwed ? '+' : '-'}{sym}{absAmount}
-            </Text>
-          </>
-        )}
-      </View>
-
-      {/* Footer action */}
-      <View style={styles.footer}>
-        {settled ? (
-          <Animated.View
-            style={[styles.checkContainer, { opacity: checkOpacity, transform: [{ scale: checkScale }] }]}
-          >
-            <Ionicons name="checkmark-circle" size={60} color={colors.coral} />
-            <Text style={styles.settledLabel}>{t('settleUp.settled')}</Text>
-          </Animated.View>
-        ) : (
-          <Animated.View style={{ opacity: buttonOpacity, width: '100%' }}>
-            <Pressable
-              style={[styles.button, (settling || isZero) && styles.buttonDisabled]}
-              onPress={handleSettle}
-              disabled={settling || isZero}
-            >
-              <Text style={styles.buttonText}>
-                {settling ? t('settleUp.saving') : t('settleUp.markAsSettled')}
-              </Text>
-            </Pressable>
-          </Animated.View>
-        )}
-      </View>
-    </SafeAreaView>
-  );
-}
-
-const styles = StyleSheet.create({
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   header: {
     flexDirection: 'row',
@@ -148,7 +38,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   content: {
     flex: 1,
@@ -174,14 +64,14 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: 28,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     textAlign: 'center',
   },
-  chip: {
+  statusChip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 7,
@@ -189,7 +79,7 @@ const styles = StyleSheet.create({
   chipText: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
   },
@@ -197,6 +87,48 @@ const styles = StyleSheet.create({
     fontSize: 52,
     fontWeight: '800',
     letterSpacing: -1,
+  },
+  payingInSection: {
+    alignItems: 'center',
+    gap: 10,
+    width: '100%',
+  },
+  payingInLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  currencyScroll: {
+    flexGrow: 0,
+  },
+  currencyScrollContent: {
+    gap: 8,
+  },
+  currencyChip: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: c.card,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  currencyChipSelected: {
+    borderColor: c.coral,
+  },
+  currencyChipText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  currencyChipTextSelected: {
+    color: c.coral,
+  },
+  equivalentText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
   },
   footer: {
     paddingHorizontal: 20,
@@ -207,11 +139,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   button: {
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.button,
     paddingVertical: 17,
     alignItems: 'center',
-    shadowColor: colors.coral,
+    shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -233,6 +165,187 @@ const styles = StyleSheet.create({
   settledLabel: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.coral,
+    color: c.coral,
+  },
+  settledDetail: {
+    fontSize: fontSizes.caption,
+    fontWeight: '500',
+    color: c.textSecondary,
+    textAlign: 'center',
   },
 });
+
+export default function SettleUpScreen({ route, navigation }: Props) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
+  const { groupId, memberId, memberName, balance, avatarIndex, currency } = route.params;
+
+  const [payInCurrency, setPayInCurrency] = useState(currency);
+  const [settling, setSettling] = useState(false);
+  const [settled,  setSettled]  = useState(false);
+  const [settledPayCurrency, setSettledPayCurrency] = useState('');
+  const [settledPayAmount,   setSettledPayAmount]   = useState(0);
+
+  const checkScale    = useRef(new Animated.Value(0)).current;
+  const checkOpacity  = useRef(new Animated.Value(0)).current;
+  const buttonOpacity = useRef(new Animated.Value(1)).current;
+
+  const isOwed  = balance > 0;
+  const isZero  = balance === 0;
+  const absBase = Math.abs(balance);
+  const baseSym = getCurrencySymbol(currency);
+  const baseAmt = formatAmount(absBase, currency);
+
+  const rates         = getCachedRates();
+  const isCrossCur    = payInCurrency !== currency;
+  const payInAbsAmt   = isCrossCur && rates
+    ? convertAmount(absBase, currency, payInCurrency, rates)
+    : absBase;
+  const payInSym      = getCurrencySymbol(payInCurrency);
+  const payInAmtStr   = formatAmount(payInAbsAmt, payInCurrency);
+
+  const handleSettle = async () => {
+    if (settling || isZero) return;
+    setSettling(true);
+
+    const finalPayCur = payInCurrency;
+    const finalPayAmt = isCrossCur ? payInAbsAmt : absBase;
+    setSettledPayCurrency(finalPayCur);
+    setSettledPayAmount(finalPayAmt);
+
+    const today = new Date().toISOString().split('T')[0];
+    await recordSettlement(
+      groupId, memberId, balance, today,
+      isCrossCur ? finalPayCur : undefined,
+      isCrossCur ? (balance < 0 ? -finalPayAmt : finalPayAmt) : undefined,
+    );
+
+    Animated.timing(buttonOpacity, {
+      toValue: 0,
+      duration: 150,
+      useNativeDriver: true,
+    }).start(() => {
+      setSettled(true);
+      Animated.parallel([
+        Animated.spring(checkScale, {
+          toValue: 1,
+          tension: 55,
+          friction: 5,
+          useNativeDriver: true,
+        }),
+        Animated.timing(checkOpacity, {
+          toValue: 1,
+          duration: 200,
+          useNativeDriver: true,
+        }),
+      ]).start(() => {
+        setTimeout(() => navigation.goBack(), 1200);
+      });
+    });
+  };
+
+  return (
+    <SafeAreaView style={styles.safe}>
+      <View style={styles.header}>
+        <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+          <Ionicons name="close" size={24} color={colors.textPrimary} />
+        </Pressable>
+        <Text style={styles.headerTitle}>{t('settleUp.title')}</Text>
+        <View style={{ width: 24 }} />
+      </View>
+
+      <View style={styles.content}>
+        <View style={[styles.avatar, { backgroundColor: getAvatarColor(avatarIndex) }]}>
+          <Text style={styles.avatarText}>{getInitials(memberName)}</Text>
+        </View>
+
+        <Text style={styles.memberName}>{memberName}</Text>
+
+        {isZero ? (
+          <View style={styles.statusChip}>
+            <Ionicons name="checkmark-circle" size={16} color={colors.sage} />
+            <Text style={[styles.chipText, { color: colors.sage }]}>{t('settleUp.alreadySettled')}</Text>
+          </View>
+        ) : (
+          <>
+            <View style={styles.statusChip}>
+              <Text style={styles.chipText}>
+                {isOwed ? t('settleUp.getsBack') : t('settleUp.owes')}
+              </Text>
+            </View>
+
+            <Text style={[styles.balanceAmount, { color: isOwed ? colors.sage : colors.coral }]}>
+              {isOwed ? '+' : '-'}{baseSym}{baseAmt}
+            </Text>
+
+            <View style={styles.payingInSection}>
+              <Text style={styles.payingInLabel}>{t('settleUp.payingIn')}</Text>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={styles.currencyScroll}
+                contentContainerStyle={styles.currencyScrollContent}
+              >
+                {SETTLE_CURRENCIES.map((cur) => (
+                  <Pressable
+                    key={cur}
+                    style={[styles.currencyChip, payInCurrency === cur && styles.currencyChipSelected]}
+                    onPress={() => setPayInCurrency(cur)}
+                  >
+                    <Text style={[styles.currencyChipText, payInCurrency === cur && styles.currencyChipTextSelected]}>
+                      {cur}
+                    </Text>
+                  </Pressable>
+                ))}
+              </ScrollView>
+
+              {isCrossCur && (
+                <Text style={styles.equivalentText}>
+                  {rates
+                    ? t('settleUp.equivalent', { sym: payInSym, amount: payInAmtStr, currency: payInCurrency })
+                    : `≈ ${payInSym}— ${payInCurrency}`}
+                </Text>
+              )}
+            </View>
+          </>
+        )}
+      </View>
+
+      <View style={styles.footer}>
+        {settled ? (
+          <Animated.View
+            style={[styles.checkContainer, { opacity: checkOpacity, transform: [{ scale: checkScale }] }]}
+          >
+            <Ionicons name="checkmark-circle" size={60} color={colors.coral} />
+            <Text style={styles.settledLabel}>{t('settleUp.settled')}</Text>
+            {settledPayCurrency !== currency && (
+              <Text style={styles.settledDetail}>
+                {t('settleUp.settledDetail', {
+                  baseSym,
+                  baseAmt,
+                  baseCur: currency,
+                  paidSym: getCurrencySymbol(settledPayCurrency),
+                  paidAmt: formatAmount(settledPayAmount, settledPayCurrency),
+                  paidCur: settledPayCurrency,
+                })}
+              </Text>
+            )}
+          </Animated.View>
+        ) : (
+          <Animated.View style={{ opacity: buttonOpacity, width: '100%' }}>
+            <Pressable
+              style={[styles.button, (settling || isZero) && styles.buttonDisabled]}
+              onPress={handleSettle}
+              disabled={settling || isZero}
+            >
+              <Text style={styles.buttonText}>
+                {settling ? t('settleUp.saving') : t('settleUp.markAsSettled')}
+              </Text>
+            </Pressable>
+          </Animated.View>
+        )}
+      </View>
+    </SafeAreaView>
+  );
+}

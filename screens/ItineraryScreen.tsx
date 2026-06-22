@@ -20,7 +20,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
-import { colors, fontSizes, radii } from '../theme';
+import { type ColorPalette, fontSizes, radii } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import {
   getItineraryItems,
   addItineraryItem,
@@ -134,9 +135,207 @@ function layoutItems(items: ItineraryItem[]): LayoutItem[] {
   });
 }
 
+// ─── Styles factory ───────────────────────────────────────────────────────────
+
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
+
+  // Header
+  header: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 14,
+  },
+  headerTitle: { fontSize: fontSizes.sectionTitle, fontWeight: '700', color: c.textPrimary },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
+  addBtn: { width: 32, alignItems: 'center' },
+
+  // Day tabs
+  dayTabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: c.border },
+  dayTabsContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
+  dayTab: {
+    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
+    backgroundColor: c.card, borderWidth: 1.5, borderColor: 'transparent',
+  },
+  dayTabSelected: { borderColor: c.coral, backgroundColor: '#FFF0EE' },
+  dayTabText: { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary },
+  dayTabTextSelected: { color: c.coral },
+  addDayBtn: {
+    width: 32, height: 32, borderRadius: 16, backgroundColor: c.card,
+    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: c.border,
+  },
+
+  // Timeline
+  timelineScroll: { flex: 1 },
+  timelineRow: { flexDirection: 'row' },
+  labelsCol: { width: LABEL_W, position: 'relative' },
+  hourLabelWrap: { position: 'absolute', right: 8 },
+  hourLabel: { fontSize: 11, fontWeight: '500', color: c.textSecondary, textAlign: 'right' },
+  eventsCol: {
+    flex: 1, position: 'relative',
+    backgroundColor: c.card, borderLeftWidth: 1, borderLeftColor: c.border,
+  },
+  hourLine: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: c.border },
+  tapTarget: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
+  emptyHint: {
+    position: 'absolute', top: HOUR_HEIGHT * 3, left: 0, right: 0,
+    alignItems: 'center', gap: 8, paddingVertical: 20, zIndex: 0,
+  },
+  emptyHintText: { fontSize: fontSizes.caption, color: c.textSecondary },
+
+  // Event blocks
+  eventBlockOuter: {
+    position: 'absolute',
+    zIndex: 1,
+  },
+  eventBlockOuterActive: {
+    zIndex: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.32,
+    shadowRadius: 12,
+    elevation: 14,
+  },
+  eventBlock: {
+    borderRadius: 10,
+    padding: 8,
+    paddingLeft: 12,
+    overflow: 'hidden',
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  eventAccentStrip: {
+    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, opacity: 0.85,
+  },
+  typeIconBadge: {
+    position: 'absolute', top: 4, right: 22,
+    width: 17, height: 17, borderRadius: 9,
+    backgroundColor: 'rgba(0,0,0,0.20)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  mapPinBtn: { position: 'absolute', top: 5, right: 4 },
+  eventTitleRow: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 4 },
+  eventTitle: { fontSize: 12, fontWeight: '700', color: '#fff', lineHeight: 16, flex: 1 },
+  eventLocation: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
+  eventLocationText: { fontSize: 10, color: 'rgba(255,255,255,0.80)', flex: 1 },
+  eventTime: { fontSize: 10, color: 'rgba(255,255,255,0.70)', marginTop: 2 },
+
+  // Resize handle
+  resizeHandle: {
+    position: 'absolute', bottom: 0, left: 0, right: 0,
+    height: RESIZE_H, alignItems: 'center', justifyContent: 'center',
+  },
+  resizeBar: {
+    width: 28, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+
+  // Form modal
+  formSafe: { flex: 1, backgroundColor: c.background },
+  formHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderBottomWidth: 1, borderBottomColor: c.border, backgroundColor: c.card,
+  },
+  formTitle: { fontSize: fontSizes.sectionTitle, fontWeight: '700', color: c.textPrimary },
+  formHeaderSpacer: { width: 24 },
+  formScrollContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
+  formFooter: {
+    paddingHorizontal: 20, paddingVertical: 16,
+    borderTopWidth: 1, borderTopColor: c.border, backgroundColor: c.card,
+  },
+
+  // Form fields
+  fieldLabel: {
+    fontSize: fontSizes.caption, fontWeight: '700', color: c.textSecondary,
+    textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginTop: 24,
+  },
+  textInput: {
+    backgroundColor: c.card, borderRadius: radii.button,
+    paddingHorizontal: 16, paddingVertical: 14,
+    fontSize: fontSizes.body, color: c.textPrimary,
+    borderWidth: 1, borderColor: c.border,
+  },
+  noteInput: { minHeight: 88, textAlignVertical: 'top', paddingTop: 14 },
+
+  // Activity type picker
+  typePickerContent: { gap: 8, paddingRight: 4 },
+  typeChip: {
+    alignItems: 'center', width: 76,
+    paddingVertical: 10, paddingHorizontal: 6,
+    borderRadius: 14, borderWidth: 1.5, borderColor: 'transparent',
+    backgroundColor: c.card, gap: 6,
+  },
+  typeChipIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  typeChipLabel: {
+    fontSize: 10, fontWeight: '600', color: c.textSecondary, textAlign: 'center', lineHeight: 13,
+  },
+
+  // Maps
+  mapsConfirmRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
+  mapsConfirmText: { fontSize: fontSizes.caption, color: c.sage, fontWeight: '500' },
+  autoMapRow: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12,
+    backgroundColor: c.card, borderRadius: radii.button,
+    borderWidth: 1, borderColor: c.border, padding: 14,
+  },
+  autoMapLabel: { fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary, marginBottom: 2 },
+  autoMapSub: { fontSize: fontSizes.caption, color: c.textSecondary },
+
+  // Duration
+  durationRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
+  durationChip: {
+    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
+    backgroundColor: c.card, borderWidth: 1.5, borderColor: 'transparent',
+  },
+  durationChipSelected: { borderColor: c.coral, backgroundColor: '#FFF0EE' },
+  durationChipText: { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary },
+  durationChipTextSelected: { color: c.coral },
+
+  // Anchor
+  anchorRow: {
+    flexDirection: 'row', alignItems: 'center', marginTop: 24, gap: 12,
+    backgroundColor: c.card, borderRadius: radii.button,
+    borderWidth: 1, borderColor: c.border, padding: 14,
+  },
+  anchorLabel: { fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary, marginBottom: 2 },
+  anchorSub: { fontSize: fontSizes.caption, color: c.textSecondary },
+
+  // Tip banner
+  tipBanner: {
+    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
+    backgroundColor: '#F0F5F2', borderRadius: radii.button, padding: 12, marginTop: 10,
+  },
+  tipText: { flex: 1, fontSize: fontSizes.caption, color: c.sage, lineHeight: 18 },
+
+  // Save button
+  saveBtn: {
+    backgroundColor: c.coral, borderRadius: radii.button, paddingVertical: 16, alignItems: 'center',
+    shadowColor: c.coral, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.28, shadowRadius: 8, elevation: 4,
+  },
+  saveBtnDisabled: { opacity: 0.45 },
+  saveBtnText: { fontSize: fontSizes.body, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
+
+  // TimePicker
+  timePicker: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: c.card, borderRadius: radii.button,
+    borderWidth: 1, borderColor: c.border, padding: 14, alignSelf: 'flex-start',
+  },
+  timeUnit: { alignItems: 'center', gap: 4 },
+  timeDigit: { fontSize: 28, fontWeight: '700', color: c.textPrimary, width: 44, textAlign: 'center' },
+  timeChevron: { padding: 4 },
+  timeColon: { fontSize: 28, fontWeight: '700', color: c.textPrimary, paddingBottom: 4, marginHorizontal: 2 },
+  ampmBtn: {
+    marginLeft: 8, backgroundColor: c.background,
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: c.border,
+  },
+  ampmText: { fontSize: fontSizes.body, fontWeight: '700', color: c.textPrimary },
+});
+
 // ─── TimePicker ───────────────────────────────────────────────────────────────
 
 function TimePicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const { colors } = useTheme();
+  const styles     = makeStyles(colors);
   const totalH = Math.floor(value / 60);
   const mins   = value % 60;
   const isAM   = totalH < 12;
@@ -198,14 +397,16 @@ function EventBlock({
   item, eventsWidth, isActive,
   onPress, onDragStart, onMoveEnd, onResizeEnd,
 }: EventBlockProps) {
-  const typeDef  = getActivityType(item.activity_type);
-  const baseTop  = minsToY(item.start_time);
-  const baseH    = Math.max(44, minsToY(item.start_time + item.duration_minutes) - baseTop);
-  const colWidth = eventsWidth / item.numCols;
-  const left     = item.col * colWidth + 2;
-  const width    = colWidth - 4;
-  const blockBg  = item.is_anchor ? colors.coral : colors.sage;
-  const endMins  = item.start_time + item.duration_minutes;
+  const { colors } = useTheme();
+  const styles     = makeStyles(colors);
+  const typeDef    = getActivityType(item.activity_type);
+  const baseTop    = minsToY(item.start_time);
+  const baseH      = Math.max(44, minsToY(item.start_time + item.duration_minutes) - baseTop);
+  const colWidth   = eventsWidth / item.numCols;
+  const left       = item.col * colWidth + 2;
+  const width      = colWidth - 4;
+  const blockBg    = item.is_anchor ? colors.coral : colors.sage;
+  const endMins    = item.start_time + item.duration_minutes;
 
   // RN Animated values — no Reanimated worklets, runs on JS thread via .runOnJS(true)
   const dragY     = useRef(new Animated.Value(0)).current;
@@ -338,7 +539,9 @@ function EventBlock({
 export default function ItineraryScreen() {
   const navigation = useNavigation<any>();
   const route      = useRoute<any>();
-  const { t } = useTranslation();
+  const { t }      = useTranslation();
+  const { colors } = useTheme();
+  const styles     = makeStyles(colors);
   const { groupId, totalDays } = route.params as { groupId: number; totalDays: number };
 
   const [numDays, setNumDays]         = useState(totalDays);
@@ -373,9 +576,7 @@ export default function ItineraryScreen() {
 
   const handleMoveEnd = useCallback((id: number, startMins: number) => {
     setActiveDragId(null);
-    // Update state immediately so overlap re-calculates on release
     setItems(prev => prev.map(i => i.id === id ? { ...i, start_time: startMins } : i));
-    // Persist; on failure restore from DB
     updateItineraryItem(id, { start_time: startMins }).catch(() => {
       getItineraryItems(groupId, selectedDay).then(setItems);
     });
@@ -433,7 +634,7 @@ export default function ItineraryScreen() {
     if (!form.title.trim()) return;
     setSaving(true);
     try {
-      const mapsQuery    = form.location.trim() || (form.autoMapFromTitle ? form.title.trim() : '');
+      const mapsQuery     = form.location.trim() || (form.autoMapFromTitle ? form.title.trim() : '');
       const googleMapsUrl = buildMapsUrl(mapsQuery);
       if (editingItem) {
         await updateItineraryItem(editingItem.id, {
@@ -773,200 +974,3 @@ export default function ItineraryScreen() {
     </SafeAreaView>
   );
 }
-
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
-
-  // Header
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 14,
-  },
-  headerTitle: { fontSize: fontSizes.sectionTitle, fontWeight: '700', color: colors.textPrimary },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 16 },
-  addBtn: { width: 32, alignItems: 'center' },
-
-  // Day tabs
-  dayTabsScroll: { flexGrow: 0, borderBottomWidth: 1, borderBottomColor: colors.border },
-  dayTabsContent: { paddingHorizontal: 16, paddingVertical: 10, gap: 8, alignItems: 'center' },
-  dayTab: {
-    paddingHorizontal: 16, paddingVertical: 7, borderRadius: 20,
-    backgroundColor: colors.card, borderWidth: 1.5, borderColor: 'transparent',
-  },
-  dayTabSelected: { borderColor: colors.coral, backgroundColor: '#FFF0EE' },
-  dayTabText: { fontSize: fontSizes.caption, fontWeight: '600', color: colors.textSecondary },
-  dayTabTextSelected: { color: colors.coral },
-  addDayBtn: {
-    width: 32, height: 32, borderRadius: 16, backgroundColor: colors.card,
-    alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: colors.border,
-  },
-
-  // Timeline
-  timelineScroll: { flex: 1 },
-  timelineRow: { flexDirection: 'row' },
-  labelsCol: { width: LABEL_W, position: 'relative' },
-  hourLabelWrap: { position: 'absolute', right: 8 },
-  hourLabel: { fontSize: 11, fontWeight: '500', color: colors.textSecondary, textAlign: 'right' },
-  eventsCol: {
-    flex: 1, position: 'relative',
-    backgroundColor: colors.card, borderLeftWidth: 1, borderLeftColor: colors.border,
-  },
-  hourLine: { position: 'absolute', left: 0, right: 0, height: 1, backgroundColor: colors.border },
-  tapTarget: { ...StyleSheet.absoluteFillObject, zIndex: 0 },
-  emptyHint: {
-    position: 'absolute', top: HOUR_HEIGHT * 3, left: 0, right: 0,
-    alignItems: 'center', gap: 8, paddingVertical: 20, zIndex: 0,
-  },
-  emptyHintText: { fontSize: fontSizes.caption, color: colors.textSecondary },
-
-  // Event blocks — split into outer (position + translateY) and inner (height + bg)
-  // so that Animated styles for move and resize don't conflict.
-  eventBlockOuter: {
-    position: 'absolute',
-    zIndex: 1,
-  },
-  eventBlockOuterActive: {
-    zIndex: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.32,
-    shadowRadius: 12,
-    elevation: 14,
-  },
-  eventBlock: {
-    borderRadius: 10,
-    padding: 8,
-    paddingLeft: 12,
-    overflow: 'hidden',
-    borderWidth: 1.5,
-    borderColor: 'transparent',
-  },
-  eventAccentStrip: {
-    position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, opacity: 0.85,
-  },
-  typeIconBadge: {
-    position: 'absolute', top: 4, right: 22,
-    width: 17, height: 17, borderRadius: 9,
-    backgroundColor: 'rgba(0,0,0,0.20)',
-    alignItems: 'center', justifyContent: 'center',
-  },
-  mapPinBtn: { position: 'absolute', top: 5, right: 4 },
-  eventTitleRow: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 4 },
-  eventTitle: { fontSize: 12, fontWeight: '700', color: '#fff', lineHeight: 16, flex: 1 },
-  eventLocation: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
-  eventLocationText: { fontSize: 10, color: 'rgba(255,255,255,0.80)', flex: 1 },
-  eventTime: { fontSize: 10, color: 'rgba(255,255,255,0.70)', marginTop: 2 },
-
-  // Resize handle
-  resizeHandle: {
-    position: 'absolute', bottom: 0, left: 0, right: 0,
-    height: RESIZE_H, alignItems: 'center', justifyContent: 'center',
-  },
-  resizeBar: {
-    width: 28, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.55)',
-  },
-
-  // Form modal
-  formSafe: { flex: 1, backgroundColor: colors.background },
-  formHeader: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: 20, paddingVertical: 16,
-    borderBottomWidth: 1, borderBottomColor: colors.border, backgroundColor: colors.card,
-  },
-  formTitle: { fontSize: fontSizes.sectionTitle, fontWeight: '700', color: colors.textPrimary },
-  formHeaderSpacer: { width: 24 },
-  formScrollContent: { paddingHorizontal: 20, paddingTop: 8, paddingBottom: 32 },
-  formFooter: {
-    paddingHorizontal: 20, paddingVertical: 16,
-    borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.card,
-  },
-
-  // Form fields
-  fieldLabel: {
-    fontSize: fontSizes.caption, fontWeight: '700', color: colors.textSecondary,
-    textTransform: 'uppercase', letterSpacing: 0.6, marginBottom: 8, marginTop: 24,
-  },
-  textInput: {
-    backgroundColor: colors.card, borderRadius: radii.button,
-    paddingHorizontal: 16, paddingVertical: 14,
-    fontSize: fontSizes.body, color: colors.textPrimary,
-    borderWidth: 1, borderColor: colors.border,
-  },
-  noteInput: { minHeight: 88, textAlignVertical: 'top', paddingTop: 14 },
-
-  // Activity type picker
-  typePickerContent: { gap: 8, paddingRight: 4 },
-  typeChip: {
-    alignItems: 'center', width: 76,
-    paddingVertical: 10, paddingHorizontal: 6,
-    borderRadius: 14, borderWidth: 1.5, borderColor: 'transparent',
-    backgroundColor: colors.card, gap: 6,
-  },
-  typeChipIcon: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
-  typeChipLabel: {
-    fontSize: 10, fontWeight: '600', color: colors.textSecondary, textAlign: 'center', lineHeight: 13,
-  },
-
-  // Maps
-  mapsConfirmRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
-  mapsConfirmText: { fontSize: fontSizes.caption, color: colors.sage, fontWeight: '500' },
-  autoMapRow: {
-    flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12,
-    backgroundColor: colors.card, borderRadius: radii.button,
-    borderWidth: 1, borderColor: colors.border, padding: 14,
-  },
-  autoMapLabel: { fontSize: fontSizes.body, fontWeight: '600', color: colors.textPrimary, marginBottom: 2 },
-  autoMapSub: { fontSize: fontSizes.caption, color: colors.textSecondary },
-
-  // Duration
-  durationRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
-  durationChip: {
-    paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20,
-    backgroundColor: colors.card, borderWidth: 1.5, borderColor: 'transparent',
-  },
-  durationChipSelected: { borderColor: colors.coral, backgroundColor: '#FFF0EE' },
-  durationChipText: { fontSize: fontSizes.caption, fontWeight: '600', color: colors.textSecondary },
-  durationChipTextSelected: { color: colors.coral },
-
-  // Anchor
-  anchorRow: {
-    flexDirection: 'row', alignItems: 'center', marginTop: 24, gap: 12,
-    backgroundColor: colors.card, borderRadius: radii.button,
-    borderWidth: 1, borderColor: colors.border, padding: 14,
-  },
-  anchorLabel: { fontSize: fontSizes.body, fontWeight: '600', color: colors.textPrimary, marginBottom: 2 },
-  anchorSub: { fontSize: fontSizes.caption, color: colors.textSecondary },
-
-  // Tip
-  tipBanner: {
-    flexDirection: 'row', alignItems: 'flex-start', gap: 8,
-    backgroundColor: '#F0F5F2', borderRadius: radii.button, padding: 12, marginTop: 10,
-  },
-  tipText: { flex: 1, fontSize: fontSizes.caption, color: colors.sage, lineHeight: 18 },
-
-  // Save button
-  saveBtn: {
-    backgroundColor: colors.coral, borderRadius: radii.button, paddingVertical: 16, alignItems: 'center',
-    shadowColor: colors.coral, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.28, shadowRadius: 8, elevation: 4,
-  },
-  saveBtnDisabled: { opacity: 0.45 },
-  saveBtnText: { fontSize: fontSizes.body, fontWeight: '700', color: '#fff', letterSpacing: 0.3 },
-
-  // TimePicker
-  timePicker: {
-    flexDirection: 'row', alignItems: 'center', gap: 4,
-    backgroundColor: colors.card, borderRadius: radii.button,
-    borderWidth: 1, borderColor: colors.border, padding: 14, alignSelf: 'flex-start',
-  },
-  timeUnit: { alignItems: 'center', gap: 4 },
-  timeDigit: { fontSize: 28, fontWeight: '700', color: colors.textPrimary, width: 44, textAlign: 'center' },
-  timeChevron: { padding: 4 },
-  timeColon: { fontSize: 28, fontWeight: '700', color: colors.textPrimary, paddingBottom: 4, marginHorizontal: 2 },
-  ampmBtn: {
-    marginLeft: 8, backgroundColor: colors.background,
-    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 10, borderWidth: 1.5, borderColor: colors.border,
-  },
-  ampmText: { fontSize: fontSizes.body, fontWeight: '700', color: colors.textPrimary },
-});

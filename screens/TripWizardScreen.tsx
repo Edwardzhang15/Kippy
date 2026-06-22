@@ -19,7 +19,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { PlanStackParamList } from '../navigation/types';
 import { createPlanTrip } from '../db';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import {
   VIBES,
   VIBE_DESTINATIONS,
@@ -119,9 +120,511 @@ function searchURL(query: string) {
   return `https://www.google.com/search?q=${encodeURIComponent(query)}`;
 }
 
+// ─── Styles factory ──────────────────────────────────────────────────────────
+
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 8,
+    paddingBottom: 4,
+  },
+  navBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  progressRow: {
+    flexDirection: 'row',
+    gap: 6,
+    alignItems: 'center',
+  },
+  dot: {
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: c.border,
+  },
+  dotDone: {
+    backgroundColor: c.coral,
+    opacity: 0.45,
+  },
+  dotActive: {
+    width: 20,
+    backgroundColor: c.coral,
+    opacity: 1,
+  },
+
+  stageContent: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 48,
+  },
+  stageTitle: {
+    fontSize: fontSizes.screenTitle,
+    fontWeight: '800',
+    color: c.textPrimary,
+    marginBottom: 6,
+    lineHeight: 36,
+  },
+  stageSubtitle: {
+    fontSize: fontSizes.body,
+    color: c.textSecondary,
+    marginBottom: 24,
+    lineHeight: 21,
+  },
+  stageParagraph: {
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    lineHeight: 22,
+    marginBottom: 14,
+  },
+
+  optionStack: {
+    gap: 12,
+    marginTop: 8,
+  },
+  optionCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  optionIconBg: {
+    width: 44,
+    height: 44,
+    borderRadius: 13,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  optionTitle: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginBottom: 2,
+  },
+  optionSubtitle: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    lineHeight: 17,
+  },
+
+  stepperRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 4,
+  },
+  stepperBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: c.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stepperBtnDisabled: {
+    opacity: 0.4,
+  },
+  stepperValue: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  stepperSuffix: {
+    fontSize: fontSizes.body,
+    fontWeight: '500',
+    color: c.textSecondary,
+  },
+
+  formCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    marginBottom: 20,
+  },
+  inputCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  currencyPrefix: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: c.textSecondary,
+  },
+  budgetInput: {
+    flex: 1,
+    fontSize: 20,
+    fontWeight: '600',
+    color: c.textPrimary,
+    paddingVertical: 4,
+  },
+  destInput: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    fontWeight: '500',
+    color: c.textPrimary,
+    paddingVertical: 6,
+  },
+
+  sectionLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 8,
+  },
+
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 9,
+    borderRadius: radii.button,
+    backgroundColor: c.card,
+    borderWidth: 1.5,
+    borderColor: c.border,
+  },
+  chipSelected: {
+    backgroundColor: '#FFF0EE',
+    borderColor: c.coral,
+  },
+  chipText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  chipTextSelected: {
+    color: c.coral,
+  },
+
+  monthGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 20,
+  },
+  monthChip: {
+    width: '22%',
+    paddingVertical: 10,
+    borderRadius: radii.button,
+    backgroundColor: c.card,
+    borderWidth: 1.5,
+    borderColor: c.border,
+    alignItems: 'center',
+  },
+  monthChipSelected: {
+    backgroundColor: '#FFF0EE',
+    borderColor: c.coral,
+  },
+  monthChipText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  monthChipTextSelected: {
+    color: c.coral,
+  },
+
+  continueBtn: {
+    backgroundColor: c.coral,
+    borderRadius: radii.button,
+    paddingVertical: 16,
+    alignItems: 'center',
+    marginTop: 8,
+    shadowColor: c.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  continueBtnDisabled: {
+    opacity: 0.45,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  continueBtnText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+
+  skipBtn: {
+    alignItems: 'center',
+    paddingVertical: 14,
+    marginTop: 4,
+  },
+  skipBtnText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+
+  divider: {
+    height: 1,
+    backgroundColor: c.border,
+    marginVertical: 24,
+  },
+  orLabel: {
+    fontSize: fontSizes.body,
+    color: c.textSecondary,
+    marginBottom: 12,
+  },
+
+  linkBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: '#FFF0EE',
+    borderRadius: radii.button,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+    alignSelf: 'flex-start',
+    marginTop: 8,
+  },
+  linkBtnText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.coral,
+  },
+
+  suggestionCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  suggestionCardSelected: {
+    borderColor: c.coral,
+    backgroundColor: '#FFFBFB',
+  },
+  suggestionHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    marginBottom: 8,
+  },
+  suggestionFlag: {
+    fontSize: 28,
+    lineHeight: 32,
+  },
+  suggestionName: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginBottom: 2,
+  },
+  suggestionTagline: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.coral,
+  },
+  suggestionCheck: {
+    marginLeft: 'auto',
+  },
+  suggestionBlurb: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    lineHeight: 18,
+  },
+
+  resultsHeader: {
+    marginBottom: 28,
+  },
+  resultsDestination: {
+    fontSize: fontSizes.screenTitle,
+    fontWeight: '800',
+    color: c.textPrimary,
+    marginBottom: 10,
+    lineHeight: 36,
+  },
+  resultsMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  resultsMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+  },
+  resultsMetaText: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    fontWeight: '500',
+  },
+  resultsSectionTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+
+  pacingCard: {
+    backgroundColor: '#FFF0EE',
+    borderRadius: radii.card,
+    padding: 18,
+    marginBottom: 28,
+    borderLeftWidth: 3,
+    borderLeftColor: c.coral,
+  },
+  pacingBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 10,
+  },
+  pacingBadge: {
+    backgroundColor: c.coral,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  pacingBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#fff',
+    letterSpacing: 0.8,
+  },
+  pacingHeadline: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+    flex: 1,
+    lineHeight: 20,
+  },
+  pacingBody: {
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    lineHeight: 22,
+  },
+  pacingCallout: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
+    marginTop: 12,
+    backgroundColor: 'rgba(255,107,91,0.10)',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+  },
+  pacingCalloutText: {
+    fontSize: fontSizes.caption,
+    color: c.textPrimary,
+    fontWeight: '600',
+    flex: 1,
+    lineHeight: 17,
+  },
+
+  tipsCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    marginBottom: 28,
+    overflow: 'hidden',
+    ...cardShadow as object,
+  },
+  tipRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    paddingHorizontal: 16,
+    paddingVertical: 13,
+  },
+  tipRowBorder: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  tipIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    backgroundColor: '#F3F0FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+    marginTop: 1,
+  },
+  tipText: {
+    fontSize: fontSizes.caption,
+    color: c.textPrimary,
+    lineHeight: 18,
+    flex: 1,
+  },
+
+  linksRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 32,
+    flexWrap: 'wrap',
+  },
+  linkChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FFF0EE',
+    borderRadius: radii.button,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  linkChipText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.coral,
+  },
+
+  createBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: c.sage,
+    borderRadius: radii.button,
+    paddingVertical: 16,
+    marginTop: 4,
+    shadowColor: c.sage,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  createBtnText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+});
+
 // ─── Shared UI ───────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: string }) {
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return <Text style={sh.sectionLabel}>{children}</Text>;
 }
 
@@ -130,7 +633,7 @@ function OptionCard({
   title,
   subtitle,
   onPress,
-  iconColor = colors.coral,
+  iconColor,
   iconBg = '#FFF0EE',
 }: {
   icon: React.ComponentProps<typeof Ionicons>['name'];
@@ -140,13 +643,16 @@ function OptionCard({
   iconColor?: string;
   iconBg?: string;
 }) {
+  const { colors }        = useTheme();
+  const sh                = makeStyles(colors);
+  const resolvedIconColor = iconColor ?? colors.coral;
   return (
     <Pressable
       style={({ pressed }) => [sh.optionCard, cardShadow, pressed && { opacity: 0.82 }]}
       onPress={onPress}
     >
       <View style={[sh.optionIconBg, { backgroundColor: iconBg }]}>
-        <Ionicons name={icon} size={22} color={iconColor} />
+        <Ionicons name={icon} size={22} color={resolvedIconColor} />
       </View>
       <View style={{ flex: 1 }}>
         <Text style={sh.optionTitle}>{title}</Text>
@@ -170,6 +676,8 @@ function Stepper({
   suffix: string;
   onChange: (n: number) => void;
 }) {
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <View style={sh.stepperRow}>
       <Pressable
@@ -206,6 +714,8 @@ function WizardContainer({
   progressStep: number | null;
   children: React.ReactNode;
 }) {
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <SafeAreaView style={sh.safe}>
       <View style={sh.navRow}>
@@ -248,6 +758,8 @@ function ContinueButton({
   disabled?: boolean;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <Pressable
       style={[sh.continueBtn, disabled && sh.continueBtnDisabled]}
@@ -263,6 +775,8 @@ function ContinueButton({
 
 function S1Mode({ goTo }: { goTo: GoTo }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
 
   const modeOptions = [
     {
@@ -314,6 +828,8 @@ function S1Mode({ goTo }: { goTo: GoTo }) {
 
 function S1AgentResult({ navigation }: { navigation: Props['navigation'] }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
       <Text style={sh.stageTitle}>{t('wizard.agent.title')}</Text>
@@ -339,6 +855,8 @@ function S1AgentResult({ navigation }: { navigation: Props['navigation'] }) {
 
 function S1TourResult({ navigation }: { navigation: Props['navigation'] }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
       <Text style={sh.stageTitle}>{t('wizard.tour.title')}</Text>
@@ -374,6 +892,8 @@ function S2Basics({
   goTo: GoTo;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
 
   const toggleMonth = (m: number) => {
     const next = answers.months.includes(m)
@@ -476,6 +996,8 @@ function S2Basics({
 
 function S3DestBranch({ goTo }: { goTo: GoTo }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
       <Text style={sh.stageTitle}>{t('wizard.dest.branchTitle')}</Text>
@@ -511,6 +1033,8 @@ function S3DestInput({
   goTo: GoTo;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -549,6 +1073,8 @@ function S3DestInput({
 
 function S3VibePick({ goTo }: { goTo: GoTo }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   return (
     <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
       <Text style={sh.stageTitle}>{t('wizard.vibe.title')}</Text>
@@ -582,6 +1108,8 @@ function S3VibeResults({
   goTo: GoTo;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
   const vibe = answers.selectedVibe;
   if (!vibe) return null;
 
@@ -640,6 +1168,8 @@ function S3VibeResults({
 
 function S4Pace({ goTo }: { goTo: GoTo }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const sh = makeStyles(colors);
 
   const paceOptions = [
     {
@@ -690,7 +1220,9 @@ function S5Results({
   answers: WizardAnswers;
   navigation: Props['navigation'];
 }) {
-  const { t }         = useTranslation();
+  const { t }      = useTranslation();
+  const { colors } = useTheme();
+  const sh         = makeStyles(colors);
   const [creating, setCreating] = useState(false);
 
   const dest   = answers.pickedDestination || answers.destination || null;
@@ -901,503 +1433,3 @@ export default function TripWizardScreen({ navigation }: Props) {
     </WizardContainer>
   );
 }
-
-// ─── Styles ──────────────────────────────────────────────────────────────────
-
-const sh = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
-  navBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.card,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  progressRow: {
-    flexDirection: 'row',
-    gap: 6,
-    alignItems: 'center',
-  },
-  dot: {
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.border,
-  },
-  dotDone: {
-    backgroundColor: colors.coral,
-    opacity: 0.45,
-  },
-  dotActive: {
-    width: 20,
-    backgroundColor: colors.coral,
-    opacity: 1,
-  },
-
-  stageContent: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 48,
-  },
-  stageTitle: {
-    fontSize: fontSizes.screenTitle,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: 6,
-    lineHeight: 36,
-  },
-  stageSubtitle: {
-    fontSize: fontSizes.body,
-    color: colors.textSecondary,
-    marginBottom: 24,
-    lineHeight: 21,
-  },
-  stageParagraph: {
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    lineHeight: 22,
-    marginBottom: 14,
-  },
-
-  optionStack: {
-    gap: 12,
-    marginTop: 8,
-  },
-  optionCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    padding: 16,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  optionIconBg: {
-    width: 44,
-    height: 44,
-    borderRadius: 13,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  optionTitle: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  optionSubtitle: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    lineHeight: 17,
-  },
-
-  stepperRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  stepperBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stepperBtnDisabled: {
-    opacity: 0.4,
-  },
-  stepperValue: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  stepperSuffix: {
-    fontSize: fontSizes.body,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-
-  formCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    marginBottom: 20,
-  },
-  inputCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  currencyPrefix: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.textSecondary,
-  },
-  budgetInput: {
-    flex: 1,
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    paddingVertical: 4,
-  },
-  destInput: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    fontWeight: '500',
-    color: colors.textPrimary,
-    paddingVertical: 6,
-  },
-
-  sectionLabel: {
-    fontSize: fontSizes.caption,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 8,
-  },
-
-  chipRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  chip: {
-    paddingHorizontal: 16,
-    paddingVertical: 9,
-    borderRadius: radii.button,
-    backgroundColor: colors.card,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  chipSelected: {
-    backgroundColor: '#FFF0EE',
-    borderColor: colors.coral,
-  },
-  chipText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.coral,
-  },
-
-  monthGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 20,
-  },
-  monthChip: {
-    width: '22%',
-    paddingVertical: 10,
-    borderRadius: radii.button,
-    backgroundColor: colors.card,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    alignItems: 'center',
-  },
-  monthChipSelected: {
-    backgroundColor: '#FFF0EE',
-    borderColor: colors.coral,
-  },
-  monthChipText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  monthChipTextSelected: {
-    color: colors.coral,
-  },
-
-  continueBtn: {
-    backgroundColor: colors.coral,
-    borderRadius: radii.button,
-    paddingVertical: 16,
-    alignItems: 'center',
-    marginTop: 8,
-    shadowColor: colors.coral,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  continueBtnDisabled: {
-    opacity: 0.45,
-    shadowOpacity: 0,
-    elevation: 0,
-  },
-  continueBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-
-  skipBtn: {
-    alignItems: 'center',
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  skipBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 24,
-  },
-  orLabel: {
-    fontSize: fontSizes.body,
-    color: colors.textSecondary,
-    marginBottom: 12,
-  },
-
-  linkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFF0EE',
-    borderRadius: radii.button,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-  linkBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.coral,
-  },
-
-  suggestionCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  suggestionCardSelected: {
-    borderColor: colors.coral,
-    backgroundColor: '#FFFBFB',
-  },
-  suggestionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 8,
-  },
-  suggestionFlag: {
-    fontSize: 28,
-    lineHeight: 32,
-  },
-  suggestionName: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  suggestionTagline: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: colors.coral,
-  },
-  suggestionCheck: {
-    marginLeft: 'auto',
-  },
-  suggestionBlurb: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    lineHeight: 18,
-  },
-
-  resultsHeader: {
-    marginBottom: 28,
-  },
-  resultsDestination: {
-    fontSize: fontSizes.screenTitle,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginBottom: 10,
-    lineHeight: 36,
-  },
-  resultsMetaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-  },
-  resultsMeta: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-  },
-  resultsMetaText: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  resultsSectionTitle: {
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 12,
-    marginTop: 4,
-  },
-
-  pacingCard: {
-    backgroundColor: '#FFF0EE',
-    borderRadius: radii.card,
-    padding: 18,
-    marginBottom: 28,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.coral,
-  },
-  pacingBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 10,
-  },
-  pacingBadge: {
-    backgroundColor: colors.coral,
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  pacingBadgeText: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: '#fff',
-    letterSpacing: 0.8,
-  },
-  pacingHeadline: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    flex: 1,
-    lineHeight: 20,
-  },
-  pacingBody: {
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    lineHeight: 22,
-  },
-  pacingCallout: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 8,
-    marginTop: 12,
-    backgroundColor: 'rgba(255,107,91,0.10)',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
-  },
-  pacingCalloutText: {
-    fontSize: fontSizes.caption,
-    color: colors.textPrimary,
-    fontWeight: '600',
-    flex: 1,
-    lineHeight: 17,
-  },
-
-  tipsCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    marginBottom: 28,
-    overflow: 'hidden',
-    ...cardShadow as object,
-  },
-  tipRow: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-  },
-  tipRowBorder: {
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-  },
-  tipIconBg: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: '#F3F0FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-    marginTop: 1,
-  },
-  tipText: {
-    fontSize: fontSizes.caption,
-    color: colors.textPrimary,
-    lineHeight: 18,
-    flex: 1,
-  },
-
-  linksRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 32,
-    flexWrap: 'wrap',
-  },
-  linkChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    backgroundColor: '#FFF0EE',
-    borderRadius: radii.button,
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-  },
-  linkChipText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.coral,
-  },
-
-  createBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.sage,
-    borderRadius: radii.button,
-    paddingVertical: 16,
-    marginTop: 4,
-    shadowColor: colors.sage,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  createBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-});

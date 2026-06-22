@@ -31,7 +31,8 @@ import {
   SuggestedTransaction,
   SubgroupWithMembers,
 } from '../db';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, formatAmount } from '../utils';
 import { getCachedRates } from '../currencyRates';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
@@ -53,6 +54,8 @@ function MemberBalanceCard({
   groupCurrency: string;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const isPositive    = member.balance >= 0;
   const fadeAnim      = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(16)).current;
@@ -108,6 +111,8 @@ function ExpenseRow({
   onPress: () => void;
   onReceiptPress?: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const { t }   = useTranslation();
   const cat     = expense.category;
   const catDef  = CATEGORY_MAP[cat];
@@ -184,6 +189,8 @@ function SuggestionRow({
   groupCurrency: string;
   isLast: boolean;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const { t } = useTranslation();
   return (
     <>
@@ -206,6 +213,8 @@ function SuggestionRow({
 export default function GroupDetailScreen({ route }: Props) {
   const navigation = useNavigation<NavProp>();
   const { t }      = useTranslation();
+  const { colors } = useTheme();
+  const styles     = makeStyles(colors);
   const [group, setGroup]       = useState<GroupDetails | null>(null);
   const [subgroups, setSubgroups] = useState<SubgroupWithMembers[]>([]);
   const [loading, setLoading]   = useState(true);
@@ -306,12 +315,12 @@ export default function GroupDetailScreen({ route }: Props) {
             <View style={styles.heroNavRow}>
               <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
                 <View style={styles.heroNavBtn}>
-                  <Ionicons name="chevron-back" size={22} color={colors.card} />
+                  <Ionicons name="chevron-back" size={22} color="#fff" />
                 </View>
               </Pressable>
               {!group.is_archived && (
                 <Pressable onPress={handleConclude} hitSlop={10} style={styles.heroNavConclude}>
-                  <Ionicons name="archive-outline" size={15} color={colors.card} />
+                  <Ionicons name="archive-outline" size={15} color="#fff" />
                   <Text style={styles.heroNavConcludeText}>{t('groupDetail.conclude')}</Text>
                 </Pressable>
               )}
@@ -612,10 +621,10 @@ export default function GroupDetailScreen({ route }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   scrollContent: {
     paddingHorizontal: 20,
@@ -657,7 +666,7 @@ const styles = StyleSheet.create({
   heroNavConcludeText: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.card,
+    color: '#fff',
   },
   heroTextArea: {
     position: 'absolute',
@@ -669,7 +678,7 @@ const styles = StyleSheet.create({
   heroTitle: {
     fontSize: fontSizes.screenTitle,
     fontWeight: '800',
-    color: colors.card,
+    color: '#fff',
     lineHeight: 34,
     textShadowColor: 'rgba(0,0,0,0.20)',
     textShadowOffset: { width: 0, height: 1 },
@@ -704,17 +713,17 @@ const styles = StyleSheet.create({
   concludeLabel: {
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   screenTitle: {
     fontSize: fontSizes.screenTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginTop: 4,
   },
   totalLabel: {
     fontSize: fontSizes.body,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     marginTop: 4,
     marginBottom: 8,
   },
@@ -726,13 +735,13 @@ const styles = StyleSheet.create({
   },
   ratesBannerText: {
     fontSize: fontSizes.caption,
-    color: colors.coral,
+    color: c.coral,
     flex: 1,
   },
   sectionTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 12,
   },
   memberRow: {
@@ -742,7 +751,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   memberCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     padding: 14,
     alignItems: 'center',
@@ -763,14 +772,14 @@ const styles = StyleSheet.create({
   memberName: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   memberBalance: {
     fontSize: fontSizes.body,
     fontWeight: '700',
   },
   expenseCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     paddingHorizontal: 16,
     marginBottom: 16,
@@ -782,7 +791,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: fontSizes.body,
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   expenseRow: {
     flexDirection: 'row',
@@ -804,11 +813,11 @@ const styles = StyleSheet.create({
   expenseTitle: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   expenseMeta: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   expenseRight: {
     alignItems: 'flex-end',
@@ -818,7 +827,7 @@ const styles = StyleSheet.create({
   expenseAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   receiptBadge: {
     backgroundColor: '#FFF0EE',
@@ -850,7 +859,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
   },
   suggestionRow: {
     flexDirection: 'row',
@@ -877,16 +886,16 @@ const styles = StyleSheet.create({
   },
   suggestionName: {
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   suggestionVerb: {
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '400',
   },
   suggestionAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.coral,
+    color: c.coral,
     flexShrink: 0,
   },
 
@@ -905,10 +914,10 @@ const styles = StyleSheet.create({
   subgroupAddLabel: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.coral,
+    color: c.coral,
   },
   subgroupEmptyCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -916,7 +925,7 @@ const styles = StyleSheet.create({
   },
   subgroupEmptyText: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     lineHeight: 18,
   },
   subgroupScroll: {
@@ -927,7 +936,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   subgroupChip: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.button,
     paddingHorizontal: 14,
     paddingVertical: 10,
@@ -935,16 +944,16 @@ const styles = StyleSheet.create({
     minWidth: 90,
     alignItems: 'center',
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
   },
   subgroupChipName: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   subgroupChipCount: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '500',
   },
 
@@ -953,7 +962,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     padding: 16,
     marginBottom: 20,
@@ -994,12 +1003,12 @@ const styles = StyleSheet.create({
   itineraryBtnTitle: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 2,
   },
   itineraryBtnSub: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
 
   // Share button (visible on archived trips)
@@ -1008,11 +1017,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.button,
     paddingVertical: 14,
     marginBottom: 28,
-    shadowColor: colors.coral,
+    shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -1028,7 +1037,7 @@ const styles = StyleSheet.create({
   // Share modal
   modalSafe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -1040,7 +1049,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   modalCardWrap: {
     flex: 1,
@@ -1052,17 +1061,17 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 16,
     paddingTop: 12,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   shareSheetBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.button,
     paddingVertical: 16,
-    shadowColor: colors.coral,
+    shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,

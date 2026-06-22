@@ -12,7 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import {
   getAllTripSummaries,
   getGroupDetails,
@@ -26,8 +27,6 @@ import { getCachedRates, convertAmount } from '../currencyRates';
 
 let rememberedTab: 'all' | 'trip' = 'all';
 
-// ─── Category breakdown ───────────────────────────────────────────────────────
-
 function CategoryBreakdown({
   expenses,
   currency,
@@ -36,6 +35,8 @@ function CategoryBreakdown({
   currency: string;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const scopeTotal = expenses.reduce((s, e) => s + e.amount, 0);
 
   const catRows = CATEGORIES
@@ -96,12 +97,12 @@ function CategoryBreakdown({
   );
 }
 
-// ─── Who Paid the Most ────────────────────────────────────────────────────────
-
 const MEDALS = ['🥇', '🥈', '🥉'];
 
 function WhoPaidMost({ tripDetails }: { tripDetails: GroupDetails }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const memberIndexMap = new Map(tripDetails.members.map((m, i) => [m.id, i]));
 
   const paidMap = new Map<number, number>();
@@ -142,10 +143,10 @@ function WhoPaidMost({ tripDetails }: { tripDetails: GroupDetails }) {
   );
 }
 
-// ─── Who Owes the Most ────────────────────────────────────────────────────────
-
 function WhoOwesMost({ tripDetails }: { tripDetails: GroupDetails }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const memberIndexMap = new Map(tripDetails.members.map((m, i) => [m.id, i]));
   const ranking = [...tripDetails.members].sort((a, b) => a.balance - b.balance);
 
@@ -185,8 +186,6 @@ function WhoOwesMost({ tripDetails }: { tripDetails: GroupDetails }) {
   );
 }
 
-// ─── Trip Highlights ──────────────────────────────────────────────────────────
-
 type HighlightItem = {
   icon: React.ComponentProps<typeof Ionicons>['name'];
   iconColor: string;
@@ -198,6 +197,8 @@ type HighlightItem = {
 
 function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const { expenses } = tripDetails;
   if (expenses.length === 0) return null;
 
@@ -287,10 +288,10 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
   );
 }
 
-// ─── All Trips view ───────────────────────────────────────────────────────────
-
 function AllTripsView({ trips }: { trips: GroupSummary[] }) {
   const { t }   = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const rates   = getCachedRates();
 
   if (trips.length === 0) {
@@ -305,7 +306,6 @@ function AllTripsView({ trips }: { trips: GroupSummary[] }) {
   const currencies = [...new Set(trips.map((tr) => tr.currency))];
   const mixedCurrencies = currencies.length > 1;
 
-  // Convert all trip totals to USD for apples-to-apples ranking and grand total
   const tripsWithUSD = trips.map((tr) => ({
     ...tr,
     totalInUSD: rates ? convertAmount(tr.totalSpent, tr.currency, 'USD', rates) : tr.totalSpent,
@@ -380,10 +380,10 @@ function AllTripsView({ trips }: { trips: GroupSummary[] }) {
   );
 }
 
-// ─── Screen ───────────────────────────────────────────────────────────────────
-
 export default function InsightsScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [activeTab, setActiveTab] = useState<'all' | 'trip'>(rememberedTab);
 
   const [allTrips, setAllTrips]             = useState<GroupSummary[]>([]);
@@ -455,7 +455,6 @@ export default function InsightsScreen() {
   const memberCount   = tripDetails?.members.length ?? 0;
   const costPerPerson = memberCount > 0 ? tripTotal / memberCount : null;
 
-  // Normalize expenses to the trip's base currency for sub-component aggregations
   const tripDetailsNorm: GroupDetails | null = tripDetails && rates ? {
     ...tripDetails,
     expenses: tripDetails.expenses.map((e) => ({
@@ -606,12 +605,10 @@ export default function InsightsScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -620,14 +617,14 @@ const styles = StyleSheet.create({
   screenTitle: {
     fontSize: fontSizes.screenTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginTop: 24,
     marginBottom: 20,
   },
 
   segmentRow: {
     flexDirection: 'row',
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.button,
     padding: 4,
     marginBottom: 20,
@@ -639,19 +636,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   segmentSelected: {
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
   },
   segmentText: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   segmentTextSelected: {
     color: '#fff',
   },
 
   card: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     padding: 16,
     marginBottom: 16,
@@ -659,7 +656,7 @@ const styles = StyleSheet.create({
   cardTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 14,
   },
   emptyCard: {
@@ -669,17 +666,17 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     fontSize: fontSizes.body,
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
 
   headlineCard: {
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.card,
     paddingHorizontal: 20,
     paddingVertical: 18,
     marginBottom: 16,
     gap: 3,
-    shadowColor: colors.coral,
+    shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
@@ -688,7 +685,7 @@ const styles = StyleSheet.create({
   headlineScope: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.card,
+    color: c.card,
     opacity: 0.82,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
@@ -696,7 +693,7 @@ const styles = StyleSheet.create({
   headlineAmount: {
     fontSize: fontSizes.screenTitle,
     fontWeight: '800',
-    color: colors.card,
+    color: c.card,
   },
   headlineCurrency: {
     fontSize: fontSizes.body,
@@ -705,7 +702,7 @@ const styles = StyleSheet.create({
   headlineSub: {
     fontSize: fontSizes.caption,
     fontWeight: '500',
-    color: colors.card,
+    color: c.card,
     opacity: 0.72,
   },
   headlineDivider: {
@@ -723,7 +720,7 @@ const styles = StyleSheet.create({
   },
   ratesBannerText: {
     fontSize: fontSizes.caption,
-    color: colors.coral,
+    color: c.coral,
     flex: 1,
   },
   cppRow: {
@@ -734,7 +731,7 @@ const styles = StyleSheet.create({
   cppText: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.card,
+    color: c.card,
     opacity: 0.90,
   },
 
@@ -753,22 +750,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderWidth: 1.5,
     borderColor: 'transparent',
     maxWidth: 180,
   },
   tripChipSelected: {
-    borderColor: colors.coral,
+    borderColor: c.coral,
     backgroundColor: '#FFF0EE',
   },
   tripChipText: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   tripChipTextSelected: {
-    color: colors.coral,
+    color: c.coral,
   },
   chipTrashBtn: {
     marginLeft: 2,
@@ -802,7 +799,7 @@ const styles = StyleSheet.create({
   catName: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   catAmountRow: {
     flexDirection: 'row',
@@ -816,12 +813,12 @@ const styles = StyleSheet.create({
   catPct: {
     fontSize: fontSizes.caption,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   barTrack: {
     height: 5,
     borderRadius: 3,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     overflow: 'hidden',
   },
   barFill: {
@@ -832,7 +829,7 @@ const styles = StyleSheet.create({
   hlTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 12,
   },
   hlScroll: {
@@ -846,7 +843,7 @@ const styles = StyleSheet.create({
   },
   hlCard: {
     width: 148,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     padding: 14,
     gap: 5,
@@ -866,14 +863,14 @@ const styles = StyleSheet.create({
   hlLabel: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   hlSub: {
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
 
   rankRow: {
@@ -884,7 +881,7 @@ const styles = StyleSheet.create({
   },
   rankRowBorder: {
     borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
   },
   medal: {
     fontSize: 18,
@@ -895,14 +892,14 @@ const styles = StyleSheet.create({
     width: 28,
     height: 28,
     borderRadius: 14,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
   },
   rankNumText: {
     fontSize: 11,
     fontWeight: '700',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   rankAvatar: {
     width: 34,
@@ -921,15 +918,15 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   rankAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   rankAmountZero: {
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '500',
   },
   settledBadge: {
@@ -940,23 +937,23 @@ const styles = StyleSheet.create({
   settledText: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.sage,
+    color: c.sage,
   },
   owesAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.coral,
+    color: c.coral,
   },
   creditAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.sage,
+    color: c.sage,
   },
 
   allListTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 12,
   },
   allTripRow: {
@@ -980,7 +977,7 @@ const styles = StyleSheet.create({
   allTripThumbInitial: {
     fontSize: 17,
     fontWeight: '800',
-    color: colors.coral,
+    color: c.coral,
   },
   allTripInfo: {
     flex: 1,
@@ -989,17 +986,17 @@ const styles = StyleSheet.create({
   allTripName: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   allTripDest: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '400',
   },
   allTripAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     flexShrink: 0,
   },
 });

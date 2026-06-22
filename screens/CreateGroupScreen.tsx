@@ -15,7 +15,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { HomeStackParamList } from '../navigation/types';
 import { createGroup, addMember } from '../db';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CreateGroup'>;
 
@@ -37,12 +38,140 @@ async function fetchDestinationPhoto(query: string): Promise<string | null> {
   }
 }
 
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  sectionLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginTop: 24,
+  },
+  inputCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  input: {
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    paddingVertical: 14,
+  },
+  chipScroll: {
+    flexGrow: 0,
+  },
+  chip: {
+    paddingHorizontal: 18,
+    paddingVertical: 10,
+    borderRadius: 20,
+    backgroundColor: c.card,
+    marginRight: 8,
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  chipSelected: {
+    borderColor: c.coral,
+  },
+  chipText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  chipTextSelected: {
+    color: c.coral,
+  },
+  membersCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    paddingHorizontal: 16,
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  memberInput: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    paddingVertical: 14,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: c.border,
+  },
+  addMemberBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    alignSelf: 'flex-start',
+  },
+  addMemberText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.coral,
+  },
+  saveContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 20,
+    paddingTop: 12,
+    backgroundColor: c.background,
+  },
+  saveButton: {
+    backgroundColor: c.coral,
+    borderRadius: radii.button,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: c.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  saveButtonDisabled: {
+    opacity: 0.45,
+  },
+  saveText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+});
+
 function SectionLabel({ title }: { title: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return <Text style={styles.sectionLabel}>{title}</Text>;
 }
 
 export default function CreateGroupScreen({ navigation }: Props) {
   const { t }                         = useTranslation();
+  const { colors }                    = useTheme();
+  const styles                        = makeStyles(colors);
   const [groupName, setGroupName]     = useState('');
   const [destination, setDestination] = useState('');
   const [currency, setCurrency]       = useState('CAD');
@@ -133,14 +262,14 @@ export default function CreateGroupScreen({ navigation }: Props) {
 
           <SectionLabel title={t('createGroup.currency')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-            {CURRENCIES.map((c) => (
+            {CURRENCIES.map((cur) => (
               <Pressable
-                key={c}
-                style={[styles.chip, currency === c && styles.chipSelected]}
-                onPress={() => setCurrency(c)}
+                key={cur}
+                style={[styles.chip, currency === cur && styles.chipSelected]}
+                onPress={() => setCurrency(cur)}
               >
-                <Text style={[styles.chipText, currency === c && styles.chipTextSelected]}>
-                  {c}
+                <Text style={[styles.chipText, currency === cur && styles.chipTextSelected]}>
+                  {cur}
                 </Text>
               </Pressable>
             ))}
@@ -191,135 +320,3 @@ export default function CreateGroupScreen({ navigation }: Props) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerTitle: {
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  sectionLabel: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    marginTop: 24,
-  },
-
-  // Name input
-  inputCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-  },
-  input: {
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    paddingVertical: 14,
-  },
-
-  // Currency chips
-  chipScroll: {
-    flexGrow: 0,
-  },
-  chip: {
-    paddingHorizontal: 18,
-    paddingVertical: 10,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    marginRight: 8,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  chipSelected: {
-    borderColor: colors.coral,
-  },
-  chipText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  chipTextSelected: {
-    color: colors.coral,
-  },
-
-  // Members
-  membersCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    paddingHorizontal: 16,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  memberInput: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    paddingVertical: 14,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  addMemberBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
-    alignSelf: 'flex-start',
-  },
-  addMemberText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.coral,
-  },
-
-  // Save
-  saveContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 20,
-    paddingTop: 12,
-    backgroundColor: colors.background,
-  },
-  saveButton: {
-    backgroundColor: colors.coral,
-    borderRadius: radii.button,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: colors.coral,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  saveButtonDisabled: {
-    opacity: 0.45,
-  },
-  saveText: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-});

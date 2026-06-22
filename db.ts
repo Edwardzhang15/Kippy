@@ -249,6 +249,14 @@ export async function initDatabase(): Promise<void> {
     await db.execAsync('ALTER TABLE expenses ADD COLUMN receipt_photo_uri TEXT;');
   } catch { /* column already exists */ }
 
+  // Migration v12: paid_currency and paid_amount on settlements (for cross-currency settle-up)
+  try {
+    await db.execAsync('ALTER TABLE settlements ADD COLUMN paid_currency TEXT;');
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE settlements ADD COLUMN paid_amount REAL;');
+  } catch { /* column already exists */ }
+
   // Migration v7: budget plan items
   try {
     await db.execAsync(`
@@ -437,6 +445,32 @@ export async function addMember(groupId: number, name: string): Promise<number> 
   return result.lastInsertRowId;
 }
 
+export async function getMembers(groupId: number): Promise<{ id: number; name: string }[]> {
+  return db.getAllAsync<{ id: number; name: string }>(
+    'SELECT id, name FROM members WHERE group_id = ? ORDER BY id ASC',
+    groupId,
+  );
+}
+
+export async function updateMemberName(memberId: number, name: string): Promise<void> {
+  await db.runAsync('UPDATE members SET name = ? WHERE id = ?', name, memberId);
+}
+
+export async function getMemberHasExpenses(memberId: number): Promise<boolean> {
+  const row = await db.getFirstAsync<{ cnt: number }>(
+    `SELECT (
+      (SELECT COUNT(*) FROM expenses WHERE paid_by = ?) +
+      (SELECT COUNT(*) FROM expense_splits WHERE member_id = ?)
+    ) AS cnt`,
+    memberId, memberId,
+  );
+  return (row?.cnt ?? 0) > 0;
+}
+
+export async function deleteMember(memberId: number): Promise<void> {
+  await db.runAsync('DELETE FROM members WHERE id = ?', memberId);
+}
+
 export async function addExpense(
   groupId: number,
   amount: number,
@@ -571,10 +605,12 @@ export async function recordSettlement(
   memberId: number,
   amount: number,
   date: string,
+  paidCurrency?: string,
+  paidAmount?: number,
 ): Promise<number> {
   const result = await db.runAsync(
-    'INSERT INTO settlements (group_id, member_id, amount, date) VALUES (?, ?, ?, ?)',
-    groupId, memberId, amount, date,
+    'INSERT INTO settlements (group_id, member_id, amount, date, paid_currency, paid_amount) VALUES (?, ?, ?, ?, ?, ?)',
+    groupId, memberId, amount, date, paidCurrency ?? null, paidAmount ?? null,
   );
   return result.lastInsertRowId;
 }

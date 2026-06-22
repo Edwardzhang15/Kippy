@@ -1,15 +1,15 @@
 import './i18n'; // must be imported before any component that calls useTranslation()
 import { useEffect, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors } from './theme';
 import { initDatabase } from './db';
 import { initRates } from './currencyRates';
 import { applyPersistedLanguage } from './i18n';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import LoadingScreen from './components/LoadingScreen';
 import HomeStack from './navigation/HomeStack';
 import PlanStack from './navigation/PlanStack';
@@ -28,8 +28,9 @@ const TAB_ICONS: Record<string, { focused: IoniconName; unfocused: IoniconName }
   Setting:  { focused: 'settings',  unfocused: 'settings-outline' },
 };
 
-export default function App() {
+function AppCore() {
   const { t } = useTranslation();
+  const { colors, isDark } = useTheme();
   const [dbReady, setDbReady]           = useState(false);
   const [minTimeReady, setMinTimeReady] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(true);
@@ -54,7 +55,9 @@ export default function App() {
   }, [appReady]);
 
   return (
-    <GestureHandlerRootView style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
+
       {dbReady && (
         <NavigationContainer>
           <Tab.Navigator
@@ -91,6 +94,16 @@ export default function App() {
           <LoadingScreen />
         </View>
       )}
+    </View>
+  );
+}
+
+export default function App() {
+  return (
+    <GestureHandlerRootView style={styles.root}>
+      <ThemeProvider>
+        <AppCore />
+      </ThemeProvider>
     </GestureHandlerRootView>
   );
 }
@@ -98,6 +111,5 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: colors.background,
   },
 });

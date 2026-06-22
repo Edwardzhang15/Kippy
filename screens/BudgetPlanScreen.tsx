@@ -17,7 +17,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import BudgetShareCard from '../components/BudgetShareCard';
 import SharePreviewModal from '../components/SharePreviewModal';
 import {
@@ -42,8 +43,6 @@ function fmt(n: number, currency: string): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
-// ─── Row component ────────────────────────────────────────────────────────────
-
 function BudgetRow({
   item,
   draft,
@@ -64,6 +63,8 @@ function BudgetRow({
   onDelete: () => void;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const def = getBudgetCategoryDef(item.category);
   const planned = parseFloat(draft) || 0;
   const pct = planned > 0 ? Math.min(actual / planned, 1) : 0;
@@ -124,10 +125,10 @@ function BudgetRow({
   );
 }
 
-// ─── Main screen ──────────────────────────────────────────────────────────────
-
 export default function BudgetPlanScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const navigation = useNavigation<any>();
   const { groupId } = useRoute<any>().params as { groupId: number };
 
@@ -265,7 +266,6 @@ export default function BudgetPlanScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={0}
       >
-        {/* ── Header ──────────────────────────────────────────── */}
         <View style={styles.header}>
           <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
             <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
@@ -281,7 +281,6 @@ export default function BudgetPlanScreen() {
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ── Total card ──────────────────────────────────────── */}
           <View style={[styles.totalCard, cardShadow]}>
             <Text style={styles.totalLabel}>{t('budget.totalPlanned')}</Text>
             <Text style={styles.totalAmount}>
@@ -306,7 +305,6 @@ export default function BudgetPlanScreen() {
             )}
           </View>
 
-          {/* ── Category rows ───────────────────────────────────── */}
           {!loading && items.map((item) => (
             <BudgetRow
               key={item.id}
@@ -321,7 +319,6 @@ export default function BudgetPlanScreen() {
             />
           ))}
 
-          {/* ── Add Category button ─────────────────────────────── */}
           {remaining.length > 0 && (
             <Pressable
               style={[styles.addCategoryBtn, cardShadow]}
@@ -341,7 +338,6 @@ export default function BudgetPlanScreen() {
         </ScrollView>
       </KeyboardAvoidingView>
 
-      {/* ── Add Category Modal ──────────────────────────────────── */}
       <Modal
         visible={showModal}
         transparent
@@ -374,7 +370,6 @@ export default function BudgetPlanScreen() {
         </Pressable>
       </Modal>
 
-      {/* ── Share preview modal ──────────────────────────────── */}
       <SharePreviewModal
         visible={showShareModal}
         title={t('budget.title')}
@@ -393,12 +388,10 @@ export default function BudgetPlanScreen() {
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
-
-const styles = StyleSheet.create({
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
 
   header: {
@@ -412,7 +405,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
 
   scrollContent: {
@@ -420,9 +413,8 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
 
-  // Total card
   totalCard: {
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.card,
     padding: 20,
     marginBottom: 20,
@@ -453,9 +445,8 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
 
-  // Category row card
   rowCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     marginBottom: 12,
     overflow: 'hidden',
@@ -480,33 +471,32 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   rowCurrency: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     marginRight: -4,
   },
   rowInput: {
     width: 90,
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     textAlign: 'right',
     paddingVertical: 4,
     paddingHorizontal: 6,
     borderBottomWidth: 1.5,
-    borderBottomColor: colors.border,
+    borderBottomColor: c.border,
   },
   rowDeleteBtn: {
     paddingLeft: 4,
   },
 
-  // Actual spending section (active trips)
   actualSection: {
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
     paddingHorizontal: 14,
     paddingTop: 10,
     paddingBottom: 12,
@@ -514,7 +504,7 @@ const styles = StyleSheet.create({
   },
   progressTrack: {
     height: 6,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     borderRadius: 3,
     overflow: 'hidden',
   },
@@ -529,31 +519,30 @@ const styles = StyleSheet.create({
   },
   actualLabel: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '500',
   },
   actualLabelOver: {
-    color: colors.coral,
+    color: c.coral,
     fontWeight: '600',
   },
   pctLabel: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '600',
   },
   budgetStatusLabel: {
     fontSize: fontSizes.caption,
-    color: colors.sage,
+    color: c.sage,
     fontWeight: '600',
     marginLeft: 'auto',
   },
   overBudgetLabel: {
-    color: colors.coral,
+    color: c.coral,
   },
 
-  // Add Category button
   addCategoryBtn: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     flexDirection: 'row',
     alignItems: 'center',
@@ -561,7 +550,7 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 16,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderStyle: 'dashed',
   },
   addCategoryIconBg: {
@@ -576,25 +565,24 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.coral,
+    color: c.coral,
   },
 
   hint: {
     textAlign: 'center',
     fontSize: fontSizes.caption,
-    color: colors.tabInactive,
+    color: c.tabInactive,
     marginTop: 4,
     marginBottom: 8,
   },
 
-  // Add category modal
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'flex-end',
   },
   modalSheet: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     paddingTop: 12,
@@ -604,7 +592,7 @@ const styles = StyleSheet.create({
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 16,
@@ -612,7 +600,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     paddingHorizontal: 20,
     marginBottom: 12,
   },
@@ -623,7 +611,7 @@ const styles = StyleSheet.create({
     paddingVertical: 13,
     gap: 14,
     borderTopWidth: 1,
-    borderTopColor: colors.border,
+    borderTopColor: c.border,
   },
   modalIconBg: {
     width: 38,
@@ -637,6 +625,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
 });

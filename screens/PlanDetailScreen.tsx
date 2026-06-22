@@ -17,7 +17,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { PlanStackParamList } from '../navigation/types';
 import { getGroupDetails, addMember, activatePlanTrip, GroupDetails } from '../db';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'PlanDetail'>;
 
@@ -28,6 +29,282 @@ function formatPlanDate(dateStr: string | null): string | null {
   return `${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
 }
 
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  scrollContent: {
+    paddingBottom: 40,
+  },
+  navRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginTop: 16,
+    marginBottom: 4,
+  },
+  planBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: '#FFF0EE',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 12,
+    marginHorizontal: 20,
+    marginTop: 10,
+    marginBottom: 6,
+  },
+  planBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: c.coral,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  screenTitle: {
+    fontSize: fontSizes.screenTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginHorizontal: 20,
+    marginBottom: 4,
+  },
+  destinationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  destinationText: {
+    fontSize: fontSizes.body,
+    color: c.textSecondary,
+    fontWeight: '500',
+  },
+  photoHeader: {
+    height: 220,
+    overflow: 'hidden',
+  },
+  photoBackBtn: {
+    position: 'absolute',
+    top: 16,
+    left: 16,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: 'rgba(0,0,0,0.30)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoTitleArea: {
+    position: 'absolute',
+    bottom: 16,
+    left: 16,
+    right: 16,
+    gap: 4,
+  },
+  planBadgePhoto: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    backgroundColor: 'rgba(255,255,255,0.20)',
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginBottom: 2,
+  },
+  planBadgeTextPhoto: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: c.card,
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
+  photoTitle: {
+    fontSize: fontSizes.screenTitle,
+    fontWeight: '800',
+    color: c.card,
+    lineHeight: 34,
+  },
+  photoDestRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  photoDestText: {
+    fontSize: fontSizes.body,
+    color: 'rgba(255,255,255,0.85)',
+    fontWeight: '500',
+  },
+  sectionTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 12,
+  },
+  detailsCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    marginHorizontal: 20,
+    overflow: 'hidden',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+    gap: 12,
+  },
+  detailIconBg: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#FFF0EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  detailLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 2,
+  },
+  detailValue: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  detailDivider: {
+    height: 1,
+    backgroundColor: c.border,
+    marginHorizontal: 16,
+  },
+  membersCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    marginHorizontal: 20,
+    paddingHorizontal: 16,
+    overflow: 'hidden',
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  memberInput: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    paddingVertical: 14,
+  },
+  memberDivider: {
+    height: 1,
+    backgroundColor: c.border,
+  },
+  addMemberBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 12,
+    marginHorizontal: 20,
+    alignSelf: 'flex-start',
+  },
+  addMemberText: {
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.coral,
+  },
+  itineraryBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    padding: 16,
+    marginHorizontal: 20,
+    marginTop: 24,
+    marginBottom: 0,
+  },
+  packingBtn: {
+    marginTop: 12,
+    marginBottom: 0,
+  },
+  budgetBtn: {
+    marginTop: 12,
+    marginBottom: 0,
+  },
+  itineraryIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#FFF0EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  packingIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EFF7F2',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  budgetIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#EEF3FF',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  itineraryBtnTitle: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginBottom: 2,
+  },
+  itineraryBtnSub: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+  },
+  activateBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: c.sage,
+    borderRadius: radii.button,
+    paddingVertical: 16,
+    marginHorizontal: 20,
+    marginTop: 32,
+    shadowColor: c.sage,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  activateBtnDisabled: {
+    opacity: 0.45,
+  },
+  activateBtnText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.card,
+    letterSpacing: 0.3,
+  },
+});
+
 function DetailRow({
   icon,
   label,
@@ -37,6 +314,8 @@ function DetailRow({
   label: string;
   value: string;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <View style={styles.detailRow}>
       <View style={styles.detailIconBg}>
@@ -53,6 +332,8 @@ function DetailRow({
 export default function PlanDetailScreen({ route }: Props) {
   const navigation = useNavigation<any>();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [group, setGroup]         = useState<GroupDetails | null>(null);
   const [loading, setLoading]     = useState(true);
   const [memberNames, setMemberNames] = useState<string[]>(['', '']);
@@ -98,7 +379,6 @@ export default function PlanDetailScreen({ route }: Props) {
           onPress: async () => {
             setActivating(true);
             try {
-              // Only add members that aren't already in the DB
               const existingNames = new Set(group.members.map((m) => m.name));
               for (const name of validNames) {
                 if (!existingNames.has(name)) {
@@ -148,7 +428,6 @@ export default function PlanDetailScreen({ route }: Props) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* ── Photo header (if available) ───────────────────── */}
         {hasPhoto ? (
           <View style={styles.photoHeader}>
             <Image
@@ -161,11 +440,9 @@ export default function PlanDetailScreen({ route }: Props) {
               locations={[0.38, 0.68, 1]}
               style={StyleSheet.absoluteFill}
             />
-            {/* Back button */}
             <Pressable style={styles.photoBackBtn} onPress={() => navigation.goBack()} hitSlop={12}>
               <Ionicons name="chevron-back" size={22} color={colors.card} />
             </Pressable>
-            {/* Title overlay */}
             <View style={styles.photoTitleArea}>
               <View style={styles.planBadgePhoto}>
                 <Ionicons name="map-outline" size={11} color={colors.card} />
@@ -201,7 +478,6 @@ export default function PlanDetailScreen({ route }: Props) {
           </>
         )}
 
-        {/* ── Trip details card ─────────────────────────────── */}
         {(dateRange || group.budget_per_person != null) && (
           <>
             <Text style={styles.sectionTitle}>{t('planDetail.tripDetails')}</Text>
@@ -227,7 +503,6 @@ export default function PlanDetailScreen({ route }: Props) {
           </>
         )}
 
-        {/* ── Itinerary + Packing List buttons ─────────────── */}
         <Pressable
           style={[styles.itineraryBtn, cardShadow]}
           onPress={() =>
@@ -282,7 +557,6 @@ export default function PlanDetailScreen({ route }: Props) {
           <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
         </Pressable>
 
-        {/* ── Members section ───────────────────────────────── */}
         <Text style={styles.sectionTitle}>{t('planDetail.members')}</Text>
         <View style={[styles.membersCard, cardShadow]}>
           {memberNames.map((name, index) => (
@@ -312,7 +586,6 @@ export default function PlanDetailScreen({ route }: Props) {
           <Text style={styles.addMemberText}>{t('planDetail.addMember')}</Text>
         </Pressable>
 
-        {/* ── Activate button ───────────────────────────────── */}
         <Pressable
           style={[styles.activateBtn, !canActivate && styles.activateBtnDisabled]}
           onPress={handleActivate}
@@ -327,293 +600,3 @@ export default function PlanDetailScreen({ route }: Props) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  scrollContent: {
-    paddingBottom: 40,
-  },
-
-  // ── No-photo header ──
-  navRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginTop: 16,
-    marginBottom: 4,
-  },
-  planBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: '#FFF0EE',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginHorizontal: 20,
-    marginTop: 10,
-    marginBottom: 6,
-  },
-  planBadgeText: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.coral,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  screenTitle: {
-    fontSize: fontSizes.screenTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginHorizontal: 20,
-    marginBottom: 4,
-  },
-  destinationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 5,
-    marginHorizontal: 20,
-    marginBottom: 20,
-  },
-  destinationText: {
-    fontSize: fontSizes.body,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-
-  // ── Photo header ──
-  photoHeader: {
-    height: 220,
-    overflow: 'hidden',
-  },
-  photoBackBtn: {
-    position: 'absolute',
-    top: 16,
-    left: 16,
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: 'rgba(0,0,0,0.30)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  photoTitleArea: {
-    position: 'absolute',
-    bottom: 16,
-    left: 16,
-    right: 16,
-    gap: 4,
-  },
-  planBadgePhoto: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: 'rgba(255,255,255,0.20)',
-    alignSelf: 'flex-start',
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginBottom: 2,
-  },
-  planBadgeTextPhoto: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: colors.card,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  photoTitle: {
-    fontSize: fontSizes.screenTitle,
-    fontWeight: '800',
-    color: colors.card,
-    lineHeight: 34,
-  },
-  photoDestRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-  },
-  photoDestText: {
-    fontSize: fontSizes.body,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '500',
-  },
-
-  // ── Sections ──
-  sectionTitle: {
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginHorizontal: 20,
-    marginTop: 24,
-    marginBottom: 12,
-  },
-
-  // Details card
-  detailsCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    marginHorizontal: 20,
-    overflow: 'hidden',
-  },
-  detailRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-    gap: 12,
-  },
-  detailIconBg: {
-    width: 34,
-    height: 34,
-    borderRadius: 10,
-    backgroundColor: '#FFF0EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  detailLabel: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 2,
-  },
-  detailValue: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.textPrimary,
-  },
-  detailDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginHorizontal: 16,
-  },
-
-  // Members
-  membersCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    marginHorizontal: 20,
-    paddingHorizontal: 16,
-    overflow: 'hidden',
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-  },
-  memberInput: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    paddingVertical: 14,
-  },
-  memberDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  addMemberBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    marginTop: 12,
-    marginHorizontal: 20,
-    alignSelf: 'flex-start',
-  },
-  addMemberText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: colors.coral,
-  },
-
-  // Itinerary / Packing List buttons
-  itineraryBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    padding: 16,
-    marginHorizontal: 20,
-    marginTop: 24,
-    marginBottom: 0,
-  },
-  packingBtn: {
-    marginTop: 12,
-    marginBottom: 0,
-  },
-  budgetBtn: {
-    marginTop: 12,
-    marginBottom: 0,
-  },
-  itineraryIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#FFF0EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  packingIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#EFF7F2',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  budgetIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#EEF3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  itineraryBtnTitle: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 2,
-  },
-  itineraryBtnSub: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-  },
-
-  // Activate button
-  activateBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.sage,
-    borderRadius: radii.button,
-    paddingVertical: 16,
-    marginHorizontal: 20,
-    marginTop: 32,
-    shadowColor: colors.sage,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  activateBtnDisabled: {
-    opacity: 0.45,
-  },
-  activateBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: colors.card,
-    letterSpacing: 0.3,
-  },
-});

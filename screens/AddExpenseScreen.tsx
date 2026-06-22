@@ -27,7 +27,8 @@ import {
   GroupDetails, MemberWithBalance, SubgroupWithMembers,
 } from '../db';
 import { CATEGORIES, Category } from '../categories';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, getCurrencySymbol } from '../utils';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'AddExpense'>;
@@ -40,6 +41,8 @@ const H_PAD     = 20;
 const ITEM_W    = (Dimensions.get('window').width - H_PAD * 2 - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
 
 function SectionLabel({ title }: { title: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return <Text style={styles.sectionLabel}>{title}</Text>;
 }
 
@@ -53,6 +56,8 @@ function CategoryButton({
   onPress: () => void;
 }) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <Pressable
       style={({ pressed }) => [
@@ -89,6 +94,8 @@ function MemberAvatarButton({
   showCheck: boolean;
   onPress: () => void;
 }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return (
     <Pressable
       style={({ pressed }) => [styles.memberOption, pressed && { opacity: 0.75 }]}
@@ -119,6 +126,8 @@ function MemberAvatarButton({
 
 export default function AddExpenseScreen({ route, navigation }: Props) {
   const { t }                                           = useTranslation();
+  const { colors }                                      = useTheme();
+  const styles                                          = makeStyles(colors);
   const isEditMode                                       = !!route.params.expenseId;
   const [group, setGroup]                               = useState<GroupDetails | null>(null);
   const [subgroups, setSubgroups]                       = useState<SubgroupWithMembers[]>([]);
@@ -146,7 +155,6 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
       if (data) {
         setGroup(data);
         if (expenseData) {
-          // Pre-fill edit mode
           setAmount(expenseData.amount.toFixed(2));
           setCategory(expenseData.category);
           setCustomCategoryText(expenseData.custom_category ?? '');
@@ -157,7 +165,6 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           setReceiptUri(expenseData.receipt_photo_uri);
           setExpenseCurrency(expenseData.currency);
         } else {
-          // Create mode defaults
           setPaidBy(data.members[0]?.id ?? null);
           setSplitAmong(data.members.map((m) => m.id));
           setExpenseCurrency(data.currency);
@@ -481,7 +488,6 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
             </Pressable>
           )}
 
-          {/* Receipt */}
           <SectionLabel title={t('addExpense.receipt')} />
           {receiptUri ? (
             <View style={styles.receiptRow}>
@@ -537,7 +543,6 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
         </View>
       </KeyboardAvoidingView>
 
-      {/* Android photo picker sheet */}
       <Modal
         visible={showPhotoSheet}
         transparent
@@ -567,10 +572,10 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   header: {
     flexDirection: 'row',
@@ -582,7 +587,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   scroll: {
     paddingHorizontal: H_PAD,
@@ -598,27 +603,26 @@ const styles = StyleSheet.create({
   currencySymbol: {
     fontSize: 32,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     marginBottom: 8,
   },
   amountInput: {
     fontSize: 64,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
     minWidth: 140,
     textAlign: 'center',
   },
   sectionLabel: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
     marginTop: 24,
   },
 
-  // Category grid
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
@@ -626,7 +630,7 @@ const styles = StyleSheet.create({
   },
   categoryItem: {
     width: ITEM_W,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.button,
     paddingVertical: 12,
     alignItems: 'center',
@@ -635,7 +639,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   categoryItemSelected: {
-    borderColor: colors.coral,
+    borderColor: c.coral,
   },
   categoryIconBg: {
     width: 38,
@@ -647,28 +651,26 @@ const styles = StyleSheet.create({
   categoryLabel: {
     fontSize: 10,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textAlign: 'center',
   },
   categoryLabelSelected: {
-    color: colors.coral,
+    color: c.coral,
     fontWeight: '700',
   },
 
-  // Custom category input
   customCatCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
   customCatInput: {
     fontSize: fontSizes.body,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     paddingVertical: 14,
   },
 
-  // Members
   memberScroll: {
     flexGrow: 0,
   },
@@ -690,7 +692,7 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   memberAvatarSelected: {
-    borderColor: colors.coral,
+    borderColor: c.coral,
   },
   memberInitials: {
     fontSize: 14,
@@ -699,11 +701,11 @@ const styles = StyleSheet.create({
   },
   memberName: {
     fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+    color: c.textSecondary,
     fontWeight: '500',
   },
   memberNameSelected: {
-    color: colors.textPrimary,
+    color: c.textPrimary,
     fontWeight: '700',
   },
   checkBadge: {
@@ -713,18 +715,17 @@ const styles = StyleSheet.create({
     width: 18,
     height: 18,
     borderRadius: 9,
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 2,
-    borderColor: colors.background,
+    borderColor: c.background,
   },
 
-  // Date
   dateRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 14,
@@ -734,7 +735,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   pickerDone: {
     alignSelf: 'flex-end',
@@ -745,26 +746,25 @@ const styles = StyleSheet.create({
   pickerDoneText: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.coral,
+    color: c.coral,
   },
 
-  // Receipt
   addReceiptBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 14,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
     borderStyle: 'dashed',
   },
   addReceiptText: {
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   receiptRow: {
     flexDirection: 'row',
@@ -775,7 +775,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 105,
     borderRadius: radii.card,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     flexShrink: 0,
   },
   receiptActions: {
@@ -792,23 +792,22 @@ const styles = StyleSheet.create({
   receiptActionText: {
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.coral,
+    color: c.coral,
   },
 
-  // Save / Delete
   saveContainer: {
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 8 : 20,
     paddingTop: 12,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
     gap: 4,
   },
   saveButton: {
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.button,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: colors.coral,
+    shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -833,10 +832,9 @@ const styles = StyleSheet.create({
   deleteText: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.coral,
+    color: c.coral,
   },
 
-  // Subgroup quick-select chips
   sgChipScroll: {
     flexGrow: 0,
     marginBottom: 12,
@@ -848,24 +846,23 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderWidth: 1.5,
-    borderColor: colors.border,
+    borderColor: c.border,
   },
   sgChipActive: {
-    borderColor: colors.coral,
+    borderColor: c.coral,
     backgroundColor: '#FFF0EE',
   },
   sgChipText: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   sgChipTextActive: {
-    color: colors.coral,
+    color: c.coral,
   },
 
-  // Per-expense currency chips
   currencyScroll: {
     flexGrow: 0,
   },
@@ -876,30 +873,29 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderWidth: 2,
     borderColor: 'transparent',
   },
   currencyChipSelected: {
-    borderColor: colors.coral,
+    borderColor: c.coral,
   },
   currencyChipText: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   currencyChipTextSelected: {
-    color: colors.coral,
+    color: c.coral,
   },
 
-  // Android photo picker sheet
   sheetOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
     justifyContent: 'flex-end',
   },
   sheetContainer: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
     paddingBottom: 32,
@@ -908,7 +904,7 @@ const styles = StyleSheet.create({
   sheetTitle: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.6,
     textAlign: 'center',
@@ -916,7 +912,7 @@ const styles = StyleSheet.create({
   },
   sheetDivider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginHorizontal: 16,
   },
   sheetOption: {
@@ -929,7 +925,7 @@ const styles = StyleSheet.create({
   sheetOptionText: {
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   sheetCancel: {
     justifyContent: 'center',
@@ -938,7 +934,7 @@ const styles = StyleSheet.create({
   sheetCancelText: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.coral,
+    color: c.coral,
     textAlign: 'center',
     flex: 1,
   },

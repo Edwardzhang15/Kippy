@@ -1,6 +1,17 @@
 import { Platform } from 'react-native';
 
-export const colors = {
+export type ColorPalette = {
+  background: string;
+  card: string;
+  coral: string;
+  sage: string;
+  textPrimary: string;
+  textSecondary: string;
+  tabInactive: string;
+  border: string;
+};
+
+export const lightColors: ColorPalette = {
   background: '#F7F7F5',
   card: '#FFFFFF',
   coral: '#FF6B5B',
@@ -10,6 +21,20 @@ export const colors = {
   tabInactive: '#A0A0A0',
   border: '#EFEFED',
 };
+
+export const darkColors: ColorPalette = {
+  background: '#121212',
+  card: '#1E1E1E',
+  coral: '#FF7A6A',
+  sage: '#8FB89C',
+  textPrimary: '#F0F0EE',
+  textSecondary: '#909090',
+  tabInactive: '#5A5A5A',
+  border: '#2C2C2C',
+};
+
+// Legacy alias — always light so share cards (captured images) stay light
+export const colors = lightColors;
 
 export const fontSizes = {
   screenTitle: 30,

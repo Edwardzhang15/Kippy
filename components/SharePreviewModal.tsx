@@ -2,7 +2,8 @@ import React from 'react';
 import { Modal, Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSizes, radii } from '../theme';
+import { type ColorPalette, fontSizes, radii } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = {
   visible: boolean;
@@ -13,10 +14,57 @@ type Props = {
   children: React.ReactNode;
 };
 
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  cardWrap: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  footer: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingTop: 12,
+    backgroundColor: c.background,
+  },
+  shareBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: c.coral,
+    borderRadius: radii.button,
+    paddingVertical: 15,
+  },
+  shareBtnText: {
+    color: '#fff',
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+  },
+});
+
 export default function SharePreviewModal({
   visible, title, sharing, onClose, onShare, children,
 }: Props) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
 
   return (
     <Modal
@@ -51,48 +99,3 @@ export default function SharePreviewModal({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerTitle: {
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  cardWrap: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  footer: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    paddingTop: 12,
-    backgroundColor: colors.background,
-  },
-  shareBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.coral,
-    borderRadius: radii.button,
-    paddingVertical: 15,
-  },
-  shareBtnText: {
-    color: '#fff',
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-  },
-});

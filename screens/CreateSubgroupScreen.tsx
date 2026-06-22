@@ -16,17 +16,142 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { HomeStackParamList } from '../navigation/types';
 import { getGroupDetails, createSubgroup, MemberWithBalance } from '../db';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { getAvatarColor, getInitials } from '../utils';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CreateSubgroup'>;
 
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  headerTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  scroll: {
+    paddingHorizontal: 20,
+    paddingBottom: 24,
+  },
+  sectionLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.8,
+    marginBottom: 10,
+    marginTop: 24,
+  },
+  inputCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+  },
+  input: {
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    paddingVertical: 14,
+  },
+  membersCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    paddingHorizontal: 16,
+    overflow: 'hidden',
+  },
+  memberRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
+  },
+  avatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  memberName: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    color: c.textSecondary,
+    fontWeight: '500',
+  },
+  memberNameSelected: {
+    color: c.textPrimary,
+    fontWeight: '600',
+  },
+  checkCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkCircleSelected: {
+    backgroundColor: c.coral,
+    borderColor: c.coral,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: c.border,
+  },
+  saveContainer: {
+    paddingHorizontal: 20,
+    paddingBottom: Platform.OS === 'ios' ? 8 : 20,
+    paddingTop: 12,
+    backgroundColor: c.background,
+  },
+  saveButton: {
+    backgroundColor: c.coral,
+    borderRadius: radii.button,
+    paddingVertical: 16,
+    alignItems: 'center',
+    shadowColor: c.coral,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  saveButtonDisabled: {
+    opacity: 0.45,
+  },
+  saveText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: '#fff',
+    letterSpacing: 0.3,
+  },
+});
+
 function SectionLabel({ title }: { title: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return <Text style={styles.sectionLabel}>{title}</Text>;
 }
 
 export default function CreateSubgroupScreen({ route, navigation }: Props) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   const [members, setMembers] = useState<MemberWithBalance[]>([]);
   const [loading, setLoading] = useState(true);
   const [name, setName]       = useState('');
@@ -160,123 +285,3 @@ export default function CreateSubgroupScreen({ route, navigation }: Props) {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  headerTitle: {
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  scroll: {
-    paddingHorizontal: 20,
-    paddingBottom: 24,
-  },
-  sectionLabel: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 10,
-    marginTop: 24,
-  },
-  inputCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    paddingHorizontal: 16,
-    paddingVertical: 4,
-  },
-  input: {
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    paddingVertical: 14,
-  },
-  membersCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    paddingHorizontal: 16,
-    overflow: 'hidden',
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 12,
-    gap: 12,
-  },
-  avatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarText: {
-    fontSize: 11,
-    fontWeight: '700',
-    color: '#fff',
-  },
-  memberName: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    color: colors.textSecondary,
-    fontWeight: '500',
-  },
-  memberNameSelected: {
-    color: colors.textPrimary,
-    fontWeight: '600',
-  },
-  checkCircle: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkCircleSelected: {
-    backgroundColor: colors.coral,
-    borderColor: colors.coral,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-  },
-  saveContainer: {
-    paddingHorizontal: 20,
-    paddingBottom: Platform.OS === 'ios' ? 8 : 20,
-    paddingTop: 12,
-    backgroundColor: colors.background,
-  },
-  saveButton: {
-    backgroundColor: colors.coral,
-    borderRadius: radii.button,
-    paddingVertical: 16,
-    alignItems: 'center',
-    shadowColor: colors.coral,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 5,
-  },
-  saveButtonDisabled: {
-    opacity: 0.45,
-  },
-  saveText: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: '#fff',
-    letterSpacing: 0.3,
-  },
-});

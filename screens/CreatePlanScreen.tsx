@@ -16,7 +16,8 @@ import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { PlanStackParamList } from '../navigation/types';
 import { createPlanTrip } from '../db';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'CreatePlan'>;
 
@@ -38,6 +39,8 @@ async function fetchDestinationPhoto(query: string): Promise<string | null> {
 }
 
 function SectionLabel({ title }: { title: string }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
   return <Text style={styles.sectionLabel}>{title}</Text>;
 }
 
@@ -51,6 +54,8 @@ function formatDisplayDate(d: Date): string {
 
 export default function CreatePlanScreen({ navigation }: Props) {
   const { t }                             = useTranslation();
+  const { colors }                        = useTheme();
+  const styles                            = makeStyles(colors);
   const [tripName, setTripName]           = useState('');
   const [destination, setDestination]     = useState('');
   const [currency, setCurrency]           = useState('CAD');
@@ -250,8 +255,8 @@ export default function CreatePlanScreen({ navigation }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.background },
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: { flex: 1, backgroundColor: c.background },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -262,7 +267,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   scroll: {
     paddingHorizontal: 20,
@@ -271,21 +276,21 @@ const styles = StyleSheet.create({
   sectionLabel: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.8,
     marginBottom: 10,
     marginTop: 24,
   },
   inputCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 4,
   },
   input: {
     fontSize: fontSizes.body,
-    color: colors.textPrimary,
+    color: c.textPrimary,
     paddingVertical: 14,
   },
   chipScroll: { flexGrow: 0 },
@@ -293,21 +298,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     marginRight: 8,
     borderWidth: 2,
     borderColor: 'transparent',
   },
-  chipSelected: { borderColor: colors.coral },
+  chipSelected: { borderColor: c.coral },
   chipText: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
-  chipTextSelected: { color: colors.coral },
+  chipTextSelected: { color: c.coral },
 
   datesCard: {
-    backgroundColor: colors.card,
+    backgroundColor: c.card,
     borderRadius: radii.card,
     overflow: 'hidden',
   },
@@ -321,7 +326,7 @@ const styles = StyleSheet.create({
   dateLabelSmall: {
     fontSize: 11,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 2,
@@ -329,14 +334,14 @@ const styles = StyleSheet.create({
   dateValue: {
     fontSize: fontSizes.body,
     fontWeight: '500',
-    color: colors.textPrimary,
+    color: c.textPrimary,
   },
   datePlaceholder: {
-    color: colors.textSecondary,
+    color: c.textSecondary,
   },
   dateDivider: {
     height: 1,
-    backgroundColor: colors.border,
+    backgroundColor: c.border,
     marginHorizontal: 16,
   },
   pickerDone: {
@@ -348,7 +353,7 @@ const styles = StyleSheet.create({
   pickerDoneText: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.coral,
+    color: c.coral,
   },
 
   budgetRow: {
@@ -359,7 +364,7 @@ const styles = StyleSheet.create({
   currencyPrefix: {
     fontSize: fontSizes.body,
     fontWeight: '600',
-    color: colors.textSecondary,
+    color: c.textSecondary,
     paddingTop: 14,
     paddingBottom: 14,
   },
@@ -368,14 +373,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: Platform.OS === 'ios' ? 8 : 20,
     paddingTop: 12,
-    backgroundColor: colors.background,
+    backgroundColor: c.background,
   },
   saveButton: {
-    backgroundColor: colors.coral,
+    backgroundColor: c.coral,
     borderRadius: radii.button,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: colors.coral,
+    shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 8,
@@ -385,7 +390,7 @@ const styles = StyleSheet.create({
   saveText: {
     fontSize: fontSizes.body,
     fontWeight: '700',
-    color: colors.card,
+    color: c.card,
     letterSpacing: 0.3,
   },
 });

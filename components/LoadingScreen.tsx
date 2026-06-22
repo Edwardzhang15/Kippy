@@ -1,10 +1,43 @@
 import { useEffect, useRef } from 'react';
 import { Animated, Image, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSizes } from '../theme';
+import { type ColorPalette, fontSizes } from '../theme';
+import { useTheme } from '../context/ThemeContext';
+
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: c.background,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 24,
+  },
+  logo: {
+    width: 360,
+    height: 180,
+  },
+  track: {
+    height: 4,
+    backgroundColor: c.border,
+    borderRadius: 2,
+    overflow: 'hidden',
+  },
+  fill: {
+    height: '100%',
+    backgroundColor: c.coral,
+    borderRadius: 2,
+  },
+  caption: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    letterSpacing: 0.3,
+  },
+});
 
 export default function LoadingScreen() {
   const { t }               = useTranslation();
+  const { colors }          = useTheme();
+  const styles              = makeStyles(colors);
   const { width: screenWidth } = useWindowDimensions();
   const trackWidth = screenWidth - 80;
 
@@ -45,33 +78,3 @@ export default function LoadingScreen() {
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 24,
-  },
-  logo: {
-    width: 360,
-    height: 180,
-  },
-  track: {
-    height: 4,
-    backgroundColor: colors.border,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  fill: {
-    height: '100%',
-    backgroundColor: colors.coral,
-    borderRadius: 2,
-  },
-  caption: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    letterSpacing: 0.3,
-  },
-});

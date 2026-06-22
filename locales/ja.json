@@ -25,7 +25,12 @@
     "emptyActiveTitle": "旅行がありません",
     "emptyActiveSubtitle": "+ を押して最初のグループを作成しましょう",
     "emptyArchivedTitle": "過去の旅行はありません",
-    "emptyArchivedSubtitle": "終了した旅行がここに表示されます"
+    "emptyArchivedSubtitle": "終了した旅行がここに表示されます",
+    "menuEdit": "旅行を編集",
+    "menuConclude": "旅行を終了",
+    "menuDelete": "旅行を削除",
+    "deleteTitle": "「{{name}}」を削除しますか？",
+    "deleteMsg": "この旅行と全ての費用が完全に削除されます。元に戻すことはできません。"
   },
   "groupDetail": {
     "totalSpent": "合計：${{amount}} {{currency}}",
@@ -95,7 +100,11 @@
   },
   "settings": {
     "title": "設定",
-    "language": "言語"
+    "language": "言語",
+    "theme": "外観",
+    "themeLight": "ライト",
+    "themeDark": "ダーク",
+    "themeSystem": "システムに合わせる"
   },
   "loading": {
     "caption": "旅行を読み込み中…"
@@ -135,7 +144,9 @@
     "emptyTitle": "予定中の旅行はありません",
     "emptySubtitle": "+ をタップして次の冒険を計画しましょう",
     "deleteTitle": "「{{name}}」を削除しますか？",
-    "deleteMsg": "この旅行プランは完全に削除されます。元に戻すことはできません。"
+    "deleteMsg": "この旅行プランは完全に削除されます。元に戻すことはできません。",
+    "menuEdit": "旅行を編集",
+    "menuDelete": "旅行を削除"
   },
   "wizard": {
     "continue": "続ける",
@@ -555,7 +566,10 @@
     "owes": "グループへの支払い",
     "settled": "精算完了！",
     "saving": "保存中…",
-    "markAsSettled": "精算済みにする"
+    "markAsSettled": "精算済みにする",
+    "payingIn": "支払い通貨",
+    "equivalent": "≈ {{sym}}{{amount}} {{currency}}",
+    "settledDetail": "{{baseSym}}{{baseAmt}} {{baseCur}} · 支払い {{paidSym}}{{paidAmt}} {{paidCur}}"
   },
   "createSubgroup": {
     "title": "新しいサブグループ",
@@ -579,6 +593,11 @@
     "endDate": "終了日",
     "notSet": "未設定",
     "budgetPerPerson": "一人当たりの予算（任意）",
+    "members": "メンバー",
+    "addMember": "メンバーを追加",
+    "newMemberPlaceholder": "新しいメンバー名",
+    "cannotRemoveTitle": "メンバーを削除できません",
+    "cannotRemoveMsg": "{{name}} は費用の記録があるため、この旅行から削除できません。",
     "saveChanges": "変更を保存",
     "errorTitle": "エラー",
     "errorMsg": "変更を保存できませんでした。もう一度お試しください。"

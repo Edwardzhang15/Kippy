@@ -16,7 +16,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { captureRef } from 'react-native-view-shot';
 import * as Sharing from 'expo-sharing';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme } from '../context/ThemeContext';
 import PackingListShareCard from '../components/PackingListShareCard';
 import {
   getGroup,
@@ -84,9 +85,259 @@ function tPackingItem(
   return t(key, count !== undefined ? { count } : {});
 }
 
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 12,
+    gap: 10,
+  },
+  headerTitle: {
+    flex: 1,
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 14,
+  },
+  headerCount: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
+
+  scrollContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 60,
+  },
+
+  sectionLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+
+  vibeScroll: {
+    marginBottom: 20,
+  },
+  vibeScrollContent: {
+    gap: 8,
+    paddingRight: 4,
+  },
+  vibeChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  vibeChipActive: {
+    backgroundColor: '#FFF0EE',
+    borderColor: c.coral,
+  },
+  vibeChipText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  vibeChipTextActive: {
+    color: c.coral,
+  },
+
+  categoryCard: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    marginBottom: 14,
+    overflow: 'hidden',
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    gap: 10,
+  },
+  categoryIconBg: {
+    width: 32,
+    height: 32,
+    borderRadius: 10,
+    backgroundColor: '#FFF0EE',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryName: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  categoryCount: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    fontWeight: '500',
+    marginRight: 4,
+  },
+
+  itemDivider: {
+    height: 1,
+    backgroundColor: c.border,
+    marginLeft: 16,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 12,
+  },
+  checkbox: {
+    width: 22,
+    height: 22,
+    borderRadius: 6,
+    borderWidth: 2,
+    borderColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkboxDone: {
+    backgroundColor: c.coral,
+    borderColor: c.coral,
+  },
+  itemLabel: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+  },
+  itemLabelDone: {
+    color: c.textSecondary,
+    textDecorationLine: 'line-through',
+  },
+
+  addItemBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    gap: 8,
+  },
+  addItemText: {
+    fontSize: fontSizes.caption,
+    color: c.coral,
+    fontWeight: '600',
+  },
+  addInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    gap: 8,
+  },
+  addInput: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    color: c.textPrimary,
+    paddingVertical: 4,
+  },
+
+  hint: {
+    textAlign: 'center',
+    fontSize: fontSizes.caption,
+    color: c.tabInactive,
+    marginTop: 4,
+    marginBottom: 8,
+  },
+
+  // ── Share modal ──────────────────────────────────────────
+  modalSafe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+  modalHeaderTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  modalPageLabel: {
+    textAlign: 'center',
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    fontWeight: '600',
+    marginBottom: 12,
+    paddingHorizontal: 20,
+  },
+  modalScrollContent: {
+    alignItems: 'center',
+  },
+  modalCardPage: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 8,
+  },
+  modalDots: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 6,
+    marginTop: 14,
+    marginBottom: 4,
+  },
+  modalDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: c.border,
+  },
+  modalDotActive: {
+    width: 18,
+    backgroundColor: c.coral,
+  },
+  modalFooter: {
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    paddingTop: 14,
+    backgroundColor: c.background,
+  },
+  shareSheetBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: c.coral,
+    borderRadius: radii.button,
+    paddingVertical: 15,
+  },
+  shareSheetBtnText: {
+    color: '#fff',
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+  },
+});
+
 export default function PackingListScreen() {
-  const navigation = useNavigation<any>();
-  const { t } = useTranslation();
+  const navigation  = useNavigation<any>();
+  const { t }       = useTranslation();
+  const { colors }  = useTheme();
+  const styles      = makeStyles(colors);
   const { groupId } = useRoute<any>().params as { groupId: number };
   const tCategory = (cat: string) => {
     const key = CATEGORY_I18N_KEY[cat as PackingCategory];
@@ -449,251 +700,3 @@ export default function PackingListScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 8,
-    paddingBottom: 12,
-    gap: 10,
-  },
-  headerTitle: {
-    flex: 1,
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-  },
-  headerCount: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
-
-  scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 60,
-  },
-
-  sectionLabel: {
-    fontSize: fontSizes.caption,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 10,
-    marginTop: 4,
-  },
-
-  vibeScroll: {
-    marginBottom: 20,
-  },
-  vibeScrollContent: {
-    gap: 8,
-    paddingRight: 4,
-  },
-  vibeChip: {
-    paddingHorizontal: 14,
-    paddingVertical: 7,
-    borderRadius: 20,
-    backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  vibeChipActive: {
-    backgroundColor: '#FFF0EE',
-    borderColor: colors.coral,
-  },
-  vibeChipText: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  vibeChipTextActive: {
-    color: colors.coral,
-  },
-
-  categoryCard: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    marginBottom: 14,
-    overflow: 'hidden',
-  },
-  categoryHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 14,
-    gap: 10,
-  },
-  categoryIconBg: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    backgroundColor: '#FFF0EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  categoryName: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  categoryCount: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    marginRight: 4,
-  },
-
-  itemDivider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginLeft: 16,
-  },
-  itemRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
-  },
-  checkbox: {
-    width: 22,
-    height: 22,
-    borderRadius: 6,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkboxDone: {
-    backgroundColor: colors.coral,
-    borderColor: colors.coral,
-  },
-  itemLabel: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-  },
-  itemLabelDone: {
-    color: colors.textSecondary,
-    textDecorationLine: 'line-through',
-  },
-
-  addItemBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 8,
-  },
-  addItemText: {
-    fontSize: fontSizes.caption,
-    color: colors.coral,
-    fontWeight: '600',
-  },
-  addInputRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 8,
-  },
-  addInput: {
-    flex: 1,
-    fontSize: fontSizes.body,
-    color: colors.textPrimary,
-    paddingVertical: 4,
-  },
-
-  hint: {
-    textAlign: 'center',
-    fontSize: fontSizes.caption,
-    color: colors.tabInactive,
-    marginTop: 4,
-    marginBottom: 8,
-  },
-
-  // ── Share modal ──────────────────────────────────────────
-  modalSafe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-  modalHeaderTitle: {
-    fontSize: fontSizes.sectionTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  modalPageLabel: {
-    textAlign: 'center',
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
-    marginBottom: 12,
-    paddingHorizontal: 20,
-  },
-  modalScrollContent: {
-    alignItems: 'center',
-  },
-  modalCardPage: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 8,
-  },
-  modalDots: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 6,
-    marginTop: 14,
-    marginBottom: 4,
-  },
-  modalDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: colors.border,
-  },
-  modalDotActive: {
-    width: 18,
-    backgroundColor: colors.coral,
-  },
-  modalFooter: {
-    paddingHorizontal: 20,
-    paddingBottom: 16,
-    paddingTop: 14,
-    backgroundColor: colors.background,
-  },
-  shareSheetBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    backgroundColor: colors.coral,
-    borderRadius: radii.button,
-    paddingVertical: 15,
-  },
-  shareSheetBtnText: {
-    color: '#fff',
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-  },
-});

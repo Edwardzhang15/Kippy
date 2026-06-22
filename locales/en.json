@@ -26,7 +26,12 @@
     "emptyActiveTitle": "No trips yet",
     "emptyActiveSubtitle": "Tap + to create your first group",
     "emptyArchivedTitle": "No past trips",
-    "emptyArchivedSubtitle": "Concluded trips will appear here"
+    "emptyArchivedSubtitle": "Concluded trips will appear here",
+    "menuEdit": "Edit Trip",
+    "menuConclude": "Conclude Trip",
+    "menuDelete": "Delete Trip",
+    "deleteTitle": "Delete \"{{name}}\"?",
+    "deleteMsg": "This will permanently delete this trip and all its expenses. This cannot be undone."
   },
   "groupDetail": {
     "totalSpent": "Total spent: ${{amount}} {{currency}}",
@@ -97,7 +102,11 @@
   },
   "settings": {
     "title": "Settings",
-    "language": "Language"
+    "language": "Language",
+    "theme": "Appearance",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System Default"
   },
   "loading": {
     "caption": "Loading your trips…"
@@ -140,7 +149,9 @@
     "emptyTitle": "No trips planned yet",
     "emptySubtitle": "Tap + to start planning your next adventure",
     "deleteTitle": "Delete \"{{name}}\"?",
-    "deleteMsg": "This will permanently remove this trip plan. This cannot be undone."
+    "deleteMsg": "This will permanently remove this trip plan. This cannot be undone.",
+    "menuEdit": "Edit Trip",
+    "menuDelete": "Delete Trip"
   },
   "wizard": {
     "continue": "Continue",
@@ -572,7 +583,10 @@
     "owes": "Owes the group",
     "settled": "Settled!",
     "saving": "Saving…",
-    "markAsSettled": "Mark as Settled"
+    "markAsSettled": "Mark as Settled",
+    "payingIn": "Paying in",
+    "equivalent": "≈ {{sym}}{{amount}} {{currency}}",
+    "settledDetail": "{{baseSym}}{{baseAmt}} {{baseCur}} · paid as {{paidSym}}{{paidAmt}} {{paidCur}}"
   },
   "createSubgroup": {
     "title": "New Subgroup",
@@ -596,6 +610,11 @@
     "endDate": "End date",
     "notSet": "Not set",
     "budgetPerPerson": "Budget Per Person (optional)",
+    "members": "Members",
+    "addMember": "Add Member",
+    "newMemberPlaceholder": "New member name",
+    "cannotRemoveTitle": "Cannot Remove Member",
+    "cannotRemoveMsg": "{{name}} has expenses recorded and cannot be removed from this trip.",
     "saveChanges": "Save Changes",
     "errorTitle": "Error",
     "errorMsg": "Could not save changes. Please try again."

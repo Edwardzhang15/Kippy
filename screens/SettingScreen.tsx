@@ -1,7 +1,8 @@
 import { Pressable, SafeAreaView, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, fontSizes, radii, cardShadow } from '../theme';
+import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
+import { useTheme, ThemeMode } from '../context/ThemeContext';
 import { changeLanguage } from '../i18n';
 
 const LANGUAGES = [
@@ -10,8 +11,79 @@ const LANGUAGES = [
   { code: 'ja',    label: '日本語' },
 ];
 
+const THEME_OPTIONS: { mode: ThemeMode; labelKey: string }[] = [
+  { mode: 'light',  labelKey: 'settings.themeLight' },
+  { mode: 'dark',   labelKey: 'settings.themeDark' },
+  { mode: 'system', labelKey: 'settings.themeSystem' },
+];
+
+const makeStyles = (c: ColorPalette) => StyleSheet.create({
+  safe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  content: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 40,
+  },
+  screenTitle: {
+    fontSize: fontSizes.screenTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+    marginBottom: 32,
+  },
+  sectionLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+  },
+  sectionLabelSpaced: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+    marginTop: 28,
+  },
+  card: {
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    overflow: 'hidden',
+  },
+  langRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 18,
+    paddingVertical: 16,
+  },
+  langRowBorder: {
+    borderBottomWidth: 1,
+    borderBottomColor: c.border,
+  },
+  langRowPressed: {
+    backgroundColor: c.background,
+  },
+  langLabel: {
+    fontSize: fontSizes.body,
+    fontWeight: '500',
+    color: c.textPrimary,
+  },
+  langLabelActive: {
+    fontWeight: '700',
+    color: c.coral,
+  },
+});
+
 export default function SettingScreen() {
   const { t, i18n } = useTranslation();
+  const { colors, themeMode, setThemeMode } = useTheme();
+  const styles = makeStyles(colors);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -42,61 +114,32 @@ export default function SettingScreen() {
             );
           })}
         </View>
+
+        <Text style={styles.sectionLabelSpaced}>{t('settings.theme')}</Text>
+        <View style={[styles.card, cardShadow]}>
+          {THEME_OPTIONS.map((opt, index) => {
+            const isActive = themeMode === opt.mode;
+            return (
+              <Pressable
+                key={opt.mode}
+                style={({ pressed }) => [
+                  styles.langRow,
+                  index < THEME_OPTIONS.length - 1 && styles.langRowBorder,
+                  pressed && styles.langRowPressed,
+                ]}
+                onPress={() => setThemeMode(opt.mode)}
+              >
+                <Text style={[styles.langLabel, isActive && styles.langLabelActive]}>
+                  {t(opt.labelKey)}
+                </Text>
+                {isActive && (
+                  <Ionicons name="checkmark-circle" size={20} color={colors.coral} />
+                )}
+              </Pressable>
+            );
+          })}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  content: {
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  screenTitle: {
-    fontSize: fontSizes.screenTitle,
-    fontWeight: '700',
-    color: colors.textPrimary,
-    marginBottom: 32,
-  },
-  sectionLabel: {
-    fontSize: fontSizes.caption,
-    fontWeight: '700',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 10,
-  },
-  card: {
-    backgroundColor: colors.card,
-    borderRadius: radii.card,
-    overflow: 'hidden',
-  },
-  langRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 18,
-    paddingVertical: 16,
-  },
-  langRowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  langRowPressed: {
-    backgroundColor: colors.background,
-  },
-  langLabel: {
-    fontSize: fontSizes.body,
-    fontWeight: '500',
-    color: colors.textPrimary,
-  },
-  langLabelActive: {
-    fontWeight: '700',
-    color: colors.coral,
-  },
-});

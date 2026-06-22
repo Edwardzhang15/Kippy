@@ -25,7 +25,12 @@
     "emptyActiveTitle": "暂无行程",
     "emptyActiveSubtitle": "点击 + 创建您的第一个群组",
     "emptyArchivedTitle": "暂无历史行程",
-    "emptyArchivedSubtitle": "已结束的行程将显示在此处"
+    "emptyArchivedSubtitle": "已结束的行程将显示在此处",
+    "menuEdit": "编辑行程",
+    "menuConclude": "结束行程",
+    "menuDelete": "删除行程",
+    "deleteTitle": "删除「{{name}}」？",
+    "deleteMsg": "此操作将永久删除该行程及所有费用记录，无法撤销。"
   },
   "groupDetail": {
     "totalSpent": "合计：${{amount}} {{currency}}",
@@ -95,7 +100,11 @@
   },
   "settings": {
     "title": "设置",
-    "language": "语言"
+    "language": "语言",
+    "theme": "外观",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统"
   },
   "loading": {
     "caption": "正在加载行程…"
@@ -135,7 +144,9 @@
     "emptyTitle": "暂无计划行程",
     "emptySubtitle": "点击 + 开始规划您的下一次冒险",
     "deleteTitle": "删除「{{name}}」？",
-    "deleteMsg": "这将永久删除此行程计划，无法撤销。"
+    "deleteMsg": "这将永久删除此行程计划，无法撤销。",
+    "menuEdit": "编辑行程",
+    "menuDelete": "删除行程"
   },
   "wizard": {
     "continue": "继续",
@@ -555,7 +566,10 @@
     "owes": "欠款",
     "settled": "已结清！",
     "saving": "保存中…",
-    "markAsSettled": "标记为已结清"
+    "markAsSettled": "标记为已结清",
+    "payingIn": "支付货币",
+    "equivalent": "≈ {{sym}}{{amount}} {{currency}}",
+    "settledDetail": "{{baseSym}}{{baseAmt}} {{baseCur}} · 实付 {{paidSym}}{{paidAmt}} {{paidCur}}"
   },
   "createSubgroup": {
     "title": "新子群组",
@@ -579,6 +593,11 @@
     "endDate": "结束日期",
     "notSet": "未设置",
     "budgetPerPerson": "人均预算（可选）",
+    "members": "成员",
+    "addMember": "添加成员",
+    "newMemberPlaceholder": "新成员名称",
+    "cannotRemoveTitle": "无法移除成员",
+    "cannotRemoveMsg": "{{name}} 有已记录的费用，无法从行程中移除。",
     "saveChanges": "保存更改",
     "errorTitle": "错误",
     "errorMsg": "无法保存更改，请重试。"
