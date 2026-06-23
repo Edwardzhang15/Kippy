@@ -340,6 +340,32 @@ export async function initDatabase(): Promise<void> {
       );
     `);
   } catch { /* table already exists */ }
+
+  // Migration v18: personal expenses
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS personal_expenses (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        amount           REAL    NOT NULL,
+        currency         TEXT    NOT NULL DEFAULT 'CAD',
+        category         TEXT    NOT NULL DEFAULT 'other',
+        date             TEXT    NOT NULL,
+        note             TEXT,
+        receipt_photo_uri TEXT
+      );
+    `);
+  } catch { /* table already exists */ }
+
+  // Migration v19: personal monthly budgets
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS personal_budgets (
+        id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+        category             TEXT    NOT NULL UNIQUE,
+        monthly_budget_amount REAL    NOT NULL DEFAULT 0
+      );
+    `);
+  } catch { /* table already exists */ }
 }
 
 // ─── Visited Countries ────────────────────────────────────────────────────────
@@ -861,6 +887,79 @@ export async function getAllTripSummaries(): Promise<GroupSummary[]> {
       return { ...group, totalSpent, members };
     }),
   );
+}
+
+// ─── Personal Expenses ────────────────────────────────────────────────────────
+
+export type PersonalExpense = {
+  id: number;
+  amount: number;
+  currency: string;
+  category: string;
+  date: string;
+  note: string | null;
+  receipt_photo_uri: string | null;
+};
+
+export type PersonalBudget = {
+  id: number;
+  category: string;
+  monthly_budget_amount: number;
+};
+
+export async function getPersonalExpenses(): Promise<PersonalExpense[]> {
+  return db.getAllAsync<PersonalExpense>(
+    'SELECT * FROM personal_expenses ORDER BY date DESC, id DESC',
+  );
+}
+
+export async function getPersonalExpense(id: number): Promise<PersonalExpense | null> {
+  return db.getFirstAsync<PersonalExpense>(
+    'SELECT * FROM personal_expenses WHERE id = ?', id,
+  );
+}
+
+export async function addPersonalExpense(data: Omit<PersonalExpense, 'id'>): Promise<number> {
+  const r = await db.runAsync(
+    `INSERT INTO personal_expenses (amount, currency, category, date, note, receipt_photo_uri)
+     VALUES (?, ?, ?, ?, ?, ?)`,
+    data.amount, data.currency, data.category, data.date,
+    data.note ?? null, data.receipt_photo_uri ?? null,
+  );
+  return r.lastInsertRowId;
+}
+
+export async function updatePersonalExpense(id: number, data: Omit<PersonalExpense, 'id'>): Promise<void> {
+  await db.runAsync(
+    `UPDATE personal_expenses
+     SET amount=?, currency=?, category=?, date=?, note=?, receipt_photo_uri=?
+     WHERE id=?`,
+    data.amount, data.currency, data.category, data.date,
+    data.note ?? null, data.receipt_photo_uri ?? null, id,
+  );
+}
+
+export async function deletePersonalExpense(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM personal_expenses WHERE id = ?', id);
+}
+
+export async function getPersonalBudgets(): Promise<PersonalBudget[]> {
+  return db.getAllAsync<PersonalBudget>(
+    'SELECT * FROM personal_budgets ORDER BY category ASC',
+  );
+}
+
+export async function setPersonalBudget(category: string, amount: number): Promise<void> {
+  if (amount <= 0) {
+    await db.runAsync('DELETE FROM personal_budgets WHERE category = ?', category);
+  } else {
+    await db.runAsync(
+      `INSERT INTO personal_budgets (category, monthly_budget_amount)
+       VALUES (?, ?)
+       ON CONFLICT(category) DO UPDATE SET monthly_budget_amount=excluded.monthly_budget_amount`,
+      category, amount,
+    );
+  }
 }
 
 export async function getAllTripDestinations(): Promise<Array<{ destination: string | null; stops: string[] }>> {

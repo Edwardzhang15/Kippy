@@ -32,3 +32,9 @@ export type InsightsStackParamList = {
   InsightsScreen: undefined;
   EditTrip:       { groupId: number };
 };
+
+export type PersonalStackParamList = {
+  PersonalMain:          undefined;
+  AddPersonalExpense:    { expenseId?: number };
+  SetBudgets:            undefined;
+};

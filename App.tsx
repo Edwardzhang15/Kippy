@@ -16,7 +16,7 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import HomeStack from './navigation/HomeStack';
 import InsightsScreen from './screens/InsightsScreen';
 import SettingScreen from './screens/SettingScreen';
-import PersonalScreen from './screens/PersonalScreen';
+import PersonalStack from './navigation/PersonalStack';
 import BeenScreen from './screens/BeenScreen';
 
 const Tab = createBottomTabNavigator();
@@ -107,7 +107,7 @@ function AppCore() {
             })}
           >
             <Tab.Screen name="Home"     component={HomeStack}       options={{ tabBarLabel: t('tabs.home') }} />
-            <Tab.Screen name="Personal" component={PersonalScreen}   options={{ tabBarLabel: t('tabs.personal') }} />
+            <Tab.Screen name="Personal" component={PersonalStack}    options={{ tabBarLabel: t('tabs.personal') }} />
             <Tab.Screen name="Insights" component={InsightsScreen}   options={{ tabBarLabel: t('tabs.insights') }} />
             <Tab.Screen name="Been"     component={BeenScreen}       options={{ tabBarLabel: t('tabs.been') }} />
             <Tab.Screen name="Setting"  component={SettingScreen}    options={{ tabBarLabel: t('tabs.settings') }} />
