@@ -442,16 +442,18 @@ export default function GroupDetailScreen({ route }: Props) {
             <View style={{ flex: 1, justifyContent: 'center' }}>
               <View style={styles.kipBadgeRow}>
                 <Ionicons name="sparkles" size={11} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.kipBadgeText}>KIP'S PICKS</Text>
+                <Text style={styles.kipBadgeText}>KIP'S FAVS</Text>
               </View>
               <Text style={styles.kipPicksTitle}>{t('groupDetail.explore')}</Text>
               <Text style={styles.kipPicksSub}>{t('groupDetail.exploreSub')}</Text>
             </View>
-            <Image
-              source={require('../assets/Kippy_Trans.png')}
-              style={styles.kipPicksImage}
-              resizeMode="contain"
-            />
+            <View style={styles.kipImageWrapper}>
+              <Image
+                source={require('../assets/Kip_jog.png')}
+                style={styles.kipPicksImage}
+                resizeMode="contain"
+              />
+            </View>
           </LinearGradient>
         </Pressable>
 
@@ -1091,7 +1093,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   },
   kipPicksGradient: {
     flexDirection: 'row',
-    alignItems: 'flex-end',
+    alignItems: 'center',
     paddingLeft: 20,
     paddingVertical: 18,
     minHeight: 96,
@@ -1118,10 +1120,14 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.caption,
     color: 'rgba(255,255,255,0.85)',
   },
+  kipImageWrapper: {
+    width: 96,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   kipPicksImage: {
-    width: 88,
-    height: 88,
-    alignSelf: 'flex-end',
+    width: 80,
+    height: 80,
   },
   planningToolsHeader: {
     flexDirection: 'row',
