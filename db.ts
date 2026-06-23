@@ -329,6 +329,45 @@ export async function initDatabase(): Promise<void> {
   try {
     await db.execAsync('UPDATE groups SET is_planning = 0 WHERE is_planning = 1');
   } catch { /* ignore */ }
+
+  // Migration v17: visited countries table for Been tab
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS visited_countries (
+        iso2     TEXT    PRIMARY KEY,
+        source   TEXT    NOT NULL DEFAULT 'manual',
+        added_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now'))
+      );
+    `);
+  } catch { /* table already exists */ }
+}
+
+// ─── Visited Countries ────────────────────────────────────────────────────────
+
+export async function getVisitedCountries(): Promise<string[]> {
+  const rows = await db.getAllAsync<{ iso2: string }>('SELECT iso2 FROM visited_countries');
+  return rows.map(r => r.iso2);
+}
+
+export async function setVisitedCountry(iso2: string, visited: boolean): Promise<void> {
+  if (visited) {
+    await db.runAsync(
+      'INSERT OR IGNORE INTO visited_countries (iso2, source) VALUES (?, ?)',
+      iso2, 'manual',
+    );
+  } else {
+    await db.runAsync('DELETE FROM visited_countries WHERE iso2 = ?', iso2);
+  }
+}
+
+export async function syncAutoCountries(iso2Codes: string[]): Promise<void> {
+  // Upsert auto-detected countries without overwriting manual ones
+  for (const iso2 of iso2Codes) {
+    await db.runAsync(
+      'INSERT OR IGNORE INTO visited_countries (iso2, source) VALUES (?, ?)',
+      iso2, 'auto',
+    );
+  }
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
@@ -820,6 +859,21 @@ export async function getAllTripSummaries(): Promise<GroupSummary[]> {
       const totalSpent = round2(expRows.reduce((sum, e) =>
         sum + (rates ? convertAmount(e.amount, e.currency, group.currency, rates) : e.amount), 0));
       return { ...group, totalSpent, members };
+    }),
+  );
+}
+
+export async function getAllTripDestinations(): Promise<Array<{ destination: string | null; stops: string[] }>> {
+  const groups = await db.getAllAsync<Pick<Group, 'id' | 'destination'>>(
+    'SELECT id, destination FROM groups',
+  );
+  return Promise.all(
+    groups.map(async (g) => {
+      const stops = await db.getAllAsync<{ stop_name: string }>(
+        'SELECT stop_name FROM trip_stops WHERE group_id = ? ORDER BY order_index ASC',
+        g.id,
+      );
+      return { destination: g.destination, stops: stops.map(s => s.stop_name) };
     }),
   );
 }

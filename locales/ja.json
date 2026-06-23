@@ -12,7 +12,9 @@
   },
   "tabs": {
     "home": "ホーム",
+    "personal": "個人",
     "insights": "分析",
+    "been": "足跡",
     "settings": "設定"
   },
   "home": {
@@ -534,7 +536,24 @@
     "cat_photo_spots": "フォトスポット"
   },
   "personal": {
-    "title": "個人"
+    "title": "個人",
+    "comingSoon": "近日公開"
+  },
+  "been": {
+    "title": "足跡",
+    "subtitle": "訪れた国々",
+    "country_one": "カ国訪問済み",
+    "country_other": "カ国訪問済み",
+    "ofTheWorld": "世界の{{pct}}%",
+    "kipEmpty": "地図はまだ白紙です — 最初の国を追加しましょう！",
+    "kipFew": "{{count}}カ国訪問！世界が待っています。探索を続けましょう！",
+    "kipMany": "{{count}}カ国！あなたは本物の旅人です！",
+    "countries": "国",
+    "visited": "訪問済み",
+    "searchPlaceholder": "国を検索…",
+    "addCountry": "国を追加",
+    "emptyHint": "まだ国がありません — 上で検索するか、旅行を作成して自動検出しましょう。",
+    "mapOffline": "オフラインではマップが利用できません — 下の国リストは引き続き使用できます。"
   },
   "settleUp": {
     "title": "精算",

@@ -12,7 +12,9 @@
   },
   "tabs": {
     "home": "Home",
+    "personal": "Personal",
     "insights": "Insights",
+    "been": "Been",
     "settings": "Settings"
   },
   "home": {
@@ -550,7 +552,24 @@
     "cat_photo_spots": "Best Photo Spots"
   },
   "personal": {
-    "title": "Personal"
+    "title": "Personal",
+    "comingSoon": "Coming soon"
+  },
+  "been": {
+    "title": "Been",
+    "subtitle": "Countries you've explored",
+    "country_one": "country visited",
+    "country_other": "countries visited",
+    "ofTheWorld": "{{pct}}% of the world",
+    "kipEmpty": "Your map is blank — every journey starts somewhere. Tap + to add your first country!",
+    "kipFew": "{{count}} countries down! The world is waiting. Keep exploring!",
+    "kipMany": "{{count}} countries and counting — you're a seasoned explorer!",
+    "countries": "Countries",
+    "visited": "Visited",
+    "searchPlaceholder": "Search countries…",
+    "addCountry": "Add country",
+    "emptyHint": "No countries yet — search above or create a trip to auto-detect them.",
+    "mapOffline": "Map unavailable offline — your country list still works below."
   },
   "settleUp": {
     "title": "Settle Up",

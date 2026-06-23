@@ -16,6 +16,8 @@ import OnboardingScreen from './screens/OnboardingScreen';
 import HomeStack from './navigation/HomeStack';
 import InsightsScreen from './screens/InsightsScreen';
 import SettingScreen from './screens/SettingScreen';
+import PersonalScreen from './screens/PersonalScreen';
+import BeenScreen from './screens/BeenScreen';
 
 const Tab = createBottomTabNavigator();
 const MIN_LOADING_MS = 1500;
@@ -23,9 +25,11 @@ const MIN_LOADING_MS = 1500;
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<string, { focused: IoniconName; unfocused: IoniconName }> = {
-  Home:     { focused: 'home',      unfocused: 'home-outline' },
-  Insights: { focused: 'bar-chart', unfocused: 'bar-chart-outline' },
-  Setting:  { focused: 'settings',  unfocused: 'settings-outline' },
+  Home:     { focused: 'home',         unfocused: 'home-outline' },
+  Personal: { focused: 'person',       unfocused: 'person-outline' },
+  Insights: { focused: 'bar-chart',    unfocused: 'bar-chart-outline' },
+  Been:     { focused: 'earth',        unfocused: 'earth-outline' },
+  Setting:  { focused: 'settings',     unfocused: 'settings-outline' },
 };
 
 function AppCore() {
@@ -102,9 +106,11 @@ function AppCore() {
               },
             })}
           >
-            <Tab.Screen name="Home" component={HomeStack} options={{ tabBarLabel: t('tabs.home') }} />
-            <Tab.Screen name="Insights" component={InsightsScreen} options={{ tabBarLabel: t('tabs.insights') }} />
-            <Tab.Screen name="Setting" component={SettingScreen} options={{ tabBarLabel: t('tabs.settings') }} />
+            <Tab.Screen name="Home"     component={HomeStack}       options={{ tabBarLabel: t('tabs.home') }} />
+            <Tab.Screen name="Personal" component={PersonalScreen}   options={{ tabBarLabel: t('tabs.personal') }} />
+            <Tab.Screen name="Insights" component={InsightsScreen}   options={{ tabBarLabel: t('tabs.insights') }} />
+            <Tab.Screen name="Been"     component={BeenScreen}       options={{ tabBarLabel: t('tabs.been') }} />
+            <Tab.Screen name="Setting"  component={SettingScreen}    options={{ tabBarLabel: t('tabs.settings') }} />
           </Tab.Navigator>
         </NavigationContainer>
       )}

@@ -12,7 +12,9 @@
   },
   "tabs": {
     "home": "主页",
+    "personal": "个人",
     "insights": "洞察",
+    "been": "足迹",
     "settings": "设置"
   },
   "home": {
@@ -534,7 +536,24 @@
     "cat_photo_spots": "最佳拍照点"
   },
   "personal": {
-    "title": "个人"
+    "title": "个人",
+    "comingSoon": "即将推出"
+  },
+  "been": {
+    "title": "足迹",
+    "subtitle": "你探索过的国家",
+    "country_one": "个国家已访问",
+    "country_other": "个国家已访问",
+    "ofTheWorld": "占全球{{pct}}%",
+    "kipEmpty": "地图还是空白的——每段旅程都从某处开始。点击 + 添加你的第一个国家！",
+    "kipFew": "已去过{{count}}个国家！世界在等你，继续探索吧！",
+    "kipMany": "{{count}}个国家，经验丰富的探险家！",
+    "countries": "国家",
+    "visited": "已访问",
+    "searchPlaceholder": "搜索国家…",
+    "addCountry": "添加国家",
+    "emptyHint": "暂无国家记录——在上方搜索或创建行程自动识别。",
+    "mapOffline": "离线状态下地图不可用——下方国家列表仍然正常。"
   },
   "settleUp": {
     "title": "结算",
