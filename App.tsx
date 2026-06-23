@@ -14,7 +14,6 @@ import { OnboardingProvider, useOnboarding } from './context/OnboardingContext';
 import LoadingScreen from './components/LoadingScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
 import HomeStack from './navigation/HomeStack';
-import PlanStack from './navigation/PlanStack';
 import InsightsScreen from './screens/InsightsScreen';
 import SettingScreen from './screens/SettingScreen';
 
@@ -25,7 +24,6 @@ type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<string, { focused: IoniconName; unfocused: IoniconName }> = {
   Home:     { focused: 'home',      unfocused: 'home-outline' },
-  Plan:     { focused: 'map',       unfocused: 'map-outline' },
   Insights: { focused: 'bar-chart', unfocused: 'bar-chart-outline' },
   Setting:  { focused: 'settings',  unfocused: 'settings-outline' },
 };
@@ -105,7 +103,6 @@ function AppCore() {
             })}
           >
             <Tab.Screen name="Home" component={HomeStack} options={{ tabBarLabel: t('tabs.home') }} />
-            <Tab.Screen name="Plan" component={PlanStack} options={{ tabBarLabel: t('tabs.plan') }} />
             <Tab.Screen name="Insights" component={InsightsScreen} options={{ tabBarLabel: t('tabs.insights') }} />
             <Tab.Screen name="Setting" component={SettingScreen} options={{ tabBarLabel: t('tabs.settings') }} />
           </Tab.Navigator>

@@ -12,7 +12,6 @@
   },
   "tabs": {
     "home": "ホーム",
-    "plan": "プラン",
     "insights": "分析",
     "settings": "設定"
   },
@@ -30,7 +29,8 @@
     "menuConclude": "旅行を終了",
     "menuDelete": "旅行を削除",
     "deleteTitle": "「{{name}}」を削除しますか？",
-    "deleteMsg": "この旅行と全ての費用が完全に削除されます。元に戻すことはできません。"
+    "deleteMsg": "この旅行と全ての費用が完全に削除されます。元に戻すことはできません。",
+    "planWithKipSub": "Kipウィザードで次の旅を計画しよう"
   },
   "groupDetail": {
     "totalSpent": "合計：${{amount}} {{currency}}",
@@ -171,19 +171,6 @@
     "settled": "精算済み",
     "owed": "${{amount}} の負債"
   },
-  "plan": {
-    "title": "プラン",
-    "badge": "計画中",
-    "budgetPerPerson": "${{amount}} {{currency}} / 人",
-    "dateFrom": "{{date}} から",
-    "dateUntil": "{{date}} まで",
-    "emptyTitle": "予定中の旅行はありません",
-    "emptySubtitle": "+ をタップして次の冒険を計画しましょう",
-    "deleteTitle": "「{{name}}」を削除しますか？",
-    "deleteMsg": "この旅行プランは完全に削除されます。元に戻すことはできません。",
-    "menuEdit": "旅行を編集",
-    "menuDelete": "旅行を削除"
-  },
   "wizard": {
     "continue": "続ける",
     "basics": {
@@ -288,51 +275,6 @@
       "relaxed_long_body":             "{{days}} 日間ののんびり旅では、本当に直前では無理なことだけ事前予約を：許可証が必要な人気トレッキング、ピークシーズンの宿泊。他はすべて、動きながら発見する方が最高です。",
       "relaxed_long_callout":          "最初の2〜3泊だけ予約することを検討してください。残りは柔軟に。"
     }
-  },
-  "createPlan": {
-    "title": "新しいプラン",
-    "tripName": "旅行名",
-    "tripNamePlaceholder": "例：日本 2026、ヨーロッパロードトリップ…",
-    "destination": "目的地",
-    "destinationPlaceholder": "例：日本、フランス、イタリア…",
-    "destinationRequired": "目的地を入力してください",
-    "currency": "通貨",
-    "dates": "予定日",
-    "startDate": "開始日",
-    "endDate": "終了日",
-    "notSet": "未設定",
-    "budget": "一人当たりの予算（任意）",
-    "creating": "作成中…",
-    "create": "プランを作成",
-    "stops": "立ち寄り先（任意）",
-    "stopPlaceholder": "{{number}}番目の立ち寄り先（例：{{city}}）",
-    "addStop": "+ 立ち寄り先を追加"
-  },
-  "planDetail": {
-    "planningBadge": "プランニング中",
-    "tripDetails": "旅行詳細",
-    "plannedDates": "予定日程",
-    "budgetPerPerson": "一人あたりの予算",
-    "itineraryTitle": "旅程",
-    "itinerarySub": "日程別スケジュール",
-    "packingListTitle": "持ち物リスト",
-    "packingListSub": "持っていくもの",
-    "budgetPlanTitle": "予算プラン",
-    "budgetPlanSub": "支出の計画と管理",
-    "explore": "Kipのお気に入り",
-    "exploreSub": "Kipが選んだ目的地のお気に入り",
-    "planningTools": "プランニングツール",
-    "stops": "立ち寄り先",
-    "members": "メンバー",
-    "memberPlaceholder": "メンバー {{number}}",
-    "addMember": "メンバーを追加",
-    "activating": "有効化中…",
-    "activateTrip": "旅行を有効化",
-    "addMembersAlert": "メンバーを追加",
-    "addMembersMsg": "有効化する前に少なくとも1人のメンバーを追加してください。",
-    "activateTitle": "旅行を有効化",
-    "activateMsg_other": "「{{name}}」を {{count}} 人のメンバーで有効化しますか？アクティブな旅行に移動します。",
-    "activate": "有効化"
   },
   "itinerary": {
     "title": "旅程",

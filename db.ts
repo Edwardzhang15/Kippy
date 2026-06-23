@@ -8,7 +8,7 @@ export type Group = {
   name: string;
   currency: string;
   is_archived: number;  // 0 = active/planning, 1 = archived
-  is_planning: number;  // 1 = trip-in-planning, 0 = active or archived
+  is_planning: number;  // legacy column, always 0
   destination: string | null;
   destination_photo_url: string | null;
   planned_start_date: string | null;
@@ -324,6 +324,11 @@ export async function initDatabase(): Promise<void> {
       );
     `);
   } catch { /* table already exists */ }
+
+  // Migration v16: retire is_planning — treat all planning trips as active
+  try {
+    await db.execAsync('UPDATE groups SET is_planning = 0 WHERE is_planning = 1');
+  } catch { /* ignore */ }
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
@@ -776,7 +781,7 @@ export async function getGroups(): Promise<Group[]> {
 
 export async function getGroupSummaries(archived = false): Promise<GroupSummary[]> {
   const groups = await db.getAllAsync<Group>(
-    'SELECT * FROM groups WHERE is_archived = ? AND is_planning = 0 ORDER BY id DESC',
+    'SELECT * FROM groups WHERE is_archived = ? ORDER BY id DESC',
     archived ? 1 : 0,
   );
   return Promise.all(
@@ -799,29 +804,7 @@ export async function getGroupSummaries(archived = false): Promise<GroupSummary[
 
 export async function getAllTripSummaries(): Promise<GroupSummary[]> {
   const groups = await db.getAllAsync<Group>(
-    'SELECT * FROM groups WHERE is_planning = 0 ORDER BY is_archived ASC, id DESC',
-  );
-  return Promise.all(
-    groups.map(async (group) => {
-      const members = await db.getAllAsync<Pick<Member, 'id' | 'name'>>(
-        'SELECT id, name FROM members WHERE group_id = ? ORDER BY id ASC',
-        group.id,
-      );
-      const expRows = await db.getAllAsync<{ amount: number; currency: string }>(
-        'SELECT amount, currency FROM expenses WHERE group_id = ?',
-        group.id,
-      );
-      const rates = getCachedRates();
-      const totalSpent = round2(expRows.reduce((sum, e) =>
-        sum + (rates ? convertAmount(e.amount, e.currency, group.currency, rates) : e.amount), 0));
-      return { ...group, totalSpent, members };
-    }),
-  );
-}
-
-export async function getPlanSummaries(): Promise<GroupSummary[]> {
-  const groups = await db.getAllAsync<Group>(
-    'SELECT * FROM groups WHERE is_planning = 1 ORDER BY id DESC',
+    'SELECT * FROM groups ORDER BY is_archived ASC, id DESC',
   );
   return Promise.all(
     groups.map(async (group) => {
@@ -853,8 +836,8 @@ export async function createPlanTrip(
   const result = await db.runAsync(
     `INSERT INTO groups
        (name, currency, destination, destination_photo_url,
-        planned_start_date, planned_end_date, budget_per_person, is_planning)
-     VALUES (?, ?, ?, ?, ?, ?, ?, 1)`,
+        planned_start_date, planned_end_date, budget_per_person)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
     name, currency,
     destination ?? null,
     destinationPhotoUrl ?? null,
@@ -863,10 +846,6 @@ export async function createPlanTrip(
     budgetPerPerson ?? null,
   );
   return result.lastInsertRowId;
-}
-
-export async function activatePlanTrip(groupId: number): Promise<void> {
-  await db.runAsync('UPDATE groups SET is_planning = 0 WHERE id = ?', groupId);
 }
 
 export async function getGroupDetails(groupId: number): Promise<GroupDetails | null> {

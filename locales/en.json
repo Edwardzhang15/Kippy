@@ -12,7 +12,6 @@
   },
   "tabs": {
     "home": "Home",
-    "plan": "Plan",
     "insights": "Insights",
     "settings": "Settings"
   },
@@ -31,7 +30,8 @@
     "menuConclude": "Conclude Trip",
     "menuDelete": "Delete Trip",
     "deleteTitle": "Delete \"{{name}}\"?",
-    "deleteMsg": "This will permanently delete this trip and all its expenses. This cannot be undone."
+    "deleteMsg": "This will permanently delete this trip and all its expenses. This cannot be undone.",
+    "planWithKipSub": "Kip's wizard helps plan your next trip"
   },
   "groupDetail": {
     "totalSpent": "Total spent: ${{amount}} {{currency}}",
@@ -176,19 +176,6 @@
     "settled": "Settled",
     "owed": "${{amount}} owed"
   },
-  "plan": {
-    "title": "Plan",
-    "badge": "Planning",
-    "budgetPerPerson": "${{amount}} {{currency}} / person",
-    "dateFrom": "From {{date}}",
-    "dateUntil": "Until {{date}}",
-    "emptyTitle": "No trips planned yet",
-    "emptySubtitle": "Tap + to start planning your next adventure",
-    "deleteTitle": "Delete \"{{name}}\"?",
-    "deleteMsg": "This will permanently remove this trip plan. This cannot be undone.",
-    "menuEdit": "Edit Trip",
-    "menuDelete": "Delete Trip"
-  },
   "wizard": {
     "continue": "Continue",
     "basics": {
@@ -300,52 +287,6 @@
       "relaxed_long_body":             "With {{days}} days at a relaxed pace, pre-book only what genuinely can't be done last-minute: popular hikes with permits, peak-season accommodation. Everything else is better discovered in motion.",
       "relaxed_long_callout":          "Consider booking only the first 2–3 nights. Leave the rest flexible."
     }
-  },
-  "createPlan": {
-    "title": "New Plan",
-    "tripName": "Trip Name",
-    "tripNamePlaceholder": "e.g. Japan 2026, European Road Trip…",
-    "destination": "Destination",
-    "destinationPlaceholder": "e.g. Japan, France, Italy…",
-    "destinationRequired": "Please enter a destination",
-    "currency": "Currency",
-    "dates": "Planned Dates",
-    "startDate": "Start date",
-    "endDate": "End date",
-    "notSet": "Not set",
-    "budget": "Budget Per Person (optional)",
-    "creating": "Creating…",
-    "create": "Create Plan",
-    "stops": "Stops (optional)",
-    "stopPlaceholder": "Stop {{number}}, e.g. {{city}}",
-    "addStop": "+ Add Stop"
-  },
-  "planDetail": {
-    "planningBadge": "Planning",
-    "tripDetails": "Trip Details",
-    "plannedDates": "Planned dates",
-    "budgetPerPerson": "Budget per person",
-    "itineraryTitle": "Itinerary",
-    "itinerarySub": "Day-by-day schedule",
-    "packingListTitle": "Packing List",
-    "packingListSub": "What to bring",
-    "budgetPlanTitle": "Budget Plan",
-    "budgetPlanSub": "Plan & track spending",
-    "explore": "Kip's Favs",
-    "exploreSub": "Kip's favs for your destination",
-    "planningTools": "Planning Tools",
-    "stops": "Stops",
-    "members": "Members",
-    "memberPlaceholder": "Member {{number}}",
-    "addMember": "Add member",
-    "activating": "Activating…",
-    "activateTrip": "Activate Trip",
-    "addMembersAlert": "Add Members",
-    "addMembersMsg": "Add at least one member before activating.",
-    "activateTitle": "Activate Trip",
-    "activateMsg_one": "Activate \"{{name}}\" with {{count}} member? It will move to your active trips.",
-    "activateMsg_other": "Activate \"{{name}}\" with {{count}} members? It will move to your active trips.",
-    "activate": "Activate"
   },
   "itinerary": {
     "title": "Itinerary",

@@ -1,15 +1,3 @@
-export type PlanStackParamList = {
-  PlanScreen:   undefined;
-  CreatePlan:   undefined;
-  PlanDetail:   { groupId: number };
-  TripWizard:   undefined;
-  EditTrip:     { groupId: number };
-  Itinerary:    { groupId: number; totalDays: number };
-  PackingList:  { groupId: number };
-  BudgetPlan:   { groupId: number };
-  Explore:      { groupId: number; destination: string };
-};
-
 export type HomeStackParamList = {
   HomeScreen: { initialTab?: 'active' | 'archived' };
   GroupDetail: { groupId: number };
@@ -32,6 +20,7 @@ export type HomeStackParamList = {
     balance: number;
     groupCurrency: string;
   };
+  TripWizard:  undefined;
   EditTrip:    { groupId: number };
   Itinerary:   { groupId: number; totalDays: number };
   PackingList: { groupId: number };

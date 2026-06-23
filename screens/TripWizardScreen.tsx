@@ -18,7 +18,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
-import { PlanStackParamList } from '../navigation/types';
+import { HomeStackParamList } from '../navigation/types';
 import { createPlanTrip, addTripStop } from '../db';
 import { fetchPlaces, type PlaceResult } from '../placesApi';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
@@ -32,7 +32,7 @@ import {
   type Vibe,
 } from '../data/wizardData';
 
-type Props = NativeStackScreenProps<PlanStackParamList, 'TripWizard'>;
+type Props = NativeStackScreenProps<HomeStackParamList, 'TripWizard'>;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
@@ -1066,7 +1066,7 @@ function S5Results({
           await addTripStop(groupId, stopName.trim(), stopIdx++);
         }
       }
-      navigation.replace('PlanDetail', { groupId });
+      navigation.replace('GroupDetail', { groupId });
     } catch {
       setCreating(false);
       Alert.alert(t('wizard.results.errorTitle'), t('wizard.results.errorMsg'));

@@ -12,7 +12,6 @@
   },
   "tabs": {
     "home": "主页",
-    "plan": "计划",
     "insights": "洞察",
     "settings": "设置"
   },
@@ -30,7 +29,8 @@
     "menuConclude": "结束行程",
     "menuDelete": "删除行程",
     "deleteTitle": "删除「{{name}}」？",
-    "deleteMsg": "此操作将永久删除该行程及所有费用记录，无法撤销。"
+    "deleteMsg": "此操作将永久删除该行程及所有费用记录，无法撤销。",
+    "planWithKipSub": "用Kip向导规划您的下一次旅行"
   },
   "groupDetail": {
     "totalSpent": "合计：${{amount}} {{currency}}",
@@ -171,19 +171,6 @@
     "settled": "已结清",
     "owed": "欠款 ${{amount}}"
   },
-  "plan": {
-    "title": "计划",
-    "badge": "规划中",
-    "budgetPerPerson": "${{amount}} {{currency}} / 人",
-    "dateFrom": "从 {{date}} 出发",
-    "dateUntil": "至 {{date}}",
-    "emptyTitle": "暂无计划行程",
-    "emptySubtitle": "点击 + 开始规划您的下一次冒险",
-    "deleteTitle": "删除「{{name}}」？",
-    "deleteMsg": "这将永久删除此行程计划，无法撤销。",
-    "menuEdit": "编辑行程",
-    "menuDelete": "删除行程"
-  },
   "wizard": {
     "continue": "继续",
     "basics": {
@@ -288,51 +275,6 @@
       "relaxed_long_body":             "{{days}} 天悠闲行程，只需提前预订真正无法临时决定的事：需要许可证的热门徒步、旺季住宿。其余的，在路上发现才是最好的方式。",
       "relaxed_long_callout":          "考虑只预订前 2—3 晚住宿，其余保持灵活。"
     }
-  },
-  "createPlan": {
-    "title": "新建计划",
-    "tripName": "行程名称",
-    "tripNamePlaceholder": "例如：日本 2026、欧洲公路旅行…",
-    "destination": "目的地",
-    "destinationPlaceholder": "例如：日本、法国、意大利…",
-    "destinationRequired": "请输入目的地",
-    "currency": "货币",
-    "dates": "计划日期",
-    "startDate": "开始日期",
-    "endDate": "结束日期",
-    "notSet": "未设置",
-    "budget": "人均预算（可选）",
-    "creating": "创建中…",
-    "create": "创建计划",
-    "stops": "途经城市（可选）",
-    "stopPlaceholder": "第{{number}}站，如：{{city}}",
-    "addStop": "+ 添加途经站"
-  },
-  "planDetail": {
-    "planningBadge": "规划中",
-    "tripDetails": "行程详情",
-    "plannedDates": "计划日期",
-    "budgetPerPerson": "人均预算",
-    "itineraryTitle": "行程安排",
-    "itinerarySub": "每日日程",
-    "packingListTitle": "打包清单",
-    "packingListSub": "需要携带的物品",
-    "budgetPlanTitle": "预算计划",
-    "budgetPlanSub": "规划和追踪支出",
-    "explore": "Kip最爱",
-    "exploreSub": "Kip为您精选的目的地收藏",
-    "planningTools": "规划工具",
-    "stops": "途经站",
-    "members": "成员",
-    "memberPlaceholder": "成员 {{number}}",
-    "addMember": "添加成员",
-    "activating": "激活中…",
-    "activateTrip": "激活行程",
-    "addMembersAlert": "添加成员",
-    "addMembersMsg": "请至少添加一位成员后再激活。",
-    "activateTitle": "激活行程",
-    "activateMsg_other": "将「{{name}}」与 {{count}} 位成员一起激活？它将移至你的活跃行程。",
-    "activate": "激活"
   },
   "itinerary": {
     "title": "行程安排",
