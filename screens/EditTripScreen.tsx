@@ -398,7 +398,6 @@ export default function EditTripScreen() {
               placeholderTextColor={colors.textSecondary}
               value={tripName}
               onChangeText={setTripName}
-              autoFocus
               returnKeyType="done"
             />
           </View>

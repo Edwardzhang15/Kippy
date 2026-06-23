@@ -19,6 +19,7 @@ import { useTranslation } from 'react-i18next';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import PackingListShareCard from '../components/PackingListShareCard';
+import FeatureIntroSplash from '../components/FeatureIntroSplash';
 import {
   getGroup,
   getPackingItems,
@@ -26,6 +27,7 @@ import {
   togglePackingItem,
   addPackingItem,
   deletePackingItem,
+  markIntroSeen,
   PackingItem,
   Group,
 } from '../db';
@@ -357,6 +359,9 @@ export default function PackingListScreen() {
   const [sharePageIndex, setSharePageIndex] = useState(0);
   const pageRefs = useRef<(View | null)[]>([]);
 
+  const [showIntro, setShowIntro] = useState(false);
+  const introPhraseIdx = useRef(Math.floor(Math.random() * 5)).current;
+
   const byCategory = useMemo(() => {
     const map: Record<string, PackingItem[]> = {};
     for (const item of items) {
@@ -396,6 +401,7 @@ export default function PackingListScreen() {
         getPackingItems(groupId),
       ]);
       setGroup(g);
+      if (g && !g.has_seen_packing_intro) setShowIntro(true);
       if (existing.length === 0 && g) {
         const days = getTripDays(g.planned_start_date, g.planned_end_date);
         const season = getSeason(g.planned_start_date);
@@ -586,7 +592,6 @@ export default function PackingListScreen() {
                         placeholderTextColor={colors.textSecondary}
                         value={customLabel}
                         onChangeText={setCustomLabel}
-                        autoFocus
                         returnKeyType="done"
                         onSubmitEditing={() => handleAddItem(cat)}
                       />
@@ -697,6 +702,18 @@ export default function PackingListScreen() {
           </View>
         </SafeAreaView>
       </Modal>
+
+      {showIntro && (
+        <FeatureIntroSplash
+          image={require('../assets/Kip_packing.png')}
+          tripName={group?.name ?? ''}
+          phrase={t(`featureIntro.packing.phrase_${introPhraseIdx}`)}
+          onContinue={() => {
+            setShowIntro(false);
+            markIntroSeen(groupId, 'packing');
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

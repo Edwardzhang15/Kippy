@@ -14,13 +14,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { HomeStackParamList } from '../navigation/types';
-import { createGroup, addMember } from '../db';
+import { createGroup, addMember, addTripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CreateGroup'>;
 
 const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
+const STOP_CITY_EXAMPLES = ['Tokyo', 'Kyoto', 'Osaka', 'Rome', 'Paris', 'Barcelona'];
 
 const UNSPLASH_KEY = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
 
@@ -73,6 +74,16 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 4,
+  },
+  inputCardError: {
+    borderWidth: 1,
+    borderColor: c.coral,
+  },
+  fieldError: {
+    fontSize: fontSizes.caption,
+    color: c.coral,
+    marginTop: 6,
+    marginLeft: 4,
   },
   input: {
     fontSize: fontSizes.body,
@@ -177,6 +188,12 @@ export default function CreateGroupScreen({ navigation }: Props) {
   const [currency, setCurrency]       = useState('CAD');
   const [members, setMembers]         = useState(['', '']);
   const [saving, setSaving]           = useState(false);
+  const [destError, setDestError]     = useState(false);
+  const [stops, setStops]             = useState<string[]>([]);
+
+  const addStopField = () => setStops((prev) => [...prev, '']);
+  const updateStop   = (i: number, v: string) => setStops((prev) => prev.map((s, idx) => idx === i ? v : s));
+  const removeStop   = (i: number) => setStops((prev) => prev.filter((_, idx) => idx !== i));
 
   const addMemberField = () => setMembers((prev) => [...prev, '']);
 
@@ -195,6 +212,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
 
   const handleSave = async () => {
     if (!canSave) return;
+    if (!destination.trim()) { setDestError(true); return; }
     setSaving(true);
     try {
       const dest = destination.trim();
@@ -208,6 +226,12 @@ export default function CreateGroupScreen({ navigation }: Props) {
       for (const name of members) {
         if (name.trim().length > 0) {
           await addMember(groupId, name.trim());
+        }
+      }
+      let stopIdx = 0;
+      for (const stopName of stops) {
+        if (stopName.trim().length > 0) {
+          await addTripStop(groupId, stopName.trim(), stopIdx++);
         }
       }
       navigation.goBack();
@@ -243,22 +267,54 @@ export default function CreateGroupScreen({ navigation }: Props) {
               placeholderTextColor={colors.textSecondary}
               value={groupName}
               onChangeText={setGroupName}
-              autoFocus
               returnKeyType="done"
             />
           </View>
 
           <SectionLabel title={t('createGroup.destination')} />
-          <View style={[styles.inputCard, cardShadow]}>
+          <View style={[styles.inputCard, cardShadow, destError && styles.inputCardError]}>
             <TextInput
               style={styles.input}
               placeholder={t('createGroup.destinationPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={destination}
-              onChangeText={setDestination}
+              onChangeText={(v) => { setDestination(v); if (destError) setDestError(false); }}
               returnKeyType="done"
             />
           </View>
+          {destError && <Text style={styles.fieldError}>{t('createGroup.destinationRequired')}</Text>}
+
+          <SectionLabel title={t('createGroup.stops')} />
+
+          {stops.length > 0 && (
+            <View style={[styles.membersCard, cardShadow]}>
+              {stops.map((stop, index) => (
+                <View key={index}>
+                  {index > 0 && <View style={styles.divider} />}
+                  <View style={styles.memberRow}>
+                    <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+                    <TextInput
+                      style={styles.memberInput}
+                      placeholder={t('createGroup.stopPlaceholder', { number: index + 1, city: STOP_CITY_EXAMPLES[index % STOP_CITY_EXAMPLES.length] })}
+                      placeholderTextColor={colors.textSecondary}
+                      value={stop}
+                      onChangeText={(v) => updateStop(index, v)}
+                      returnKeyType="done"
+                      autoCapitalize="words"
+                    />
+                    <Pressable onPress={() => removeStop(index)} hitSlop={8}>
+                      <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <Pressable style={styles.addMemberBtn} onPress={addStopField}>
+            <Ionicons name="add-circle-outline" size={18} color={colors.coral} />
+            <Text style={styles.addMemberText}>{t('createGroup.addStop')}</Text>
+          </Pressable>
 
           <SectionLabel title={t('createGroup.currency')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>

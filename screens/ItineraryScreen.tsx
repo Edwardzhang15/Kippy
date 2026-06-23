@@ -28,6 +28,7 @@ import {
   updateItineraryItem,
   deleteItineraryItem,
   getGroup,
+  markIntroSeen,
   ItineraryItem,
   Group,
 } from '../db';
@@ -35,6 +36,7 @@ import { ACTIVITY_TYPES, getActivityType } from '../data/activityTypes';
 import { useTranslation } from 'react-i18next';
 import ItineraryShareCard from '../components/ItineraryShareCard';
 import SharePreviewModal from '../components/SharePreviewModal';
+import FeatureIntroSplash from '../components/FeatureIntroSplash';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -560,8 +562,14 @@ export default function ItineraryScreen() {
   const [sharing, setSharing]               = useState(false);
   const shareCardRef = useRef<View>(null);
 
+  const [showIntro, setShowIntro]   = useState(false);
+  const introPhraseIdx = useRef(Math.floor(Math.random() * 5)).current;
+
   useEffect(() => {
-    getGroup(groupId).then(setGroup);
+    getGroup(groupId).then((g) => {
+      setGroup(g);
+      if (g && !g.has_seen_itinerary_intro) setShowIntro(true);
+    });
   }, [groupId]);
 
   useEffect(() => {
@@ -971,6 +979,18 @@ export default function ItineraryScreen() {
           items={items}
         />
       </SharePreviewModal>
+
+      {showIntro && (
+        <FeatureIntroSplash
+          image={require('../assets/Kip_Itinerary.png')}
+          tripName={group?.name ?? ''}
+          phrase={t(`featureIntro.itinerary.phrase_${introPhraseIdx}`)}
+          onContinue={() => {
+            setShowIntro(false);
+            markIntroSeen(groupId, 'itinerary');
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

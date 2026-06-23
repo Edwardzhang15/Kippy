@@ -46,10 +46,14 @@
     "packingListSub": "需要携带的物品",
     "budgetPlan": "预算计划",
     "budgetPlanSub": "规划并追踪支出",
+    "explore": "Kip精选",
+    "exploreSub": "Kip为您的目的地推荐",
+    "planningTools": "规划工具",
+    "stops": "途经站",
     "balances": "余额",
     "subgroups": "子群组",
     "subgroupNew": "新建",
-    "subgroupEmpty": "暂无子群组 — 点击「新建」将费用分摊给部分成员。",
+    "subgroupEmpty": "有些人只参与部分费用——比如「喝酒小队」代表喝酒的成员，或「晚到者」代表第1天后才加入的人。创建子群组，在分摊费用时可快速选择这些成员。",
     "deleteSubgroup": "删除子群组",
     "removeSubgroupMsg": "删除「{{name}}」？",
     "subgroupCount_other": "{{count}} 人",
@@ -65,14 +69,18 @@
     "title": "新建群组",
     "groupName": "群组名称",
     "groupNamePlaceholder": "例如：东京之旅、室友…",
-    "destination": "目的地（可选）",
-    "destinationPlaceholder": "例如：东京、巴黎、班夫…",
+    "destination": "目的地",
+    "destinationPlaceholder": "例如：日本、法国、加拿大…",
+    "destinationRequired": "请输入目的地",
     "currency": "货币",
     "members": "成员",
     "memberPlaceholder": "成员 {{number}}",
     "addMember": "添加成员",
     "creating": "创建中…",
-    "create": "创建群组"
+    "create": "创建群组",
+    "stops": "途经城市（可选）",
+    "stopPlaceholder": "第{{number}}站，如：{{city}}",
+    "addStop": "+ 添加途经站"
   },
   "addExpense": {
     "title": "新增费用",
@@ -96,7 +104,34 @@
     "deleting": "删除中…",
     "deleteTitle": "删除费用",
     "deleteMsg": "永久删除此费用？余额将重新计算。",
-    "currency": "货币"
+    "currency": "货币",
+    "tapToEnterAmount": "点击此处输入金额"
+  },
+  "memberExpenses": {
+    "title": "明细",
+    "totalCharged": "{{name}} 应分摊合计",
+    "settleUp": "结算",
+    "includedIn": "参与的费用",
+    "paidFor": "支付的费用",
+    "yourShare": "分摊: {{symbol}}{{amount}}",
+    "noExpenses": "暂无费用"
+  },
+  "onboarding": {
+    "skip": "跳过",
+    "next": "下一步",
+    "getStarted": "开始使用",
+    "step1Title": "欢迎来到 Kippy！",
+    "step1Body": "嗨，我是 Kip！我会帮你记录费用、分摊账单，让每次团队旅行都轻松无忧。",
+    "step2Title": "轻松分摊费用",
+    "step2Body": "创建旅程，添加伙伴，随时记录开销。Kippy 自动帮你平衡每个人的份额。",
+    "step3Title": "规划每个细节",
+    "step3Body": "逐日制定行程，用共享清单智慧打包，用预算规划器掌控花销。",
+    "step4Title": "结算与分享",
+    "step4Body": "旅程结束后，一目了然谁欠了谁，一键完成结算，还能分享精美的旅行总结。",
+    "step5Title": "准备就绪！",
+    "step5Body": "你的第一次旅程只需轻轻一点。去创造美好回忆吧——Kip 会帮你算好账的。",
+    "viewTour": "查看应用导览",
+    "bubble": "需要帮忙就来找我！"
   },
   "settings": {
     "title": "设置",
@@ -104,7 +139,8 @@
     "theme": "外观",
     "themeLight": "浅色",
     "themeDark": "深色",
-    "themeSystem": "跟随系统"
+    "themeSystem": "跟随系统",
+    "about": "关于"
   },
   "loading": {
     "caption": "正在加载行程…"
@@ -150,37 +186,17 @@
   },
   "wizard": {
     "continue": "继续",
-    "mode": {
-      "title": "您想如何规划这次旅行？",
-      "subtitle": "选择一种方式开始。",
-      "selfTitle": "自己规划",
-      "selfSubtitle": "与 Kippy 一步步制定行程",
-      "agentTitle": "使用旅行社",
-      "agentSubtitle": "获得专业人员的预订帮助",
-      "tourTitle": "参加团队游",
-      "tourSubtitle": "预设行程，与陌生人同行"
-    },
-    "agent": {
-      "title": "完全理解。",
-      "para1": "Kippy 专为自组织团队旅行设计，通常由一人管理途中的费用。如果您想要旅行社体验，交给专业人士更合适。",
-      "para2": "不过，旅行开始后，Kippy 仍然是追踪和分摊费用的最佳工具——即使是旅行社预订的行程。",
-      "searchLink": "搜索附近的旅行社",
-      "orLabel": "或者直接创建一个基本行程：",
-      "createBasic": "创建基本行程 →"
-    },
-    "tour": {
-      "title": "好主意。",
-      "para1": "团队游包办了所有后勤。Kippy 仍可帮助您的团队追踪个人开销、共享餐饮及沿途的额外费用。",
-      "para2": "搜索合适的团队游，预订后回来创建一个 Kippy 行程来记录费用。",
-      "searchLink": "搜索团队游",
-      "orLabel": "或创建一个 Kippy 行程来追踪费用："
-    },
     "basics": {
       "title": "告诉我行程的基本信息。",
       "people": "几个人出行？",
       "transport": "如何前往目的地？",
       "months": "哪个月份？",
       "days": "几天行程？",
+      "destination": "你们要去哪里？",
+      "destinationPlaceholder": "例如：日本、巴厘岛、法国…",
+      "stops": "有特定的途经城市吗？（可选）",
+      "stopPlaceholder": "如：{{city}}",
+      "addStop": "+ 添加途经站",
       "budget": "人均预算？（可选）",
       "budgetPlaceholder": "例如：1500",
       "personSuffix_other": "人",
@@ -192,23 +208,9 @@
         "Other": "其他"
       }
     },
-    "dest": {
-      "branchTitle": "您已有目的地了吗？",
-      "hasDestTitle": "是的，我有目标",
-      "hasDestSubtitle": "我知道我们要去哪里",
-      "ideasTitle": "还没有，给我一些灵感",
-      "ideasSubtitle": "根据旅行氛围帮我找个地方",
-      "inputTitle": "您要去哪里？",
-      "inputSubtitle": "城市、国家或地区——随便您心里想的。",
-      "placeholder": "例如：东京，日本"
-    },
     "vibe": {
       "title": "旅行氛围是什么？",
       "subtitle": "选择您想要的感觉。",
-      "resultsTitle": "给您一些建议。",
-      "resultsSubtitle": "基于您的「{{vibe}}」氛围。",
-      "continueWith": "选择 {{dest}} 继续 →",
-      "skip": "跳过——稍后再决定",
       "labels": {
         "beach": "休闲 / 海滩",
         "adventure": "冒险 / 户外",
@@ -242,23 +244,6 @@
       "create": "创建此行程",
       "errorTitle": "出现了问题",
       "errorMsg": "无法创建行程，请稍后再试。"
-    },
-    "destinations": {
-      "bali":         { "tagline": "经典之选，实至名归",                  "blurb": "梯田、神庙与各具风情的海滩。全年物价低廉，热情好客。" },
-      "tulum":        { "tagline": "丛林邂逅加勒比海",                   "blurb": "水晶洞穴、生态精品度假村，以及里维埃拉玛雅最迷人的小镇，近在咫尺。" },
-      "krabi":        { "tagline": "石灰岩峭壁与碧绿海湾",               "blurb": "在甲米岛与皮皮岛之间穿梭。浮潜、攀岩或懒躺吊床——随你心情。" },
-      "queenstown":   { "tagline": "世界冒险之都",                      "blurb": "蹦极、跳伞、激流泛舟，还有令人窒息的峡湾风光。绝对让你大开眼界。" },
-      "patagonia":    { "tagline": "名副其实的天涯海角",                  "blurb": "徒步百内国家公园，在卡拉法特欣赏冰川，或在火地岛的水道里划皮艇。" },
-      "nepal":        { "tagline": "世界的屋脊",                        "blurb": "珠峰大本营或安纳普尔纳环线。喜马拉雅山将彻底颠覆你对尺度的认知。" },
-      "tokyo":        { "tagline": "感官盛宴，精彩绝伦",                  "blurb": "古老神社、机器人餐厅、全球最棒的便利店比邻而居。适合各种预算。" },
-      "lisbon":       { "tagline": "欧洲最阳光的低调之城",                "blurb": "彩色建筑、世界级葡式蛋挞、屋顶酒吧，以及穿梭历史的叮当车。" },
-      "mexico_city":  { "tagline": "世界级文化，本地物价",                "blurb": "弗里达·卡罗、令人叫绝的墨西哥卷饼、阿兹特克遗址，以及媲美欧洲首都的餐饮圈。" },
-      "bologna":      { "tagline": "欧洲美食之都",                      "blurb": "博洛尼亚肉酱、摩泰代拉香肠和意大利饺的发源地。每一顿饭都是盛事。" },
-      "osaka":        { "tagline": "街街都是美食打卡地",                  "blurb": "大阪烧、章鱼烧、拉面大战，还有道顿堀的霓虹烟火气。日本最率真的美食城市。" },
-      "san_sebastian":{ "tagline": "全球人均米其林星星最密集之地",         "blurb": "每家小酒馆的pintxos都能媲美高级套餐。逛遍老城，每隔三步就吃一口。" },
-      "ibiza":        { "tagline": "派对圣地，无可争辩",                  "blurb": "超级夜店、传奇DJ、白天的海滩俱乐部。七八月来，感受最巅峰的派对能量。" },
-      "bangkok":      { "tagline": "真正不夜城",                        "blurb": "日落时的屋顶酒吧、午夜的考山路喧嚣，凌晨四点治愈宿醉的街头美食。" },
-      "medellin":     { "tagline": "永恒之春之城",                      "blurb": "缆车俯瞰全城，每晚莎莎舞，当地人真心想带你玩遍这座城市。" }
     },
     "tips": {
       "beach_0":     "旺季海滩住宿请提前 3 个月以上预订，价格会翻倍且房间很快售罄。",
@@ -308,8 +293,9 @@
     "title": "新建计划",
     "tripName": "行程名称",
     "tripNamePlaceholder": "例如：日本 2026、欧洲公路旅行…",
-    "destination": "目的地（可选）",
-    "destinationPlaceholder": "例如：东京、阿马尔菲海岸…",
+    "destination": "目的地",
+    "destinationPlaceholder": "例如：日本、法国、意大利…",
+    "destinationRequired": "请输入目的地",
     "currency": "货币",
     "dates": "计划日期",
     "startDate": "开始日期",
@@ -317,7 +303,10 @@
     "notSet": "未设置",
     "budget": "人均预算（可选）",
     "creating": "创建中…",
-    "create": "创建计划"
+    "create": "创建计划",
+    "stops": "途经城市（可选）",
+    "stopPlaceholder": "第{{number}}站，如：{{city}}",
+    "addStop": "+ 添加途经站"
   },
   "planDetail": {
     "planningBadge": "规划中",
@@ -330,6 +319,10 @@
     "packingListSub": "需要携带的物品",
     "budgetPlanTitle": "预算计划",
     "budgetPlanSub": "规划和追踪支出",
+    "explore": "Kip精选",
+    "exploreSub": "Kip为您的目的地推荐",
+    "planningTools": "规划工具",
+    "stops": "途经站",
     "members": "成员",
     "memberPlaceholder": "成员 {{number}}",
     "addMember": "添加成员",
@@ -555,6 +548,48 @@
     "parks": "公园",
     "drive": "风景驾车",
     "other": "其他"
+  },
+  "featureIntro": {
+    "continue": "出发！",
+    "itinerary": {
+      "phrase_0": "冒险在等你——来规划吧！",
+      "phrase_1": "完美旅行从完美行程开始！",
+      "phrase_2": "Kip 帮你排好日程，快来填满它！",
+      "phrase_3": "最佳惊喜来自精心规划！",
+      "phrase_4": "一天一步，一起打造这段旅程！"
+    },
+    "packing": {
+      "phrase_0": "别忘了防晒霜——还有 Kip！",
+      "phrase_1": "打包聪明点，才有地方装纪念品！",
+      "phrase_2": "一包行天下——来装满它！",
+      "phrase_3": "Kip 的清单比记忆更靠谱！",
+      "phrase_4": "轻装上阵，玩得尽兴！"
+    },
+    "budget": {
+      "phrase_0": "省一分钱，多一个冰淇淋！",
+      "phrase_1": "预算管好，玩得更爽！",
+      "phrase_2": "数学交给 Kip，你专心玩！",
+      "phrase_3": "钱包最好的旅行搭档！",
+      "phrase_4": "精打细算，勇敢冒险！"
+    }
+  },
+  "explore": {
+    "title": "Kip的推荐",
+    "subtitle": "Kip为您精选的目的地推荐",
+    "refreshing": "刷新中…",
+    "lastUpdated": "更新于 {{time}}",
+    "noResults": "未找到结果",
+    "emptyCategory": "Kip在这里找不到任何内容",
+    "catError": "加载失败",
+    "errorTitle": "无法加载地点",
+    "errorMsg": "请检查网络连接后重试。",
+    "retry": "重试",
+    "openMaps": "在地图中打开",
+    "topPicks": "{{dest}} 精选",
+    "cat_restaurants": "热门餐厅",
+    "cat_attractions": "热门景点",
+    "cat_cheap_eats": "平价美食",
+    "cat_photo_spots": "最佳拍照点"
   },
   "personal": {
     "title": "个人"

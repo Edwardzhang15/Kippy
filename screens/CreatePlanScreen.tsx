@@ -15,7 +15,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { PlanStackParamList } from '../navigation/types';
-import { createPlanTrip } from '../db';
+import { createPlanTrip, addTripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -23,6 +23,7 @@ type Props = NativeStackScreenProps<PlanStackParamList, 'CreatePlan'>;
 
 const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 const UNSPLASH_KEY = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
+const STOP_CITY_EXAMPLES = ['Tokyo', 'Kyoto', 'Osaka', 'Rome', 'Paris', 'Barcelona'];
 
 async function fetchDestinationPhoto(query: string): Promise<string | null> {
   try {
@@ -65,6 +66,12 @@ export default function CreatePlanScreen({ navigation }: Props) {
   const [showStart, setShowStart]         = useState(false);
   const [showEnd, setShowEnd]             = useState(false);
   const [saving, setSaving]               = useState(false);
+  const [destError, setDestError]         = useState(false);
+  const [stops, setStops]                 = useState<string[]>([]);
+
+  const addStopField = () => setStops((prev) => [...prev, '']);
+  const updateStop   = (i: number, v: string) => setStops((prev) => prev.map((s, idx) => idx === i ? v : s));
+  const removeStop   = (i: number) => setStops((prev) => prev.filter((_, idx) => idx !== i));
 
   const canSave = tripName.trim().length > 0 && !saving;
 
@@ -79,12 +86,13 @@ export default function CreatePlanScreen({ navigation }: Props) {
 
   const handleSave = async () => {
     if (!canSave) return;
+    if (!destination.trim()) { setDestError(true); return; }
     setSaving(true);
     try {
       const dest = destination.trim();
       const photoUrl = dest ? await fetchDestinationPhoto(dest) : null;
       const parsedBudget = parseFloat(budget);
-      await createPlanTrip(
+      const groupId = await createPlanTrip(
         tripName.trim(),
         currency,
         dest || undefined,
@@ -93,6 +101,12 @@ export default function CreatePlanScreen({ navigation }: Props) {
         endDate   ? toISODate(endDate)   : undefined,
         !isNaN(parsedBudget) && parsedBudget > 0 ? parsedBudget : undefined,
       );
+      let stopIdx = 0;
+      for (const stopName of stops) {
+        if (stopName.trim().length > 0) {
+          await addTripStop(groupId, stopName.trim(), stopIdx++);
+        }
+      }
       navigation.goBack();
     } finally {
       setSaving(false);
@@ -126,22 +140,59 @@ export default function CreatePlanScreen({ navigation }: Props) {
               placeholderTextColor={colors.textSecondary}
               value={tripName}
               onChangeText={setTripName}
-              autoFocus
               returnKeyType="done"
             />
           </View>
 
           <SectionLabel title={t('createPlan.destination')} />
-          <View style={[styles.inputCard, cardShadow]}>
+          <View style={[styles.inputCard, cardShadow, destError && styles.inputCardError]}>
             <TextInput
               style={styles.input}
               placeholder={t('createPlan.destinationPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={destination}
-              onChangeText={setDestination}
+              onChangeText={(v) => { setDestination(v); if (destError) setDestError(false); }}
               returnKeyType="done"
             />
           </View>
+          {destError && <Text style={styles.fieldError}>{t('createPlan.destinationRequired')}</Text>}
+
+          <SectionLabel title={t('createPlan.stops')} />
+
+          {stops.length > 0 && (
+            <View style={[styles.inputCard, cardShadow, { paddingHorizontal: 16, paddingVertical: 4 }]}>
+              {stops.map((stop, index) => (
+                <View key={index}>
+                  {index > 0 && <View style={{ height: 1, backgroundColor: colors.border }} />}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+                    <TextInput
+                      style={[styles.input, { flex: 1 }]}
+                      placeholder={t('createPlan.stopPlaceholder', { number: index + 1, city: STOP_CITY_EXAMPLES[index % STOP_CITY_EXAMPLES.length] })}
+                      placeholderTextColor={colors.textSecondary}
+                      value={stop}
+                      onChangeText={(v) => updateStop(index, v)}
+                      returnKeyType="done"
+                      autoCapitalize="words"
+                    />
+                    <Pressable onPress={() => removeStop(index)} hitSlop={8}>
+                      <Ionicons name="close-circle" size={20} color={colors.textSecondary} />
+                    </Pressable>
+                  </View>
+                </View>
+              ))}
+            </View>
+          )}
+
+          <Pressable
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 12, alignSelf: 'flex-start' }}
+            onPress={addStopField}
+          >
+            <Ionicons name="add-circle-outline" size={18} color={colors.coral} />
+            <Text style={{ fontSize: fontSizes.body, fontWeight: '600', color: colors.coral }}>
+              {t('createPlan.addStop')}
+            </Text>
+          </Pressable>
 
           <SectionLabel title={t('createPlan.currency')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
@@ -287,6 +338,16 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     borderRadius: radii.card,
     paddingHorizontal: 16,
     paddingVertical: 4,
+  },
+  inputCardError: {
+    borderWidth: 1,
+    borderColor: c.coral,
+  },
+  fieldError: {
+    fontSize: fontSizes.caption,
+    color: c.coral,
+    marginTop: 6,
+    marginLeft: 4,
   },
   input: {
     fontSize: fontSizes.body,

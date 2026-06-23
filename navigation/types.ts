@@ -7,6 +7,7 @@ export type PlanStackParamList = {
   Itinerary:    { groupId: number; totalDays: number };
   PackingList:  { groupId: number };
   BudgetPlan:   { groupId: number };
+  Explore:      { groupId: number; destination: string };
 };
 
 export type HomeStackParamList = {
@@ -23,10 +24,19 @@ export type HomeStackParamList = {
     avatarIndex: number;
     currency: string;
   };
+  MemberExpenses: {
+    groupId: number;
+    memberId: number;
+    memberName: string;
+    avatarIndex: number;
+    balance: number;
+    groupCurrency: string;
+  };
   EditTrip:    { groupId: number };
   Itinerary:   { groupId: number; totalDays: number };
   PackingList: { groupId: number };
   BudgetPlan:  { groupId: number };
+  Explore:     { groupId: number; destination: string };
 };
 
 export type InsightsStackParamList = {

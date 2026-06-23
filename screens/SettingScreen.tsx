@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme, ThemeMode } from '../context/ThemeContext';
+import { useOnboarding } from '../context/OnboardingContext';
 import { changeLanguage } from '../i18n';
 
 const LANGUAGES = [
@@ -83,6 +84,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
 export default function SettingScreen() {
   const { t, i18n } = useTranslation();
   const { colors, themeMode, setThemeMode } = useTheme();
+  const { launchTour } = useOnboarding();
   const styles = makeStyles(colors);
 
   return (
@@ -138,6 +140,16 @@ export default function SettingScreen() {
               </Pressable>
             );
           })}
+        </View>
+        <Text style={styles.sectionLabelSpaced}>{t('settings.about')}</Text>
+        <View style={[styles.card, cardShadow]}>
+          <Pressable
+            style={({ pressed }) => [styles.langRow, pressed && styles.langRowPressed]}
+            onPress={launchTour}
+          >
+            <Text style={styles.langLabel}>{t('onboarding.viewTour')}</Text>
+            <Ionicons name="compass-outline" size={18} color={colors.coral} />
+          </Pressable>
         </View>
       </ScrollView>
     </SafeAreaView>

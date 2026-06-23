@@ -47,10 +47,14 @@
     "packingListSub": "What to bring",
     "budgetPlan": "Budget Plan",
     "budgetPlanSub": "Plan & track spending",
+    "explore": "Kip's Picks",
+    "exploreSub": "Kip's recommendations for your destination",
+    "planningTools": "Planning Tools",
+    "stops": "Stops",
     "balances": "Balances",
     "subgroups": "Subgroups",
     "subgroupNew": "New",
-    "subgroupEmpty": "No subgroups yet — tap New to split expenses among a subset.",
+    "subgroupEmpty": "Some people are only part of certain costs — like a 'Drinks Crew' for people who drink alcohol, or 'Late Arrivals' for people who joined after day 1. Create a subgroup to quickly include just those people when splitting an expense.",
     "deleteSubgroup": "Delete Subgroup",
     "removeSubgroupMsg": "Remove \"{{name}}\"?",
     "subgroupCount_one": "{{count}} member",
@@ -67,14 +71,18 @@
     "title": "New Group",
     "groupName": "Group Name",
     "groupNamePlaceholder": "e.g. Tokyo Trip, Roommates…",
-    "destination": "Destination (optional)",
-    "destinationPlaceholder": "e.g. Tokyo, Paris, Banff…",
+    "destination": "Destination",
+    "destinationPlaceholder": "e.g. Japan, France, Canada…",
+    "destinationRequired": "Please enter a destination",
     "currency": "Currency",
     "members": "Members",
     "memberPlaceholder": "Member {{number}}",
     "addMember": "Add member",
     "creating": "Creating…",
-    "create": "Create Group"
+    "create": "Create Group",
+    "stops": "Stops (optional)",
+    "stopPlaceholder": "Stop {{number}}, e.g. {{city}}",
+    "addStop": "+ Add Stop"
   },
   "addExpense": {
     "title": "New Expense",
@@ -98,7 +106,34 @@
     "deleting": "Deleting…",
     "deleteTitle": "Delete Expense",
     "deleteMsg": "Permanently delete this expense? Balances will be recalculated.",
-    "currency": "Currency"
+    "currency": "Currency",
+    "tapToEnterAmount": "Tap here to enter amount"
+  },
+  "memberExpenses": {
+    "title": "Breakdown",
+    "totalCharged": "Total charged to {{name}}",
+    "settleUp": "Settle Up",
+    "includedIn": "Included in",
+    "paidFor": "Paid for",
+    "yourShare": "Share: {{symbol}}{{amount}}",
+    "noExpenses": "No expenses"
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "next": "Next",
+    "getStarted": "Get Started",
+    "step1Title": "Welcome to Kippy!",
+    "step1Body": "Hi, I'm Kip! I'll help you track expenses, split bills, and make every group trip stress-free.",
+    "step2Title": "Split expenses with ease",
+    "step2Body": "Create a trip, add your crew, and log expenses as you go. Kippy keeps everyone's share balanced automatically.",
+    "step3Title": "Plan every detail",
+    "step3Body": "Build a day-by-day itinerary, pack smarter with shared checklists, and stay on budget with the budget planner.",
+    "step4Title": "Settle up & share",
+    "step4Body": "When the trip ends, see who owes what and settle up in one tap. Share a beautiful trip summary with your group.",
+    "step5Title": "You're all set!",
+    "step5Body": "Your first trip is just a tap away. Let's make some memories — Kip's got the math covered.",
+    "viewTour": "View App Tour",
+    "bubble": "Find me here if you need a hand!"
   },
   "settings": {
     "title": "Settings",
@@ -106,7 +141,8 @@
     "theme": "Appearance",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System Default"
+    "themeSystem": "System Default",
+    "about": "About"
   },
   "loading": {
     "caption": "Loading your trips…"
@@ -155,37 +191,17 @@
   },
   "wizard": {
     "continue": "Continue",
-    "mode": {
-      "title": "How do you want to plan this trip?",
-      "subtitle": "Pick one to get started.",
-      "selfTitle": "Plan it myself",
-      "selfSubtitle": "Build a trip step by step with Kippy",
-      "agentTitle": "Use a travel agent",
-      "agentSubtitle": "Get professional help booking the trip",
-      "tourTitle": "Join a group tour",
-      "tourSubtitle": "Pre-planned itinerary, group of strangers"
-    },
-    "agent": {
-      "title": "Totally fair.",
-      "para1": "Kippy is built for self-organised group trips where one person (usually you) manages expenses on the fly. For a travel agent experience, you're better off in their hands.",
-      "para2": "That said, Kippy is still the best way to track and split expenses once the trip starts — even on agent-booked trips.",
-      "searchLink": "Search travel agents near me",
-      "orLabel": "Or skip ahead and set up a basic trip:",
-      "createBasic": "Create a basic trip →"
-    },
-    "tour": {
-      "title": "Great choice.",
-      "para1": "Group tours take care of the logistics. Kippy can still help your group track personal expenses, shared meals, and any extras you pick up along the way.",
-      "para2": "Search for tours and come back to set up an expense-tracking trip once you've booked.",
-      "searchLink": "Search group tours",
-      "orLabel": "Or set up a Kippy trip to track expenses:"
-    },
     "basics": {
       "title": "Tell me about the trip.",
       "people": "How many people?",
       "transport": "How are you getting there?",
       "months": "Which month(s)?",
       "days": "How many days?",
+      "destination": "Where are you headed?",
+      "destinationPlaceholder": "e.g. Japan, Bali, France…",
+      "stops": "Any specific stops? (optional)",
+      "stopPlaceholder": "e.g. {{city}}",
+      "addStop": "+ Add stop",
       "budget": "Budget per person? (optional)",
       "budgetPlaceholder": "e.g. 1500",
       "personSuffix_one": "person",
@@ -199,23 +215,9 @@
         "Other": "Other"
       }
     },
-    "dest": {
-      "branchTitle": "Do you have a destination in mind?",
-      "hasDestTitle": "Yes, I have one",
-      "hasDestSubtitle": "I know where we're going",
-      "ideasTitle": "Not yet — give me ideas",
-      "ideasSubtitle": "Help me find somewhere based on vibe",
-      "inputTitle": "Where are you going?",
-      "inputSubtitle": "City, country, or region — whatever you have in mind.",
-      "placeholder": "e.g. Tokyo, Japan"
-    },
     "vibe": {
       "title": "What's the vibe?",
       "subtitle": "Pick the feeling you're going for.",
-      "resultsTitle": "Here are some ideas.",
-      "resultsSubtitle": "Based on your {{vibe}} vibe.",
-      "continueWith": "Continue with {{dest}} →",
-      "skip": "Skip — decide later",
       "labels": {
         "beach": "Relaxing / Beach",
         "adventure": "Adventure / Outdoors",
@@ -251,23 +253,6 @@
       "create": "Create This Trip",
       "errorTitle": "Something went wrong",
       "errorMsg": "Could not create the trip. Please try again."
-    },
-    "destinations": {
-      "bali":         { "tagline": "The classic for a reason",                            "blurb": "Rice terraces, spiritual temples, and beaches for every mood. Cheap and welcoming year-round." },
-      "tulum":        { "tagline": "Jungle meets Caribbean",                              "blurb": "Crystal cenotes, eco-chic resorts, and the Riviera Maya's best-kept towns all within reach." },
-      "krabi":        { "tagline": "Limestone cliffs and emerald bays",                  "blurb": "Island-hop between Koh Lanta and Koh Phi Phi. Snorkelling, climbing, or hammock time — your call." },
-      "queenstown":   { "tagline": "The adventure capital of the world",                 "blurb": "Bungee jumping, skydiving, white-water rafting, and jaw-dropping fjords. You will not be bored." },
-      "patagonia":    { "tagline": "End of the earth — literally",                       "blurb": "Hike Torres del Paine, glacier-hop in El Calafate, or kayak the channels of Tierra del Fuego." },
-      "nepal":        { "tagline": "The world's rooftop",                                "blurb": "Everest Base Camp or the Annapurna Circuit. The Himalayas will completely recalibrate your sense of scale." },
-      "tokyo":        { "tagline": "Sensory overload in the best way",                   "blurb": "Ancient temples next to robot restaurants next to the world's best convenience stores. Works at every budget." },
-      "lisbon":       { "tagline": "Europe's sunniest underdog",                         "blurb": "Pastel buildings, world-class pastéis de nata, rooftop bars, and tram rides through history." },
-      "mexico_city":  { "tagline": "World-class culture at local prices",                "blurb": "Frida Kahlo, unreal tacos, Aztec ruins, and a restaurant scene that rivals any European capital." },
-      "bologna":      { "tagline": "Europe's culinary capital",                          "blurb": "Birthplace of bolognese, mortadella, and tortellini. Every single meal is an event." },
-      "osaka":        { "tagline": "Eat your way through every block",                   "blurb": "Okonomiyaki, takoyaki, ramen wars, and the Dotonbori strip. Japan's most unfiltered food city." },
-      "san_sebastian":{ "tagline": "More Michelin stars per capita than anywhere on earth", "blurb": "Pintxos bars that rival any tasting menu. Walk the old town and eat at every third door." },
-      "ibiza":        { "tagline": "The original",                                        "blurb": "Superclubs, legendary DJs, and daytime beach clubs. Hit it July–August for peak season energy." },
-      "bangkok":      { "tagline": "The city that genuinely never sleeps",               "blurb": "Rooftop bars at sunset, Khao San Road chaos at midnight, world's best street food hangover cure at 4am." },
-      "medellin":     { "tagline": "The city of eternal spring",                          "blurb": "Cable car views, salsa dancing every night, and locals who genuinely want to show you around." }
     },
     "tips": {
       "beach_0":     "Book beach accommodation 3+ months ahead in peak season. Prices double and rooms disappear fast.",
@@ -320,8 +305,9 @@
     "title": "New Plan",
     "tripName": "Trip Name",
     "tripNamePlaceholder": "e.g. Japan 2026, European Road Trip…",
-    "destination": "Destination (optional)",
-    "destinationPlaceholder": "e.g. Tokyo, Amalfi Coast…",
+    "destination": "Destination",
+    "destinationPlaceholder": "e.g. Japan, France, Italy…",
+    "destinationRequired": "Please enter a destination",
     "currency": "Currency",
     "dates": "Planned Dates",
     "startDate": "Start date",
@@ -329,7 +315,10 @@
     "notSet": "Not set",
     "budget": "Budget Per Person (optional)",
     "creating": "Creating…",
-    "create": "Create Plan"
+    "create": "Create Plan",
+    "stops": "Stops (optional)",
+    "stopPlaceholder": "Stop {{number}}, e.g. {{city}}",
+    "addStop": "+ Add Stop"
   },
   "planDetail": {
     "planningBadge": "Planning",
@@ -342,6 +331,10 @@
     "packingListSub": "What to bring",
     "budgetPlanTitle": "Budget Plan",
     "budgetPlanSub": "Plan & track spending",
+    "explore": "Kip's Picks",
+    "exploreSub": "Kip's recommendations for your destination",
+    "planningTools": "Planning Tools",
+    "stops": "Stops",
     "members": "Members",
     "memberPlaceholder": "Member {{number}}",
     "addMember": "Add member",
@@ -572,6 +565,48 @@
     "parks": "Parks",
     "drive": "Scenic Drive",
     "other": "Other"
+  },
+  "featureIntro": {
+    "continue": "Let's go!",
+    "itinerary": {
+      "phrase_0": "Adventure awaits — let's plan it out!",
+      "phrase_1": "Every great trip starts with a great itinerary!",
+      "phrase_2": "Kip's got your schedule — let's fill it up!",
+      "phrase_3": "Plot twist: the best surprises come from great planning!",
+      "phrase_4": "Day by day, step by step — let's build this trip!"
+    },
+    "packing": {
+      "phrase_0": "Don't forget the sunscreen — or Kip!",
+      "phrase_1": "Packing smart means more room for souvenirs!",
+      "phrase_2": "One bag to rule them all — let's fill it!",
+      "phrase_3": "Kip's checklist: more reliable than memory!",
+      "phrase_4": "Pack light, travel bright!"
+    },
+    "budget": {
+      "phrase_0": "A penny saved is a gelato earned!",
+      "phrase_1": "Stay on budget, have more fun!",
+      "phrase_2": "Kip does the math so you don't have to!",
+      "phrase_3": "Your wallet's best travel companion!",
+      "phrase_4": "Spend smart, adventure hard!"
+    }
+  },
+  "explore": {
+    "title": "Kip's Recommendations",
+    "subtitle": "Kip's curated picks for your destination",
+    "refreshing": "Refreshing…",
+    "lastUpdated": "Updated {{time}}",
+    "noResults": "No results found",
+    "emptyCategory": "Kip couldn't find anything here",
+    "catError": "Couldn't load",
+    "errorTitle": "Couldn't load places",
+    "errorMsg": "Check your internet connection and try again.",
+    "retry": "Retry",
+    "openMaps": "Open in Maps",
+    "topPicks": "Top picks in {{dest}}",
+    "cat_restaurants": "Top Restaurants",
+    "cat_attractions": "Top Attractions",
+    "cat_cheap_eats": "Cheap Eats",
+    "cat_photo_spots": "Best Photo Spots"
   },
   "personal": {
     "title": "Personal"

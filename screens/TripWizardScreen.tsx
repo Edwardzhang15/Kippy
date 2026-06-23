@@ -1,7 +1,8 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Linking,
@@ -18,12 +19,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { PlanStackParamList } from '../navigation/types';
-import { createPlanTrip } from '../db';
+import { createPlanTrip, addTripStop } from '../db';
+import { fetchPlaces, type PlaceResult } from '../placesApi';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import {
   VIBES,
-  VIBE_DESTINATIONS,
   VIBE_TIPS,
   TRANSPORT_OPTIONS,
   MONTH_SHORT,
@@ -35,59 +36,44 @@ type Props = NativeStackScreenProps<PlanStackParamList, 'TripWizard'>;
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
-type Stage =
-  | 'mode'
-  | 'agent_result'
-  | 'tour_result'
-  | 'basics'
-  | 'dest_branch'
-  | 'dest_input'
-  | 'vibe_pick'
-  | 'vibe_results'
-  | 'pace'
-  | 'results';
+type Stage = 'basics' | 'vibe_pick' | 'pace' | 'results';
 
 type WizardAnswers = {
-  tripMode: 'self' | 'agent' | 'tour' | null;
   peopleCount: number;
   transport: string | null;
   months: number[];
   days: number;
   budgetPerPerson: string;
-  hasDestination: 'yes' | 'ideas' | null;
   destination: string;
+  stops: string[];
   selectedVibe: Vibe | null;
-  pickedDestination: string | null;
   pace: 'packed' | 'balanced' | 'relaxed' | null;
 };
 
 type GoTo = (stage: Stage, updates?: Partial<WizardAnswers>) => void;
 
 const INITIAL_ANSWERS: WizardAnswers = {
-  tripMode: null,
   peopleCount: 2,
   transport: null,
   months: [],
   days: 7,
   budgetPerPerson: '',
-  hasDestination: null,
   destination: '',
+  stops: [],
   selectedVibe: null,
-  pickedDestination: null,
   pace: null,
 };
 
 const UNSPLASH_KEY = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
+const STOP_CITY_EXAMPLES = ['Tokyo', 'Kyoto', 'Osaka', 'Rome', 'Paris', 'Barcelona'];
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getProgressStep(stage: Stage): number | null {
-  if (stage === 'mode') return 1;
-  if (stage === 'basics') return 2;
-  if (['dest_branch', 'dest_input', 'vibe_pick', 'vibe_results'].includes(stage)) return 3;
-  if (stage === 'pace') return 4;
-  if (stage === 'results') return 5;
-  return null;
+function getProgressStep(stage: Stage): number {
+  if (stage === 'basics')   return 1;
+  if (stage === 'vibe_pick') return 2;
+  if (stage === 'pace')      return 3;
+  return 4; // results
 }
 
 function calcDates(months: number[], days: number): { start: string; end: string } | null {
@@ -184,13 +170,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     marginBottom: 24,
     lineHeight: 21,
   },
-  stageParagraph: {
-    fontSize: fontSizes.body,
-    color: c.textPrimary,
-    lineHeight: 22,
-    marginBottom: 14,
-  },
-
   optionStack: {
     gap: 12,
     marginTop: 8,
@@ -371,87 +350,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     letterSpacing: 0.3,
   },
 
-  skipBtn: {
-    alignItems: 'center',
-    paddingVertical: 14,
-    marginTop: 4,
-  },
-  skipBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: c.textSecondary,
-  },
-
-  divider: {
-    height: 1,
-    backgroundColor: c.border,
-    marginVertical: 24,
-  },
-  orLabel: {
-    fontSize: fontSizes.body,
-    color: c.textSecondary,
-    marginBottom: 12,
-  },
-
-  linkBtn: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    backgroundColor: '#FFF0EE',
-    borderRadius: radii.button,
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    alignSelf: 'flex-start',
-    marginTop: 8,
-  },
-  linkBtnText: {
-    fontSize: fontSizes.body,
-    fontWeight: '600',
-    color: c.coral,
-  },
-
-  suggestionCard: {
-    backgroundColor: c.card,
-    borderRadius: radii.card,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: 'transparent',
-  },
-  suggestionCardSelected: {
-    borderColor: c.coral,
-    backgroundColor: '#FFFBFB',
-  },
-  suggestionHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 8,
-  },
-  suggestionFlag: {
-    fontSize: 28,
-    lineHeight: 32,
-  },
-  suggestionName: {
-    fontSize: fontSizes.body,
-    fontWeight: '700',
-    color: c.textPrimary,
-    marginBottom: 2,
-  },
-  suggestionTagline: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: c.coral,
-  },
-  suggestionCheck: {
-    marginLeft: 'auto',
-  },
-  suggestionBlurb: {
-    fontSize: fontSizes.caption,
-    color: c.textSecondary,
-    lineHeight: 18,
-  },
-
   resultsHeader: {
     marginBottom: 28,
   },
@@ -618,6 +516,62 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: '#fff',
     letterSpacing: 0.3,
   },
+
+  // Explore preview
+  previewLoading: {
+    fontSize: fontSizes.body,
+    color: c.textSecondary,
+    marginBottom: 28,
+  },
+  previewCatBlock: {
+    marginBottom: 16,
+  },
+  previewCatLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+    marginBottom: 10,
+  },
+  previewExploreHint: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    marginBottom: 28,
+    marginTop: 4,
+  },
+  wzCard: {
+    width: 160,
+    backgroundColor: c.card,
+    borderRadius: radii.card,
+    overflow: 'hidden',
+  },
+  wzPhoto: {
+    width: 160,
+    height: 90,
+    borderTopLeftRadius: radii.card,
+    borderTopRightRadius: radii.card,
+  },
+  wzPhotoPlaceholder: {
+    backgroundColor: c.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  wzCardBody: {
+    padding: 8,
+    gap: 3,
+  },
+  wzName: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.textPrimary,
+    lineHeight: 15,
+  },
+  wzRating: {
+    fontSize: 10,
+    color: c.textSecondary,
+    fontWeight: '600',
+  },
 });
 
 // ─── Shared UI ───────────────────────────────────────────────────────────────
@@ -711,7 +665,7 @@ function WizardContainer({
 }: {
   onBack: () => void;
   onClose: () => void;
-  progressStep: number | null;
+  progressStep: number;
   children: React.ReactNode;
 }) {
   const { colors } = useTheme();
@@ -723,20 +677,18 @@ function WizardContainer({
           <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
         </Pressable>
 
-        {progressStep !== null && (
-          <View style={sh.progressRow}>
-            {[1, 2, 3, 4, 5].map((step) => (
-              <View
-                key={step}
-                style={[
-                  sh.dot,
-                  step < progressStep  && sh.dotDone,
-                  step === progressStep && sh.dotActive,
-                ]}
-              />
-            ))}
-          </View>
-        )}
+        <View style={sh.progressRow}>
+          {[1, 2, 3, 4].map((step) => (
+            <View
+              key={step}
+              style={[
+                sh.dot,
+                step < progressStep  && sh.dotDone,
+                step === progressStep && sh.dotActive,
+              ]}
+            />
+          ))}
+        </View>
 
         <Pressable onPress={onClose} hitSlop={12} style={sh.navBtn}>
           <Ionicons name="close" size={22} color={colors.textPrimary} />
@@ -771,116 +723,7 @@ function ContinueButton({
   );
 }
 
-// ─── Stage 1: Mode ───────────────────────────────────────────────────────────
-
-function S1Mode({ goTo }: { goTo: GoTo }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const sh = makeStyles(colors);
-
-  const modeOptions = [
-    {
-      id: 'self' as const,
-      icon: 'compass-outline' as const,
-      title: t('wizard.mode.selfTitle'),
-      subtitle: t('wizard.mode.selfSubtitle'),
-    },
-    {
-      id: 'agent' as const,
-      icon: 'briefcase-outline' as const,
-      title: t('wizard.mode.agentTitle'),
-      subtitle: t('wizard.mode.agentSubtitle'),
-    },
-    {
-      id: 'tour' as const,
-      icon: 'people-outline' as const,
-      title: t('wizard.mode.tourTitle'),
-      subtitle: t('wizard.mode.tourSubtitle'),
-    },
-  ];
-
-  return (
-    <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
-      <Text style={sh.stageTitle}>{t('wizard.mode.title')}</Text>
-      <Text style={sh.stageSubtitle}>{t('wizard.mode.subtitle')}</Text>
-      <View style={sh.optionStack}>
-        {modeOptions.map((opt) => (
-          <OptionCard
-            key={opt.id}
-            icon={opt.icon}
-            title={opt.title}
-            subtitle={opt.subtitle}
-            onPress={() => {
-              const next: Stage =
-                opt.id === 'self'  ? 'basics'
-                : opt.id === 'agent' ? 'agent_result'
-                : 'tour_result';
-              goTo(next, { tripMode: opt.id });
-            }}
-          />
-        ))}
-      </View>
-    </ScrollView>
-  );
-}
-
-// ─── Stage 1 branches: Agent & Tour ──────────────────────────────────────────
-
-function S1AgentResult({ navigation }: { navigation: Props['navigation'] }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const sh = makeStyles(colors);
-  return (
-    <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
-      <Text style={sh.stageTitle}>{t('wizard.agent.title')}</Text>
-      <Text style={sh.stageParagraph}>{t('wizard.agent.para1')}</Text>
-      <Text style={sh.stageParagraph}>{t('wizard.agent.para2')}</Text>
-      <Pressable
-        style={sh.linkBtn}
-        onPress={() => Linking.openURL(searchURL('travel agents near me'))}
-      >
-        <Ionicons name="search-outline" size={16} color={colors.coral} />
-        <Text style={sh.linkBtnText}>{t('wizard.agent.searchLink')}</Text>
-      </Pressable>
-
-      <View style={sh.divider} />
-      <Text style={sh.orLabel}>{t('wizard.agent.orLabel')}</Text>
-      <ContinueButton
-        label={t('wizard.agent.createBasic')}
-        onPress={() => navigation.replace('CreatePlan')}
-      />
-    </ScrollView>
-  );
-}
-
-function S1TourResult({ navigation }: { navigation: Props['navigation'] }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const sh = makeStyles(colors);
-  return (
-    <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
-      <Text style={sh.stageTitle}>{t('wizard.tour.title')}</Text>
-      <Text style={sh.stageParagraph}>{t('wizard.tour.para1')}</Text>
-      <Text style={sh.stageParagraph}>{t('wizard.tour.para2')}</Text>
-      <Pressable
-        style={sh.linkBtn}
-        onPress={() => Linking.openURL(searchURL('group tours abroad 2026'))}
-      >
-        <Ionicons name="search-outline" size={16} color={colors.coral} />
-        <Text style={sh.linkBtnText}>{t('wizard.tour.searchLink')}</Text>
-      </Pressable>
-
-      <View style={sh.divider} />
-      <Text style={sh.orLabel}>{t('wizard.tour.orLabel')}</Text>
-      <ContinueButton
-        label={t('wizard.agent.createBasic')}
-        onPress={() => navigation.replace('CreatePlan')}
-      />
-    </ScrollView>
-  );
-}
-
-// ─── Stage 2: Basics ─────────────────────────────────────────────────────────
+// ─── Stage 1: Basics ─────────────────────────────────────────────────────────
 
 function S2Basics({
   answers,
@@ -913,6 +756,61 @@ function S2Basics({
         keyboardShouldPersistTaps="handled"
       >
         <Text style={sh.stageTitle}>{t('wizard.basics.title')}</Text>
+
+        <SectionLabel>{t('wizard.basics.destination')}</SectionLabel>
+        <View style={[sh.formCard, cardShadow, sh.inputCard]}>
+          <Ionicons name="location-outline" size={18} color={colors.coral} />
+          <TextInput
+            style={sh.destInput}
+            placeholder={t('wizard.basics.destinationPlaceholder')}
+            placeholderTextColor={colors.textSecondary}
+            value={answers.destination}
+            onChangeText={(v) => updateAnswers({ destination: v })}
+            returnKeyType="next"
+            autoCapitalize="words"
+          />
+        </View>
+
+        <SectionLabel>{t('wizard.basics.stops')}</SectionLabel>
+        {answers.stops.length > 0 && (
+          <View style={[sh.formCard, cardShadow]}>
+            {answers.stops.map((stop, i) => (
+              <View key={i}>
+                {i > 0 && <View style={{ height: 1, backgroundColor: colors.border }} />}
+                <View style={[sh.inputCard, { paddingVertical: 4 }]}>
+                  <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
+                  <TextInput
+                    style={[sh.destInput, { flex: 1 }]}
+                    placeholder={t('wizard.basics.stopPlaceholder', { city: STOP_CITY_EXAMPLES[i % STOP_CITY_EXAMPLES.length] })}
+                    placeholderTextColor={colors.textSecondary}
+                    value={stop}
+                    onChangeText={(v) => {
+                      const next = answers.stops.map((s, idx) => idx === i ? v : s);
+                      updateAnswers({ stops: next });
+                    }}
+                    returnKeyType="done"
+                    autoCapitalize="words"
+                  />
+                  <Pressable
+                    hitSlop={8}
+                    onPress={() => updateAnswers({ stops: answers.stops.filter((_, idx) => idx !== i) })}
+                  >
+                    <Ionicons name="close-circle" size={18} color={colors.textSecondary} />
+                  </Pressable>
+                </View>
+              </View>
+            ))}
+          </View>
+        )}
+        <Pressable
+          style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 20 }}
+          onPress={() => updateAnswers({ stops: [...answers.stops, ''] })}
+        >
+          <Ionicons name="add-circle-outline" size={16} color={colors.coral} />
+          <Text style={{ fontSize: fontSizes.caption, fontWeight: '600', color: colors.coral }}>
+            {t('wizard.basics.addStop')}
+          </Text>
+        </Pressable>
 
         <SectionLabel>{t('wizard.basics.people')}</SectionLabel>
         <View style={[sh.formCard, cardShadow]}>
@@ -986,82 +884,8 @@ function S2Basics({
           />
         </View>
 
-        <ContinueButton onPress={() => goTo('dest_branch')} />
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
-
-// ─── Stage 3a: Destination branch ────────────────────────────────────────────
-
-function S3DestBranch({ goTo }: { goTo: GoTo }) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const sh = makeStyles(colors);
-  return (
-    <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
-      <Text style={sh.stageTitle}>{t('wizard.dest.branchTitle')}</Text>
-      <View style={sh.optionStack}>
-        <OptionCard
-          icon="location-outline"
-          title={t('wizard.dest.hasDestTitle')}
-          subtitle={t('wizard.dest.hasDestSubtitle')}
-          onPress={() => goTo('dest_input', { hasDestination: 'yes' })}
-        />
-        <OptionCard
-          icon="sparkles-outline"
-          title={t('wizard.dest.ideasTitle')}
-          subtitle={t('wizard.dest.ideasSubtitle')}
-          iconColor="#8B72BE"
-          iconBg="#F3F0FF"
-          onPress={() => goTo('vibe_pick', { hasDestination: 'ideas' })}
-        />
-      </View>
-    </ScrollView>
-  );
-}
-
-// ─── Stage 3b: Destination input ─────────────────────────────────────────────
-
-function S3DestInput({
-  answers,
-  updateAnswers,
-  goTo,
-}: {
-  answers: WizardAnswers;
-  updateAnswers: (u: Partial<WizardAnswers>) => void;
-  goTo: GoTo;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const sh = makeStyles(colors);
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={{ flex: 1 }}
-    >
-      <ScrollView
-        contentContainerStyle={sh.stageContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        <Text style={sh.stageTitle}>{t('wizard.dest.inputTitle')}</Text>
-        <Text style={sh.stageSubtitle}>{t('wizard.dest.inputSubtitle')}</Text>
-        <View style={[sh.formCard, cardShadow, sh.inputCard]}>
-          <Ionicons name="location-outline" size={18} color={colors.coral} />
-          <TextInput
-            style={sh.destInput}
-            placeholder={t('wizard.dest.placeholder')}
-            placeholderTextColor={colors.textSecondary}
-            value={answers.destination}
-            onChangeText={(v) => updateAnswers({ destination: v })}
-            autoFocus
-            returnKeyType="done"
-            onSubmitEditing={Keyboard.dismiss}
-          />
-        </View>
         <ContinueButton
-          onPress={() => goTo('pace')}
+          onPress={() => goTo('vibe_pick')}
           disabled={answers.destination.trim().length === 0}
         />
       </ScrollView>
@@ -1069,7 +893,7 @@ function S3DestInput({
   );
 }
 
-// ─── Stage 3c: Vibe pick ─────────────────────────────────────────────────────
+// ─── Stage 2: Vibe pick ──────────────────────────────────────────────────────
 
 function S3VibePick({ goTo }: { goTo: GoTo }) {
   const { t } = useTranslation();
@@ -1088,7 +912,7 @@ function S3VibePick({ goTo }: { goTo: GoTo }) {
             subtitle=""
             iconColor="#8B72BE"
             iconBg="#F3F0FF"
-            onPress={() => goTo('vibe_results', { selectedVibe: v.id })}
+            onPress={() => goTo('pace', { selectedVibe: v.id })}
           />
         ))}
       </View>
@@ -1096,75 +920,7 @@ function S3VibePick({ goTo }: { goTo: GoTo }) {
   );
 }
 
-// ─── Stage 3d: Vibe results ───────────────────────────────────────────────────
-
-function S3VibeResults({
-  answers,
-  updateAnswers,
-  goTo,
-}: {
-  answers: WizardAnswers;
-  updateAnswers: (u: Partial<WizardAnswers>) => void;
-  goTo: GoTo;
-}) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const sh = makeStyles(colors);
-  const vibe = answers.selectedVibe;
-  if (!vibe) return null;
-
-  const suggestions = VIBE_DESTINATIONS[vibe];
-  const picked      = answers.pickedDestination;
-
-  return (
-    <ScrollView contentContainerStyle={sh.stageContent} showsVerticalScrollIndicator={false}>
-      <Text style={sh.stageTitle}>{t('wizard.vibe.resultsTitle')}</Text>
-      <Text style={sh.stageSubtitle}>
-        {t('wizard.vibe.resultsSubtitle', {
-          vibe: t(`wizard.vibe.labels.${vibe}`).toLowerCase(),
-        })}
-      </Text>
-
-      {suggestions.map((s) => {
-        const isSelected = picked === s.name;
-        return (
-          <Pressable
-            key={s.name}
-            style={[sh.suggestionCard, cardShadow, isSelected && sh.suggestionCardSelected]}
-            onPress={() => updateAnswers({ pickedDestination: isSelected ? null : s.name })}
-          >
-            <View style={sh.suggestionHeader}>
-              <Text style={sh.suggestionFlag}>{s.flag}</Text>
-              <View style={{ flex: 1 }}>
-                <Text style={sh.suggestionName}>{s.name}</Text>
-                <Text style={sh.suggestionTagline}>{t(`wizard.destinations.${s.key}.tagline`, s.tagline)}</Text>
-              </View>
-              {isSelected && (
-                <View style={sh.suggestionCheck}>
-                  <Ionicons name="checkmark-circle" size={22} color={colors.coral} />
-                </View>
-              )}
-            </View>
-            <Text style={sh.suggestionBlurb}>{t(`wizard.destinations.${s.key}.blurb`, s.blurb)}</Text>
-          </Pressable>
-        );
-      })}
-
-      {picked ? (
-        <ContinueButton
-          label={t('wizard.vibe.continueWith', { dest: picked.split(',')[0] })}
-          onPress={() => goTo('pace', { destination: picked })}
-        />
-      ) : (
-        <Pressable style={sh.skipBtn} onPress={() => goTo('pace')}>
-          <Text style={sh.skipBtnText}>{t('wizard.vibe.skip')}</Text>
-        </Pressable>
-      )}
-    </ScrollView>
-  );
-}
-
-// ─── Stage 4: Pace ───────────────────────────────────────────────────────────
+// ─── Stage 3: Pace ───────────────────────────────────────────────────────────
 
 function S4Pace({ goTo }: { goTo: GoTo }) {
   const { t } = useTranslation();
@@ -1211,7 +967,41 @@ function S4Pace({ goTo }: { goTo: GoTo }) {
   );
 }
 
-// ─── Stage 5: Results ────────────────────────────────────────────────────────
+// ─── Wizard place card (preview only) ────────────────────────────────────────
+
+function WizardPlaceCard({ place, colors, sh }: {
+  place: PlaceResult;
+  colors: ColorPalette;
+  sh: ReturnType<typeof makeStyles>;
+}) {
+  const [imgErr, setImgErr] = useState(false);
+  return (
+    <View style={sh.wzCard}>
+      {place.photoUrl && !imgErr ? (
+        <WizardPlaceImage uri={place.photoUrl} style={sh.wzPhoto} onError={() => setImgErr(true)} />
+      ) : (
+        <View style={[sh.wzPhoto, sh.wzPhotoPlaceholder]}>
+          <Ionicons name="image-outline" size={22} color={colors.border} />
+        </View>
+      )}
+      <View style={sh.wzCardBody}>
+        <Text style={sh.wzName} numberOfLines={1}>{place.name}</Text>
+        {place.rating !== null && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 3 }}>
+            <Ionicons name="star" size={10} color="#F4B400" />
+            <Text style={sh.wzRating}>{place.rating.toFixed(1)}</Text>
+          </View>
+        )}
+      </View>
+    </View>
+  );
+}
+
+function WizardPlaceImage({ uri, style, onError }: { uri: string; style: object; onError: () => void }) {
+  return <Image source={{ uri }} style={style} onError={onError} resizeMode="cover" />;
+}
+
+// ─── Stage 4: Results ────────────────────────────────────────────────────────
 
 function S5Results({
   answers,
@@ -1224,8 +1014,24 @@ function S5Results({
   const { colors } = useTheme();
   const sh         = makeStyles(colors);
   const [creating, setCreating] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [preview, setPreview] = useState<{ restaurants: PlaceResult[]; attractions: PlaceResult[] } | null>(null);
 
-  const dest   = answers.pickedDestination || answers.destination || null;
+  const dest   = answers.destination.trim() || null;
+
+  useEffect(() => {
+    if (!dest) return;
+    setPreviewLoading(true);
+    Promise.all([
+      fetchPlaces(dest, 'restaurants'),
+      fetchPlaces(dest, 'attractions'),
+    ]).then(([restaurants, attractions]) => {
+      setPreview({
+        restaurants: restaurants.slice(0, 3),
+        attractions: attractions.slice(0, 3),
+      });
+    }).catch(() => { /* silent fail */ }).finally(() => setPreviewLoading(false));
+  }, []);
   const pace   = answers.pace!;
   const advice = getPacingAdvice(pace, answers.days, t);
   const tips   = answers.selectedVibe ? VIBE_TIPS[answers.selectedVibe] : null;
@@ -1254,6 +1060,12 @@ function S5Results({
         dates?.end,
         budget,
       );
+      let stopIdx = 0;
+      for (const stopName of answers.stops) {
+        if (stopName.trim().length > 0) {
+          await addTripStop(groupId, stopName.trim(), stopIdx++);
+        }
+      }
       navigation.replace('PlanDetail', { groupId });
     } catch {
       setCreating(false);
@@ -1315,6 +1127,33 @@ function S5Results({
           </View>
         )}
       </View>
+
+      {dest && (previewLoading || preview) && (
+        <>
+          <Text style={sh.resultsSectionTitle}>{t('explore.topPicks', { dest })}</Text>
+          {previewLoading && !preview ? (
+            <Text style={sh.previewLoading}>{t('common.loading', 'Loading…')}</Text>
+          ) : preview && (
+            <>
+              {(['restaurants', 'attractions'] as const).map((cat) => {
+                const places = preview[cat];
+                if (!places || places.length === 0) return null;
+                return (
+                  <View key={cat} style={sh.previewCatBlock}>
+                    <Text style={sh.previewCatLabel}>{t(`explore.cat_${cat}`)}</Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
+                      {places.map((p) => (
+                        <WizardPlaceCard key={p.id} place={p} colors={colors} sh={sh} />
+                      ))}
+                    </ScrollView>
+                  </View>
+                );
+              })}
+              <Text style={sh.previewExploreHint}>{t('explore.subtitle')} →</Text>
+            </>
+          )}
+        </>
+      )}
 
       {tips && (
         <>
@@ -1387,7 +1226,7 @@ function S5Results({
 
 export default function TripWizardScreen({ navigation }: Props) {
   const [answers, setAnswers] = useState<WizardAnswers>(INITIAL_ANSWERS);
-  const [history, setHistory] = useState<Stage[]>(['mode']);
+  const [history, setHistory] = useState<Stage[]>(['basics']);
   const scrollRef = useRef<ScrollView>(null);
 
   const currentStage = history[history.length - 1];
@@ -1420,16 +1259,10 @@ export default function TripWizardScreen({ navigation }: Props) {
       onClose={() => navigation.goBack()}
       progressStep={progressStep}
     >
-      {currentStage === 'mode'         && <S1Mode goTo={goTo} />}
-      {currentStage === 'agent_result' && <S1AgentResult navigation={navigation} />}
-      {currentStage === 'tour_result'  && <S1TourResult  navigation={navigation} />}
-      {currentStage === 'basics'       && <S2Basics {...stageProps} />}
-      {currentStage === 'dest_branch'  && <S3DestBranch goTo={goTo} />}
-      {currentStage === 'dest_input'   && <S3DestInput {...stageProps} />}
-      {currentStage === 'vibe_pick'    && <S3VibePick goTo={goTo} />}
-      {currentStage === 'vibe_results' && <S3VibeResults {...stageProps} />}
-      {currentStage === 'pace'         && <S4Pace goTo={goTo} />}
-      {currentStage === 'results'      && <S5Results answers={answers} navigation={navigation} />}
+      {currentStage === 'basics'    && <S2Basics {...stageProps} />}
+      {currentStage === 'vibe_pick' && <S3VibePick goTo={goTo} />}
+      {currentStage === 'pace'      && <S4Pace goTo={goTo} />}
+      {currentStage === 'results'   && <S5Results answers={answers} navigation={navigation} />}
     </WizardContainer>
   );
 }

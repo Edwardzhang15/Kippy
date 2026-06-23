@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
   ActivityIndicator,
   Alert,
+  Animated,
   Dimensions,
   Image,
   KeyboardAvoidingView,
@@ -145,6 +146,28 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const [deleting, setDeleting]                         = useState(false);
   const [receiptUri, setReceiptUri]                     = useState<string | null>(null);
   const [showPhotoSheet, setShowPhotoSheet]             = useState(false);
+  const [showAmountPrompt, setShowAmountPrompt]         = useState(!isEditMode);
+  const promptOpacity                                    = useRef(new Animated.Value(1)).current;
+  const bounceAnim                                       = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!showAmountPrompt) return;
+    const loop = Animated.loop(
+      Animated.sequence([
+        Animated.timing(bounceAnim, { toValue: -7, duration: 420, useNativeDriver: true }),
+        Animated.timing(bounceAnim, { toValue: 0,  duration: 420, useNativeDriver: true }),
+      ]),
+    );
+    loop.start();
+    return () => loop.stop();
+  }, [showAmountPrompt]);
+
+  const dismissAmountPrompt = () => {
+    if (!showAmountPrompt) return;
+    Animated.timing(promptOpacity, { toValue: 0, duration: 180, useNativeDriver: true }).start(() =>
+      setShowAmountPrompt(false),
+    );
+  };
 
   useEffect(() => {
     Promise.all([
@@ -359,9 +382,18 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
               keyboardType="decimal-pad"
               value={amount}
               onChangeText={setAmount}
-              autoFocus={!isEditMode}
+              onFocus={dismissAmountPrompt}
             />
           </View>
+
+          {showAmountPrompt && (
+            <Animated.View style={[styles.amountPrompt, { opacity: promptOpacity }]}>
+              <Animated.View style={{ transform: [{ translateY: bounceAnim }] }}>
+                <Ionicons name="arrow-up-circle" size={22} color={colors.coral} />
+              </Animated.View>
+              <Text style={styles.amountPromptText}>{t('addExpense.tapToEnterAmount')}</Text>
+            </Animated.View>
+          )}
 
           <SectionLabel title={t('addExpense.currency')} />
           <ScrollView
@@ -597,8 +629,21 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-end',
     justifyContent: 'center',
-    marginVertical: 24,
+    marginTop: 24,
+    marginBottom: 8,
     gap: 4,
+  },
+  amountPrompt: {
+    flexDirection: 'column',
+    alignItems: 'center',
+    alignSelf: 'stretch',
+    gap: 6,
+    marginBottom: 20,
+  },
+  amountPromptText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.coral,
   },
   currencySymbol: {
     fontSize: 32,

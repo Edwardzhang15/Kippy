@@ -21,6 +21,7 @@ import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import BudgetShareCard from '../components/BudgetShareCard';
 import SharePreviewModal from '../components/SharePreviewModal';
+import FeatureIntroSplash from '../components/FeatureIntroSplash';
 import {
   getGroup,
   getGroupDetails,
@@ -28,6 +29,7 @@ import {
   addBudgetItem,
   updateBudgetItem,
   deleteBudgetItem,
+  markIntroSeen,
   BudgetItem,
   Expense,
   Group,
@@ -143,6 +145,9 @@ export default function BudgetPlanScreen() {
   const [sharing, setSharing] = useState(false);
   const shareCardRef = useRef<View>(null);
 
+  const [showIntro, setShowIntro] = useState(false);
+  const introPhraseIdx = useRef(Math.floor(Math.random() * 5)).current;
+
   const handleShare = async () => {
     if (!shareCardRef.current) return;
     setSharing(true);
@@ -170,6 +175,7 @@ export default function BudgetPlanScreen() {
       }
 
       setGroup(g);
+      if (g && !g.has_seen_budget_intro) setShowIntro(true);
       setItems(existing);
       setDrafts(
         Object.fromEntries(
@@ -384,6 +390,18 @@ export default function BudgetPlanScreen() {
           currency={group?.currency ?? 'CAD'}
         />
       </SharePreviewModal>
+
+      {showIntro && (
+        <FeatureIntroSplash
+          image={require('../assets/Kip_budget.png')}
+          tripName={group?.name ?? ''}
+          phrase={t(`featureIntro.budget.phrase_${introPhraseIdx}`)}
+          onContinue={() => {
+            setShowIntro(false);
+            markIntroSeen(groupId, 'budget');
+          }}
+        />
+      )}
     </SafeAreaView>
   );
 }

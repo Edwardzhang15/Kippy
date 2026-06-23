@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import {
   Alert,
   Image,
+  LayoutAnimation,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -16,7 +17,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { PlanStackParamList } from '../navigation/types';
-import { getGroupDetails, addMember, activatePlanTrip, GroupDetails } from '../db';
+import { getGroupDetails, addMember, activatePlanTrip, getTripStops, GroupDetails, TripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
@@ -222,6 +223,61 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontWeight: '600',
     color: c.coral,
   },
+  // Kip's Picks button
+  kipPicksBtn: {
+    borderRadius: radii.card,
+    overflow: 'hidden',
+    marginHorizontal: 20,
+    marginTop: 24,
+  },
+  kipPicksGradient: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingLeft: 20,
+    paddingVertical: 18,
+    minHeight: 96,
+  },
+  kipBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  kipBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 0.8,
+  },
+  kipPicksTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 3,
+  },
+  kipPicksSub: {
+    fontSize: fontSizes.caption,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  kipPicksImage: {
+    width: 88,
+    height: 88,
+    alignSelf: 'flex-end',
+  },
+  planningToolsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    marginTop: 16,
+  },
+  planningToolsTitle: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+
   itineraryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -268,6 +324,19 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
+  exploreBtn: {
+    marginTop: 12,
+    marginBottom: 0,
+  },
+  exploreIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#E8F4F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   itineraryBtnTitle: {
     fontSize: fontSizes.body,
     fontWeight: '700',
@@ -302,6 +371,46 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontWeight: '700',
     color: c.card,
     letterSpacing: 0.3,
+  },
+  stopsSection: {
+    marginHorizontal: 20,
+    marginBottom: 16,
+  },
+  stopsLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 8,
+  },
+  stopsLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  stopsChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+  },
+  stopChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  stopChipText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  stopsArrow: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    marginHorizontal: 6,
   },
 });
 
@@ -338,13 +447,23 @@ export default function PlanDetailScreen({ route }: Props) {
   const [loading, setLoading]     = useState(true);
   const [memberNames, setMemberNames] = useState<string[]>(['', '']);
   const [activating, setActivating]   = useState(false);
+  const [stops, setStops]             = useState<TripStop[]>([]);
+  const [toolsExpanded, setToolsExpanded] = useState(false);
+  const toggleTools = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setToolsExpanded(prev => !prev);
+  };
 
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      getGroupDetails(route.params.groupId).then((data) => {
+      Promise.all([
+        getGroupDetails(route.params.groupId),
+        getTripStops(route.params.groupId),
+      ]).then(([data, stopsData]) => {
         if (!active) return;
         setGroup(data);
+        setStops(stopsData);
         if (data && data.members.length > 0) {
           setMemberNames(data.members.map((m) => m.name));
         }
@@ -503,59 +622,126 @@ export default function PlanDetailScreen({ route }: Props) {
           </>
         )}
 
+        {stops.length > 0 && (
+          <View style={styles.stopsSection}>
+            <View style={styles.stopsLabelRow}>
+              <Ionicons name="map-outline" size={13} color={colors.textSecondary} />
+              <Text style={styles.stopsLabel}>{t('planDetail.stops')}</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.stopsChipRow}
+            >
+              {stops.map((stop, i) => (
+                <View key={stop.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {i > 0 && <Text style={styles.stopsArrow}>{'→'}</Text>}
+                  <View style={styles.stopChip}>
+                    <Text style={styles.stopChipText}>{stop.stop_name}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <Pressable
-          style={[styles.itineraryBtn, cardShadow]}
+          style={[styles.kipPicksBtn, cardShadow]}
           onPress={() =>
-            navigation.navigate('Itinerary', {
+            navigation.navigate('Explore', {
               groupId: group.id,
-              totalDays: (() => {
-                if (!group.planned_start_date || !group.planned_end_date) return 7;
-                const diff =
-                  (new Date(group.planned_end_date).getTime() -
-                    new Date(group.planned_start_date).getTime()) /
-                  (1000 * 60 * 60 * 24);
-                return Math.max(1, Math.ceil(diff));
-              })(),
+              destination: group.destination ?? group.name,
             })
           }
         >
-          <View style={styles.itineraryIconBg}>
-            <Ionicons name="calendar-outline" size={20} color={colors.coral} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itineraryBtnTitle}>{t('planDetail.itineraryTitle')}</Text>
-            <Text style={styles.itineraryBtnSub}>{t('planDetail.itinerarySub')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+          <LinearGradient
+            colors={['#FF6B5B', '#7FA68C']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.kipPicksGradient}
+          >
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <View style={styles.kipBadgeRow}>
+                <Ionicons name="sparkles" size={11} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.kipBadgeText}>KIP'S PICKS</Text>
+              </View>
+              <Text style={styles.kipPicksTitle}>{t('planDetail.explore')}</Text>
+              <Text style={styles.kipPicksSub}>{t('planDetail.exploreSub')}</Text>
+            </View>
+            <Image
+              source={require('../assets/Kippy_Trans.png')}
+              style={styles.kipPicksImage}
+              resizeMode="contain"
+            />
+          </LinearGradient>
         </Pressable>
 
-        <Pressable
-          style={[styles.itineraryBtn, styles.packingBtn, cardShadow]}
-          onPress={() => navigation.navigate('PackingList', { groupId: group.id })}
-        >
-          <View style={styles.packingIconBg}>
-            <Ionicons name="bag-handle-outline" size={20} color={colors.sage} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itineraryBtnTitle}>{t('planDetail.packingListTitle')}</Text>
-            <Text style={styles.itineraryBtnSub}>{t('planDetail.packingListSub')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+        <Pressable style={styles.planningToolsHeader} onPress={toggleTools}>
+          <Text style={styles.planningToolsTitle}>{t('planDetail.planningTools')}</Text>
+          <Ionicons
+            name={toolsExpanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={colors.textSecondary}
+          />
         </Pressable>
 
-        <Pressable
-          style={[styles.itineraryBtn, styles.budgetBtn, cardShadow]}
-          onPress={() => navigation.navigate('BudgetPlan', { groupId: group.id })}
-        >
-          <View style={styles.budgetIconBg}>
-            <Ionicons name="wallet-outline" size={20} color="#6A9BD8" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itineraryBtnTitle}>{t('planDetail.budgetPlanTitle')}</Text>
-            <Text style={styles.itineraryBtnSub}>{t('planDetail.budgetPlanSub')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
-        </Pressable>
+        {toolsExpanded && (
+          <>
+            <Pressable
+              style={[styles.itineraryBtn, { marginTop: 12 }, cardShadow]}
+              onPress={() =>
+                navigation.navigate('Itinerary', {
+                  groupId: group.id,
+                  totalDays: (() => {
+                    if (!group.planned_start_date || !group.planned_end_date) return 7;
+                    const diff =
+                      (new Date(group.planned_end_date).getTime() -
+                        new Date(group.planned_start_date).getTime()) /
+                      (1000 * 60 * 60 * 24);
+                    return Math.max(1, Math.ceil(diff));
+                  })(),
+                })
+              }
+            >
+              <View style={styles.itineraryIconBg}>
+                <Ionicons name="calendar-outline" size={20} color={colors.coral} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itineraryBtnTitle}>{t('planDetail.itineraryTitle')}</Text>
+                <Text style={styles.itineraryBtnSub}>{t('planDetail.itinerarySub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.itineraryBtn, styles.packingBtn, cardShadow]}
+              onPress={() => navigation.navigate('PackingList', { groupId: group.id })}
+            >
+              <View style={styles.packingIconBg}>
+                <Ionicons name="bag-handle-outline" size={20} color={colors.sage} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itineraryBtnTitle}>{t('planDetail.packingListTitle')}</Text>
+                <Text style={styles.itineraryBtnSub}>{t('planDetail.packingListSub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.itineraryBtn, styles.budgetBtn, cardShadow]}
+              onPress={() => navigation.navigate('BudgetPlan', { groupId: group.id })}
+            >
+              <View style={styles.budgetIconBg}>
+                <Ionicons name="wallet-outline" size={20} color="#6A9BD8" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itineraryBtnTitle}>{t('planDetail.budgetPlanTitle')}</Text>
+                <Text style={styles.itineraryBtnSub}>{t('planDetail.budgetPlanSub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+            </Pressable>
+          </>
+        )}
 
         <Text style={styles.sectionTitle}>{t('planDetail.members')}</Text>
         <View style={[styles.membersCard, cardShadow]}>

@@ -236,23 +236,25 @@ function GroupCard({
     : [
         { label: t('home.menuEdit'), onPress: () => navigation.navigate('EditTrip', { groupId: group.id }) },
         { label: t('home.menuConclude'), onPress: onConclude },
+        { label: t('home.menuDelete'), destructive: true, onPress: onDelete },
       ];
 
   const openMenu = () => {
     if (Platform.OS === 'ios') {
       const labels = isArchived
         ? [t('home.menuEdit'), t('home.menuDelete'), t('common.cancel')]
-        : [t('home.menuEdit'), t('home.menuConclude'), t('common.cancel')];
+        : [t('home.menuEdit'), t('home.menuConclude'), t('home.menuDelete'), t('common.cancel')];
       ActionSheetIOS.showActionSheetWithOptions(
         {
           options: labels,
           cancelButtonIndex: labels.length - 1,
-          destructiveButtonIndex: isArchived ? 1 : undefined,
+          destructiveButtonIndex: isArchived ? 1 : 2,
         },
         (idx) => {
           if (idx === 0) navigation.navigate('EditTrip', { groupId: group.id });
-          else if (idx === 1 && isArchived) onDelete();
-          else if (idx === 1 && !isArchived) onConclude();
+          else if (isArchived && idx === 1) onDelete();
+          else if (!isArchived && idx === 1) onConclude();
+          else if (!isArchived && idx === 2) onDelete();
         },
       );
     } else {

@@ -46,10 +46,14 @@
     "packingListSub": "持っていくもの",
     "budgetPlan": "予算プラン",
     "budgetPlanSub": "支出を計画・管理",
+    "explore": "Kipのおすすめ",
+    "exploreSub": "Kipが選んだ目的地のおすすめ",
+    "planningTools": "プランニングツール",
+    "stops": "立ち寄り先",
     "balances": "残高",
     "subgroups": "サブグループ",
     "subgroupNew": "新規",
-    "subgroupEmpty": "サブグループはまだありません — 「新規」をタップして一部のメンバーで費用を分割しましょう。",
+    "subgroupEmpty": "費用に関係する人が限られる場合があります。たとえば「お酒を飲む人グループ」や「2日目以降に合流した人グループ」など。サブグループを作ると、費用を分割するとき特定のメンバーだけを素早く選べます。",
     "deleteSubgroup": "サブグループを削除",
     "removeSubgroupMsg": "「{{name}}」を削除しますか？",
     "subgroupCount_other": "{{count}} 人",
@@ -65,14 +69,18 @@
     "title": "新しいグループ",
     "groupName": "グループ名",
     "groupNamePlaceholder": "例：東京旅行、ルームメイト…",
-    "destination": "目的地（任意）",
-    "destinationPlaceholder": "例：東京、パリ、バンフ…",
+    "destination": "目的地",
+    "destinationPlaceholder": "例：日本、フランス、カナダ…",
+    "destinationRequired": "目的地を入力してください",
     "currency": "通貨",
     "members": "メンバー",
     "memberPlaceholder": "メンバー {{number}}",
     "addMember": "メンバーを追加",
     "creating": "作成中…",
-    "create": "グループを作成"
+    "create": "グループを作成",
+    "stops": "立ち寄り先（任意）",
+    "stopPlaceholder": "{{number}}番目の立ち寄り先（例：{{city}}）",
+    "addStop": "+ 立ち寄り先を追加"
   },
   "addExpense": {
     "title": "新しい費用",
@@ -96,7 +104,34 @@
     "deleting": "削除中…",
     "deleteTitle": "費用を削除",
     "deleteMsg": "この費用を完全に削除しますか？残高が再計算されます。",
-    "currency": "通貨"
+    "currency": "通貨",
+    "tapToEnterAmount": "ここをタップして金額を入力"
+  },
+  "memberExpenses": {
+    "title": "内訳",
+    "totalCharged": "{{name}} の負担合計",
+    "settleUp": "精算",
+    "includedIn": "参加した費用",
+    "paidFor": "支払った費用",
+    "yourShare": "負担: {{symbol}}{{amount}}",
+    "noExpenses": "費用なし"
+  },
+  "onboarding": {
+    "skip": "スキップ",
+    "next": "次へ",
+    "getStarted": "始めよう",
+    "step1Title": "Kippy へようこそ！",
+    "step1Body": "こんにちは、Kip です！費用の管理、割り勘、グループ旅行をストレスフリーにお手伝いします。",
+    "step2Title": "費用を簡単に分担",
+    "step2Body": "旅行を作成してメンバーを追加し、費用をその場で記録。Kippy が自動でみんなの分担を計算します。",
+    "step3Title": "細部まで計画",
+    "step3Body": "日程表を作成し、持ち物リストで賢く荷造り、予算プランナーで支出を管理しましょう。",
+    "step4Title": "精算してシェア",
+    "step4Body": "旅行が終わったら誰が何を支払うか一目瞭然。ワンタップで精算し、きれいな旅行まとめをシェアしましょう。",
+    "step5Title": "準備完了！",
+    "step5Body": "最初の旅行はタップひとつで始まります。素敵な思い出を作りましょう — 計算は Kip に任せて！",
+    "viewTour": "アプリツアーを見る",
+    "bubble": "困ったらここにいるよ！"
   },
   "settings": {
     "title": "設定",
@@ -104,7 +139,8 @@
     "theme": "外観",
     "themeLight": "ライト",
     "themeDark": "ダーク",
-    "themeSystem": "システムに合わせる"
+    "themeSystem": "システムに合わせる",
+    "about": "このアプリについて"
   },
   "loading": {
     "caption": "旅行を読み込み中…"
@@ -150,37 +186,17 @@
   },
   "wizard": {
     "continue": "続ける",
-    "mode": {
-      "title": "この旅行をどのように計画しますか？",
-      "subtitle": "1つを選んで始めましょう。",
-      "selfTitle": "自分で計画する",
-      "selfSubtitle": "Kippy と一緒にステップごとに旅行を組み立てる",
-      "agentTitle": "旅行代理店を使う",
-      "agentSubtitle": "プロに予約を手伝ってもらう",
-      "tourTitle": "グループツアーに参加する",
-      "tourSubtitle": "あらかじめ決まった日程で、見知らぬ人たちと旅する"
-    },
-    "agent": {
-      "title": "それは理解できます。",
-      "para1": "Kippy は自分たちで組む団体旅行向けに設計されており、通常は 1 人が現地での費用を管理します。旅行代理店を使う場合は、プロに任せるのが最善です。",
-      "para2": "ただし、旅行が始まったら費用を追跡・分担するのに Kippy は最適です——代理店手配の旅でも活用できます。",
-      "searchLink": "近くの旅行代理店を検索",
-      "orLabel": "または基本的な旅行プランをすぐに作成：",
-      "createBasic": "基本プランを作成 →"
-    },
-    "tour": {
-      "title": "いい選択です。",
-      "para1": "グループツアーは手配をすべてお任せできます。Kippy は個人の出費、共有の食事、途中で生じる追加費用の管理に引き続き役立てられます。",
-      "para2": "ツアーを探して、予約できたら Kippy に戻って費用管理用の旅行を作成してください。",
-      "searchLink": "グループツアーを検索",
-      "orLabel": "または Kippy で費用管理の旅行を設定："
-    },
     "basics": {
       "title": "旅行について教えてください。",
       "people": "何人ですか？",
       "transport": "どうやって行きますか？",
       "months": "何月ですか？",
       "days": "何日間ですか？",
+      "destination": "どこへ行きますか？",
+      "destinationPlaceholder": "例：日本、バリ、フランス…",
+      "stops": "特定の立ち寄り先はありますか？（任意）",
+      "stopPlaceholder": "例：{{city}}",
+      "addStop": "+ 立ち寄り先を追加",
       "budget": "一人当たりの予算は？（任意）",
       "budgetPlaceholder": "例：1500",
       "personSuffix_other": "人",
@@ -192,23 +208,9 @@
         "Other": "その他"
       }
     },
-    "dest": {
-      "branchTitle": "目的地は決まっていますか？",
-      "hasDestTitle": "はい、決まっています",
-      "hasDestSubtitle": "行き先は決まっています",
-      "ideasTitle": "まだです — アイデアをください",
-      "ideasSubtitle": "雰囲気に合った場所を探すのを手伝います",
-      "inputTitle": "どこに行きますか？",
-      "inputSubtitle": "都市、国、地域 — 思い浮かんでいるものを入力してください。",
-      "placeholder": "例：東京、日本"
-    },
     "vibe": {
       "title": "旅の雰囲気は？",
       "subtitle": "求めるフィーリングを選んでください。",
-      "resultsTitle": "いくつかのアイデアを紹介します。",
-      "resultsSubtitle": "「{{vibe}}」な雰囲気に基づいています。",
-      "continueWith": "{{dest}} に決定 →",
-      "skip": "スキップ — 後で決める",
       "labels": {
         "beach": "リラックス / ビーチ",
         "adventure": "冒険 / アウトドア",
@@ -242,23 +244,6 @@
       "create": "この旅行を作成",
       "errorTitle": "エラーが発生しました",
       "errorMsg": "旅行を作成できませんでした。もう一度お試しください。"
-    },
-    "destinations": {
-      "bali":         { "tagline": "定番には理由がある",                    "blurb": "棚田、神聖な寺院、あらゆる気分に合うビーチ。一年中リーズナブルで居心地がいい。" },
-      "tulum":        { "tagline": "ジャングルとカリブ海の出会い",           "blurb": "澄んだセノーテ、エコリゾート、リビエラ・マヤの隠れた町々がすぐそこに。" },
-      "krabi":        { "tagline": "石灰岩の断崖とエメラルドの湾",          "blurb": "コ・ランタ島とピピ島の間を島ホッピング。シュノーケリング、クライミング、ハンモックでのんびり——好きなだけ。" },
-      "queenstown":   { "tagline": "世界の冒険の都",                      "blurb": "バンジージャンプ、スカイダイビング、急流下り、息をのむフィヨルド。退屈する暇はない。" },
-      "patagonia":    { "tagline": "文字通り、地の果て",                   "blurb": "トレス・デル・パイネをハイキングし、エル・カラファテで氷河を見学、またはティエラ・デル・フエゴの水路をカヤックで。" },
-      "nepal":        { "tagline": "世界の屋根",                          "blurb": "エベレスト・ベースキャンプかアンナプルナ・サーキット。ヒマラヤがスケール感をまったく別次元に塗り替える。" },
-      "tokyo":        { "tagline": "最高の感覚過多",                      "blurb": "古い神社の隣にロボットレストラン、その横に世界最高のコンビニ。どんな予算にも対応。" },
-      "lisbon":       { "tagline": "ヨーロッパで最も陽気な穴場",           "blurb": "パステルカラーの建物、絶品パステル・デ・ナタ、屋上バー、歴史を走るトラム。" },
-      "mexico_city":  { "tagline": "世界クラスの文化を地元価格で",          "blurb": "フリーダ・カーロ、絶品タコス、アステカ遺跡、ヨーロッパの首都にも匹敵するレストランシーン。" },
-      "bologna":      { "tagline": "ヨーロッパの美食の都",                 "blurb": "ボロネーゼ、モルタデッラ、トルテッリーニの発祥地。すべての食事が一大イベント。" },
-      "osaka":        { "tagline": "ブロックごとに食べ歩き",               "blurb": "お好み焼き、たこ焼き、ラーメン合戦、道頓堀のネオン——日本で最もリアルなフード都市。" },
-      "san_sebastian":{ "tagline": "人口当たりミシュランの星の数が世界一",  "blurb": "どのバルのピンチョスも高級コース料理に匹敵する。旧市街を歩いて、3ドアおきに食べ続けよう。" },
-      "ibiza":        { "tagline": "元祖パーティーアイランド",              "blurb": "スーパークラブ、伝説のDJ、昼のビーチクラブ。7〜8月がピークシーズンのエネルギー全開。" },
-      "bangkok":      { "tagline": "本当に眠らない街",                    "blurb": "夕暮れの屋上バー、真夜中のカオサン通りの喧騒、午前4時の最高の二日酔い回復ストリートフード。" },
-      "medellin":     { "tagline": "永遠の春の街",                        "blurb": "ケーブルカーからの絶景、毎夜のサルサダンス、本当に街を案内したいと思っている地元の人たち。" }
     },
     "tips": {
       "beach_0":     "ピークシーズンのビーチ宿泊は3か月以上前に予約を。価格は倍増し、部屋もすぐになくなります。",
@@ -308,8 +293,9 @@
     "title": "新しいプラン",
     "tripName": "旅行名",
     "tripNamePlaceholder": "例：日本 2026、ヨーロッパロードトリップ…",
-    "destination": "目的地（任意）",
-    "destinationPlaceholder": "例：東京、アマルフィ海岸…",
+    "destination": "目的地",
+    "destinationPlaceholder": "例：日本、フランス、イタリア…",
+    "destinationRequired": "目的地を入力してください",
     "currency": "通貨",
     "dates": "予定日",
     "startDate": "開始日",
@@ -317,7 +303,10 @@
     "notSet": "未設定",
     "budget": "一人当たりの予算（任意）",
     "creating": "作成中…",
-    "create": "プランを作成"
+    "create": "プランを作成",
+    "stops": "立ち寄り先（任意）",
+    "stopPlaceholder": "{{number}}番目の立ち寄り先（例：{{city}}）",
+    "addStop": "+ 立ち寄り先を追加"
   },
   "planDetail": {
     "planningBadge": "プランニング中",
@@ -330,6 +319,10 @@
     "packingListSub": "持っていくもの",
     "budgetPlanTitle": "予算プラン",
     "budgetPlanSub": "支出の計画と管理",
+    "explore": "Kipのおすすめ",
+    "exploreSub": "Kipが選んだ目的地のおすすめ",
+    "planningTools": "プランニングツール",
+    "stops": "立ち寄り先",
     "members": "メンバー",
     "memberPlaceholder": "メンバー {{number}}",
     "addMember": "メンバーを追加",
@@ -555,6 +548,48 @@
     "parks": "公園",
     "drive": "ドライブ",
     "other": "その他"
+  },
+  "featureIntro": {
+    "continue": "さあ行こう！",
+    "itinerary": {
+      "phrase_0": "冒険が待ってるよ — 計画を立てよう！",
+      "phrase_1": "最高の旅は最高のプランから始まる！",
+      "phrase_2": "Kip がスケジュールを管理するよ — 一緒に埋めよう！",
+      "phrase_3": "最高のサプライズは素晴らしい計画から生まれる！",
+      "phrase_4": "一日一歩、この旅を一緒に作ろう！"
+    },
+    "packing": {
+      "phrase_0": "日焼け止めを忘れずに — もちろん Kip も！",
+      "phrase_1": "賢くパッキングして、お土産スペースを確保しよう！",
+      "phrase_2": "一つのバッグで世界を旅しよう！",
+      "phrase_3": "Kip のチェックリストは記憶より信頼できる！",
+      "phrase_4": "荷物を軽く、旅を楽しく！"
+    },
+    "budget": {
+      "phrase_0": "一円節約してジェラートをもう一つ！",
+      "phrase_1": "予算を守れば、もっと楽しめる！",
+      "phrase_2": "計算は Kip に任せて、君は楽しもう！",
+      "phrase_3": "お財布の最高の旅仲間！",
+      "phrase_4": "賢く使って、思いっきり冒険！"
+    }
+  },
+  "explore": {
+    "title": "Kipのおすすめ",
+    "subtitle": "Kipが選んだ目的地のおすすめスポット",
+    "refreshing": "更新中…",
+    "lastUpdated": "{{time}} に更新",
+    "noResults": "結果が見つかりません",
+    "emptyCategory": "Kipはここで何も見つかりませんでした",
+    "catError": "読み込み失敗",
+    "errorTitle": "場所を読み込めません",
+    "errorMsg": "インターネット接続を確認して再試行してください。",
+    "retry": "再試行",
+    "openMaps": "マップで開く",
+    "topPicks": "{{dest}} のおすすめ",
+    "cat_restaurants": "人気レストラン",
+    "cat_attractions": "観光スポット",
+    "cat_cheap_eats": "リーズナブルなグルメ",
+    "cat_photo_spots": "フォトスポット"
   },
   "personal": {
     "title": "個人"

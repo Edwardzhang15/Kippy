@@ -3,6 +3,7 @@ import {
   Alert,
   Animated,
   Image,
+  LayoutAnimation,
   Modal,
   Pressable,
   SafeAreaView,
@@ -25,11 +26,13 @@ import {
   archiveGroup,
   deleteSubgroup,
   simplifyDebts,
+  getTripStops,
   GroupDetails,
   MemberWithBalance,
   Expense,
   SuggestedTransaction,
   SubgroupWithMembers,
+  TripStop,
 } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
@@ -47,12 +50,14 @@ function MemberBalanceCard({
   member,
   index,
   groupCurrency,
-  onPress,
+  onPressBreakdown,
+  onPressSettle,
 }: {
   member: MemberWithBalance;
   index: number;
   groupCurrency: string;
-  onPress: () => void;
+  onPressBreakdown: () => void;
+  onPressSettle: () => void;
 }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
@@ -79,19 +84,34 @@ function MemberBalanceCard({
 
   return (
     <Animated.View style={[{ flex: 1 }, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
-      <Pressable
-        style={({ pressed }) => [styles.memberCard, cardShadow, pressed && { opacity: 0.7 }]}
-        onPress={onPress}
-      >
-        <View style={[styles.memberAvatar, { backgroundColor: getAvatarColor(index) }]}>
-          <Text style={styles.memberAvatarText}>{getInitials(member.name)}</Text>
-        </View>
-        <Text style={styles.memberName} numberOfLines={1}>{member.name}</Text>
-        <Text style={[styles.memberBalance, { color: isPositive ? colors.sage : colors.coral }]}>
-          {isPositive ? '+' : '-'}{getCurrencySymbol(groupCurrency)}{formatAmount(Math.abs(member.balance), groupCurrency)}
-        </Text>
-        <Ionicons name="chevron-forward" size={11} color={colors.tabInactive} style={{ marginTop: 2 }} />
-      </Pressable>
+      <View style={[styles.memberCard, cardShadow]}>
+        <Pressable
+          style={({ pressed }) => [styles.memberCardUpper, pressed && { opacity: 0.7 }]}
+          onPress={onPressBreakdown}
+        >
+          <View style={[styles.memberAvatar, { backgroundColor: getAvatarColor(index) }]}>
+            <Text style={styles.memberAvatarText}>{getInitials(member.name)}</Text>
+          </View>
+          <Text style={styles.memberName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+            {member.name}
+          </Text>
+        </Pressable>
+        <View style={styles.memberCardDivider} />
+        <Pressable
+          style={({ pressed }) => [styles.memberCardLower, pressed && { opacity: 0.7 }]}
+          onPress={onPressSettle}
+        >
+          <Text
+            style={[styles.memberBalance, { color: isPositive ? colors.sage : colors.coral }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+          >
+            {getCurrencySymbol(groupCurrency)}{formatAmount(Math.abs(member.balance), groupCurrency)}
+          </Text>
+          <Ionicons name="chevron-forward" size={11} color={colors.tabInactive} />
+        </Pressable>
+      </View>
     </Animated.View>
   );
 }
@@ -217,11 +237,17 @@ export default function GroupDetailScreen({ route }: Props) {
   const styles     = makeStyles(colors);
   const [group, setGroup]       = useState<GroupDetails | null>(null);
   const [subgroups, setSubgroups] = useState<SubgroupWithMembers[]>([]);
+  const [stops, setStops]       = useState<TripStop[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [toolsExpanded, setToolsExpanded] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharing, setSharing]   = useState(false);
   const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
   const cardRef = useRef<View>(null);
+  const toggleTools = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setToolsExpanded(prev => !prev);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -229,10 +255,12 @@ export default function GroupDetailScreen({ route }: Props) {
       Promise.all([
         getGroupDetails(route.params.groupId),
         getSubgroups(route.params.groupId),
-      ]).then(([groupData, subgroupData]) => {
+        getTripStops(route.params.groupId),
+      ]).then(([groupData, subgroupData, stopsData]) => {
         if (active) {
           setGroup(groupData);
           setSubgroups(subgroupData);
+          setStops(stopsData);
           setLoading(false);
         }
       });
@@ -373,59 +401,126 @@ export default function GroupDetailScreen({ route }: Props) {
           </Pressable>
         ) : null}
 
+        {stops.length > 0 && (
+          <View style={styles.stopsSection}>
+            <View style={styles.stopsLabelRow}>
+              <Ionicons name="map-outline" size={13} color={colors.textSecondary} />
+              <Text style={styles.stopsLabel}>{t('groupDetail.stops')}</Text>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.stopsChipRow}
+            >
+              {stops.map((stop, i) => (
+                <View key={stop.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {i > 0 && <Text style={styles.stopsArrow}>{'→'}</Text>}
+                  <View style={styles.stopChip}>
+                    <Text style={styles.stopChipText}>{stop.stop_name}</Text>
+                  </View>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+
         <Pressable
-          style={[styles.itineraryBtn, { marginBottom: 12 }, cardShadow]}
+          style={[styles.kipPicksBtn, cardShadow]}
           onPress={() =>
-            navigation.navigate('Itinerary', {
+            navigation.navigate('Explore', {
               groupId: group.id,
-              totalDays: (() => {
-                if (!group.planned_start_date || !group.planned_end_date) return 7;
-                const diff =
-                  (new Date(group.planned_end_date).getTime() -
-                    new Date(group.planned_start_date).getTime()) /
-                  (1000 * 60 * 60 * 24);
-                return Math.max(1, Math.ceil(diff));
-              })(),
+              destination: group.destination ?? group.name,
             })
           }
         >
-          <View style={styles.itineraryIconBg}>
-            <Ionicons name="calendar-outline" size={20} color={colors.coral} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itineraryBtnTitle}>{t('groupDetail.itinerary')}</Text>
-            <Text style={styles.itineraryBtnSub}>{t('groupDetail.itinerarySub')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+          <LinearGradient
+            colors={['#FF6B5B', '#7FA68C']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.kipPicksGradient}
+          >
+            <View style={{ flex: 1, justifyContent: 'center' }}>
+              <View style={styles.kipBadgeRow}>
+                <Ionicons name="sparkles" size={11} color="rgba(255,255,255,0.9)" />
+                <Text style={styles.kipBadgeText}>KIP'S PICKS</Text>
+              </View>
+              <Text style={styles.kipPicksTitle}>{t('groupDetail.explore')}</Text>
+              <Text style={styles.kipPicksSub}>{t('groupDetail.exploreSub')}</Text>
+            </View>
+            <Image
+              source={require('../assets/Kippy_Trans.png')}
+              style={styles.kipPicksImage}
+              resizeMode="contain"
+            />
+          </LinearGradient>
         </Pressable>
 
-        <Pressable
-          style={[styles.itineraryBtn, styles.packingBtn, cardShadow]}
-          onPress={() => navigation.navigate('PackingList', { groupId: group.id })}
-        >
-          <View style={styles.packingIconBg}>
-            <Ionicons name="bag-handle-outline" size={20} color={colors.sage} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itineraryBtnTitle}>{t('groupDetail.packingList')}</Text>
-            <Text style={styles.itineraryBtnSub}>{t('groupDetail.packingListSub')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+        <Pressable style={styles.planningToolsHeader} onPress={toggleTools}>
+          <Text style={styles.planningToolsTitle}>{t('groupDetail.planningTools')}</Text>
+          <Ionicons
+            name={toolsExpanded ? 'chevron-up' : 'chevron-down'}
+            size={18}
+            color={colors.textSecondary}
+          />
         </Pressable>
 
-        <Pressable
-          style={[styles.itineraryBtn, styles.budgetBtn, cardShadow]}
-          onPress={() => navigation.navigate('BudgetPlan', { groupId: group.id })}
-        >
-          <View style={styles.budgetIconBg}>
-            <Ionicons name="wallet-outline" size={20} color="#6A9BD8" />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.itineraryBtnTitle}>{t('groupDetail.budgetPlan')}</Text>
-            <Text style={styles.itineraryBtnSub}>{t('groupDetail.budgetPlanSub')}</Text>
-          </View>
-          <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
-        </Pressable>
+        {toolsExpanded && (
+          <>
+            <Pressable
+              style={[styles.itineraryBtn, { marginBottom: 12 }, cardShadow]}
+              onPress={() =>
+                navigation.navigate('Itinerary', {
+                  groupId: group.id,
+                  totalDays: (() => {
+                    if (!group.planned_start_date || !group.planned_end_date) return 7;
+                    const diff =
+                      (new Date(group.planned_end_date).getTime() -
+                        new Date(group.planned_start_date).getTime()) /
+                      (1000 * 60 * 60 * 24);
+                    return Math.max(1, Math.ceil(diff));
+                  })(),
+                })
+              }
+            >
+              <View style={styles.itineraryIconBg}>
+                <Ionicons name="calendar-outline" size={20} color={colors.coral} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itineraryBtnTitle}>{t('groupDetail.itinerary')}</Text>
+                <Text style={styles.itineraryBtnSub}>{t('groupDetail.itinerarySub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.itineraryBtn, styles.packingBtn, cardShadow]}
+              onPress={() => navigation.navigate('PackingList', { groupId: group.id })}
+            >
+              <View style={styles.packingIconBg}>
+                <Ionicons name="bag-handle-outline" size={20} color={colors.sage} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itineraryBtnTitle}>{t('groupDetail.packingList')}</Text>
+                <Text style={styles.itineraryBtnSub}>{t('groupDetail.packingListSub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+            </Pressable>
+
+            <Pressable
+              style={[styles.itineraryBtn, styles.budgetBtn, cardShadow]}
+              onPress={() => navigation.navigate('BudgetPlan', { groupId: group.id })}
+            >
+              <View style={styles.budgetIconBg}>
+                <Ionicons name="wallet-outline" size={20} color="#6A9BD8" />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.itineraryBtnTitle}>{t('groupDetail.budgetPlan')}</Text>
+                <Text style={styles.itineraryBtnSub}>{t('groupDetail.budgetPlanSub')}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
+            </Pressable>
+          </>
+        )}
 
         <Text style={styles.sectionTitle}>{t('groupDetail.balances')}</Text>
         <View style={styles.memberRow}>
@@ -435,7 +530,17 @@ export default function GroupDetailScreen({ route }: Props) {
               member={m}
               index={i}
               groupCurrency={group.currency}
-              onPress={() =>
+              onPressBreakdown={() =>
+                navigation.navigate('MemberExpenses', {
+                  groupId: group.id,
+                  memberId: m.id,
+                  memberName: m.name,
+                  avatarIndex: i,
+                  balance: m.balance,
+                  groupCurrency: group.currency,
+                })
+              }
+              onPressSettle={() =>
                 navigation.navigate('SettleUp', {
                   groupId: group.id,
                   memberId: m.id,
@@ -753,9 +858,26 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   memberCard: {
     backgroundColor: c.card,
     borderRadius: radii.card,
-    padding: 14,
+    overflow: 'hidden',
+  },
+  memberCardUpper: {
     alignItems: 'center',
-    gap: 6,
+    paddingTop: 12,
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    gap: 5,
+  },
+  memberCardDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+    marginHorizontal: 10,
+  },
+  memberCardLower: {
+    alignItems: 'center',
+    paddingTop: 8,
+    paddingHorizontal: 14,
+    paddingBottom: 10,
+    gap: 2,
   },
   memberAvatar: {
     width: 40,
@@ -773,10 +895,14 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.caption,
     fontWeight: '600',
     color: c.textPrimary,
+    alignSelf: 'stretch',
+    textAlign: 'center',
   },
   memberBalance: {
-    fontSize: fontSizes.body,
+    fontSize: 13,
     fontWeight: '700',
+    alignSelf: 'stretch',
+    textAlign: 'center',
   },
   expenseCard: {
     backgroundColor: c.card,
@@ -957,6 +1083,59 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontWeight: '500',
   },
 
+  // Kip's Picks button
+  kipPicksBtn: {
+    borderRadius: radii.card,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  kipPicksGradient: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingLeft: 20,
+    paddingVertical: 18,
+    minHeight: 96,
+  },
+  kipBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 6,
+  },
+  kipBadgeText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
+    letterSpacing: 0.8,
+  },
+  kipPicksTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '800',
+    color: '#fff',
+    marginBottom: 3,
+  },
+  kipPicksSub: {
+    fontSize: fontSizes.caption,
+    color: 'rgba(255,255,255,0.85)',
+  },
+  kipPicksImage: {
+    width: 88,
+    height: 88,
+    alignSelf: 'flex-end',
+  },
+  planningToolsHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 14,
+    marginBottom: 4,
+  },
+  planningToolsTitle: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+
   // Itinerary / Packing List / Budget buttons
   itineraryBtn: {
     flexDirection: 'row',
@@ -1000,6 +1179,18 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
+  exploreBtn: {
+    marginBottom: 20,
+  },
+  exploreIconBg: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#E8F4F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
   itineraryBtnTitle: {
     fontSize: fontSizes.body,
     fontWeight: '700',
@@ -1009,6 +1200,47 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   itineraryBtnSub: {
     fontSize: fontSizes.caption,
     color: c.textSecondary,
+  },
+
+  stopsSection: {
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  stopsLabelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginBottom: 8,
+  },
+  stopsLabel: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.6,
+  },
+  stopsChipRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 0,
+  },
+  stopChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: c.card,
+    borderWidth: 1,
+    borderColor: c.border,
+  },
+  stopChipText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  stopsArrow: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    marginHorizontal: 6,
   },
 
   // Share button (visible on archived trips)

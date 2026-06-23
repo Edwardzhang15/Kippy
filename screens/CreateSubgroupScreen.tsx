@@ -217,7 +217,6 @@ export default function CreateSubgroupScreen({ route, navigation }: Props) {
                 placeholderTextColor={colors.textSecondary}
                 value={name}
                 onChangeText={setName}
-                autoFocus
                 returnKeyType="done"
               />
             </View>

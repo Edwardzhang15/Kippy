@@ -14,6 +14,9 @@ export type Group = {
   planned_start_date: string | null;
   planned_end_date: string | null;
   budget_per_person: number | null;
+  has_seen_itinerary_intro: number;
+  has_seen_packing_intro: number;
+  has_seen_budget_intro: number;
 };
 
 export type Member = {
@@ -101,6 +104,21 @@ export type BudgetItem = {
   category: string;       // display name, e.g. "Flights"
   planned_amount: number;
   icon: string;            // Ionicons name
+};
+
+export type PlacesCacheRow = {
+  id: number;
+  group_id: number;
+  category: string;
+  data: string;
+  fetched_at: string;
+};
+
+export type TripStop = {
+  id: number;
+  group_id: number;
+  stop_name: string;
+  order_index: number;
 };
 
 // ─── Connection ───────────────────────────────────────────────────────────────
@@ -257,6 +275,43 @@ export async function initDatabase(): Promise<void> {
     await db.execAsync('ALTER TABLE settlements ADD COLUMN paid_amount REAL;');
   } catch { /* column already exists */ }
 
+  // Migration v13: per-trip feature intro seen flags
+  try {
+    await db.execAsync('ALTER TABLE groups ADD COLUMN has_seen_itinerary_intro INTEGER NOT NULL DEFAULT 0;');
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE groups ADD COLUMN has_seen_packing_intro INTEGER NOT NULL DEFAULT 0;');
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE groups ADD COLUMN has_seen_budget_intro INTEGER NOT NULL DEFAULT 0;');
+  } catch { /* column already exists */ }
+
+  // Migration v14: places cache table
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS places_cache (
+        id         INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id   INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        category   TEXT NOT NULL,
+        data       TEXT NOT NULL,
+        fetched_at TEXT NOT NULL,
+        UNIQUE(group_id, category)
+      );
+    `);
+  } catch { /* table already exists */ }
+
+  // Migration v15: trip stops table
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS trip_stops (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        group_id    INTEGER NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+        stop_name   TEXT    NOT NULL,
+        order_index INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+  } catch { /* table already exists */ }
+
   // Migration v7: budget plan items
   try {
     await db.execAsync(`
@@ -289,6 +344,68 @@ export async function deleteGroup(groupId: number): Promise<void> {
 
 export async function getGroup(groupId: number): Promise<Group | null> {
   return db.getFirstAsync<Group>('SELECT * FROM groups WHERE id = ?', groupId);
+}
+
+export async function markIntroSeen(
+  groupId: number,
+  feature: 'itinerary' | 'packing' | 'budget',
+): Promise<void> {
+  const col =
+    feature === 'itinerary' ? 'has_seen_itinerary_intro' :
+    feature === 'packing'   ? 'has_seen_packing_intro'   :
+                              'has_seen_budget_intro';
+  await db.runAsync(`UPDATE groups SET ${col} = 1 WHERE id = ?`, groupId);
+}
+
+export async function getPlacesCache(groupId: number, category: string, stopName?: string): Promise<string | null> {
+  const cacheKey = stopName ? `${stopName}::${category}` : category;
+  const row = await db.getFirstAsync<PlacesCacheRow>(
+    'SELECT * FROM places_cache WHERE group_id = ? AND category = ?',
+    groupId, cacheKey,
+  );
+  if (!row) return null;
+  const age = Date.now() - new Date(row.fetched_at).getTime();
+  if (age > 7 * 24 * 60 * 60 * 1000) return null;
+  return row.data;
+}
+
+export async function setPlacesCache(groupId: number, category: string, data: string, stopName?: string): Promise<void> {
+  const cacheKey = stopName ? `${stopName}::${category}` : category;
+  await db.runAsync(
+    `INSERT INTO places_cache (group_id, category, data, fetched_at)
+     VALUES (?, ?, ?, ?)
+     ON CONFLICT(group_id, category) DO UPDATE SET data = excluded.data, fetched_at = excluded.fetched_at`,
+    groupId, cacheKey, data, new Date().toISOString(),
+  );
+}
+
+export async function clearPlacesCache(groupId: number): Promise<void> {
+  await db.runAsync('DELETE FROM places_cache WHERE group_id = ?', groupId);
+}
+
+export async function addTripStop(groupId: number, stopName: string, orderIndex: number): Promise<number> {
+  const result = await db.runAsync(
+    'INSERT INTO trip_stops (group_id, stop_name, order_index) VALUES (?, ?, ?)',
+    groupId, stopName, orderIndex,
+  );
+  return result.lastInsertRowId;
+}
+
+export async function getTripStops(groupId: number): Promise<TripStop[]> {
+  return db.getAllAsync<TripStop>(
+    'SELECT * FROM trip_stops WHERE group_id = ? ORDER BY order_index ASC, id ASC',
+    groupId,
+  );
+}
+
+export async function removeTripStop(stopId: number): Promise<void> {
+  await db.runAsync('DELETE FROM trip_stops WHERE id = ?', stopId);
+}
+
+export async function reorderTripStops(stops: { id: number; orderIndex: number }[]): Promise<void> {
+  for (const stop of stops) {
+    await db.runAsync('UPDATE trip_stops SET order_index = ? WHERE id = ?', stop.orderIndex, stop.id);
+  }
 }
 
 export type GroupUpdates = {
@@ -858,6 +975,73 @@ export function simplifyDebts(members: MemberWithBalance[]): SuggestedTransactio
   }
 
   return transactions;
+}
+
+// ─── Member expense breakdown ─────────────────────────────────────────────────
+
+export type MemberExpenseRow = {
+  id: number;
+  group_id: number;
+  amount: number;
+  currency: string;
+  category: string;
+  custom_category: string | null;
+  paid_by: number;
+  paid_by_name: string;
+  date: string;
+  note: string | null;
+  receipt_photo_uri: string | null;
+  share_amount: number | null;
+};
+
+export type MemberExpensesData = {
+  member: Member;
+  includedIn: MemberExpenseRow[];
+  paidFor: MemberExpenseRow[];
+  totalCharged: number;
+  groupCurrency: string;
+};
+
+export async function getMemberExpenses(
+  groupId: number,
+  memberId: number,
+): Promise<MemberExpensesData> {
+  const member = await db.getFirstAsync<Member>(
+    'SELECT * FROM members WHERE id = ?', memberId,
+  );
+  if (!member) throw new Error(`Member ${memberId} not found`);
+
+  const group = await db.getFirstAsync<{ currency: string }>(
+    'SELECT currency FROM groups WHERE id = ?', groupId,
+  );
+  const gc = group?.currency ?? 'CAD';
+
+  const includedIn = await db.getAllAsync<MemberExpenseRow>(
+    `SELECT e.*, m.name AS paid_by_name, es.share_amount
+     FROM expenses e
+     JOIN members m ON e.paid_by = m.id
+     JOIN expense_splits es ON es.expense_id = e.id AND es.member_id = ?
+     WHERE e.group_id = ?
+     ORDER BY e.date DESC, e.id DESC`,
+    memberId, groupId,
+  );
+
+  const paidFor = await db.getAllAsync<MemberExpenseRow>(
+    `SELECT e.*, m.name AS paid_by_name, NULL AS share_amount
+     FROM expenses e
+     JOIN members m ON e.paid_by = m.id
+     WHERE e.group_id = ? AND e.paid_by = ?
+     ORDER BY e.date DESC, e.id DESC`,
+    groupId, memberId,
+  );
+
+  const rates = getCachedRates();
+  const totalCharged = round2(includedIn.reduce((sum, e) => {
+    const share = e.share_amount ?? 0;
+    return sum + (rates ? convertAmount(share, e.currency, gc, rates) : share);
+  }, 0));
+
+  return { member, includedIn, paidFor, totalCharged, groupCurrency: gc };
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

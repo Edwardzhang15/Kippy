@@ -6,14 +6,6 @@ export type VibeOption = {
   icon: string;
 };
 
-export type DestinationSuggestion = {
-  name: string;
-  flag: string;
-  tagline: string;
-  blurb: string;
-  key: string;
-};
-
 export type VibeTip = {
   icon: string;
   text: string;
@@ -32,124 +24,6 @@ export const VIBES: VibeOption[] = [
   { id: 'food',      label: 'Food-focused',          icon: 'restaurant-outline' },
   { id: 'party',     label: 'Party / Nightlife',    icon: 'musical-notes-outline' },
 ];
-
-export const VIBE_DESTINATIONS: Record<Vibe, DestinationSuggestion[]> = {
-  beach: [
-    {
-      name: 'Bali, Indonesia',
-      flag: '🇮🇩',
-      key: 'bali',
-      tagline: 'The classic for a reason',
-      blurb: 'Rice terraces, spiritual temples, and beaches for every mood. Cheap and welcoming year-round.',
-    },
-    {
-      name: 'Tulum, Mexico',
-      flag: '🇲🇽',
-      key: 'tulum',
-      tagline: 'Jungle meets Caribbean',
-      blurb: 'Crystal cenotes, eco-chic resorts, and the Riviera Maya\'s best-kept towns all within reach.',
-    },
-    {
-      name: 'Krabi, Thailand',
-      flag: '🇹🇭',
-      key: 'krabi',
-      tagline: 'Limestone cliffs and emerald bays',
-      blurb: 'Island-hop between Koh Lanta and Koh Phi Phi. Snorkelling, climbing, or hammock time — your call.',
-    },
-  ],
-  adventure: [
-    {
-      name: 'Queenstown, New Zealand',
-      flag: '🇳🇿',
-      key: 'queenstown',
-      tagline: 'The adventure capital of the world',
-      blurb: 'Bungee jumping, skydiving, white-water rafting, and jaw-dropping fjords. You will not be bored.',
-    },
-    {
-      name: 'Patagonia, Argentina/Chile',
-      flag: '🇦🇷',
-      key: 'patagonia',
-      tagline: 'End of the earth — literally',
-      blurb: 'Hike Torres del Paine, glacier-hop in El Calafate, or kayak the channels of Tierra del Fuego.',
-    },
-    {
-      name: 'Nepal',
-      flag: '🇳🇵',
-      key: 'nepal',
-      tagline: "The world's rooftop",
-      blurb: 'Everest Base Camp or the Annapurna Circuit. The Himalayas will completely recalibrate your sense of scale.',
-    },
-  ],
-  city: [
-    {
-      name: 'Tokyo, Japan',
-      flag: '🇯🇵',
-      key: 'tokyo',
-      tagline: 'Sensory overload in the best way',
-      blurb: 'Ancient temples next to robot restaurants next to the world\'s best convenience stores. Works at every budget.',
-    },
-    {
-      name: 'Lisbon, Portugal',
-      flag: '🇵🇹',
-      key: 'lisbon',
-      tagline: "Europe's sunniest underdog",
-      blurb: 'Pastel buildings, world-class pastéis de nata, rooftop bars, and tram rides through history.',
-    },
-    {
-      name: 'Mexico City, Mexico',
-      flag: '🇲🇽',
-      key: 'mexico_city',
-      tagline: 'World-class culture at local prices',
-      blurb: 'Frida Kahlo, unreal tacos, Aztec ruins, and a restaurant scene that rivals any European capital.',
-    },
-  ],
-  food: [
-    {
-      name: 'Bologna, Italy',
-      flag: '🇮🇹',
-      key: 'bologna',
-      tagline: "Europe's culinary capital",
-      blurb: 'Birthplace of bolognese, mortadella, and tortellini. Every single meal is an event.',
-    },
-    {
-      name: 'Osaka, Japan',
-      flag: '🇯🇵',
-      key: 'osaka',
-      tagline: 'Eat your way through every block',
-      blurb: 'Okonomiyaki, takoyaki, ramen wars, and the Dotonbori strip. Japan\'s most unfiltered food city.',
-    },
-    {
-      name: 'San Sebastián, Spain',
-      flag: '🇪🇸',
-      key: 'san_sebastian',
-      tagline: 'More Michelin stars per capita than anywhere on earth',
-      blurb: 'Pintxos bars that rival any tasting menu. Walk the old town and eat at every third door.',
-    },
-  ],
-  party: [
-    {
-      name: 'Ibiza, Spain',
-      flag: '🇪🇸',
-      key: 'ibiza',
-      tagline: 'The original',
-      blurb: 'Superclubs, legendary DJs, and daytime beach clubs. Hit it July–August for peak season energy.',
-    },
-    {
-      name: 'Bangkok, Thailand',
-      flag: '🇹🇭',
-      key: 'bangkok',
-      tagline: 'The city that genuinely never sleeps',
-      blurb: 'Rooftop bars at sunset, Khao San Road chaos at midnight, world\'s best street food hangover cure at 4am.',
-    },
-    {
-      name: 'Medellín, Colombia',
-      flag: '🇨🇴',
-      key: 'medellin',
-      tagline: 'The city of eternal spring',
-      blurb: 'Cable car views, salsa dancing every night, and locals who genuinely want to show you around.',
-    },
-  ],
-};
 
 export const VIBE_TIPS: Record<Vibe, VibeTip[]> = {
   beach: [

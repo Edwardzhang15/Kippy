@@ -10,6 +10,8 @@ import EditTripScreen from '../screens/EditTripScreen';
 import ItineraryScreen from '../screens/ItineraryScreen';
 import PackingListScreen from '../screens/PackingListScreen';
 import BudgetPlanScreen from '../screens/BudgetPlanScreen';
+import MemberExpensesScreen from '../screens/MemberExpensesScreen';
+import ExploreScreen from '../screens/ExploreScreen';
 
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
@@ -46,6 +48,8 @@ export default function HomeStack() {
       <Stack.Screen name="Itinerary" component={ItineraryScreen} />
       <Stack.Screen name="PackingList" component={PackingListScreen} />
       <Stack.Screen name="BudgetPlan" component={BudgetPlanScreen} />
+      <Stack.Screen name="MemberExpenses" component={MemberExpensesScreen} />
+      <Stack.Screen name="Explore" component={ExploreScreen} />
     </Stack.Navigator>
   );
 }
