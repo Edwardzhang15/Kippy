@@ -67,7 +67,8 @@
     "noExpenses": "No expenses yet. Tap + to add one.",
     "expensePaidBy": "Paid by {{name}} · {{date}}",
     "receipt": "Receipt",
-    "tripSummary": "Trip Summary"
+    "tripSummary": "Trip Summary",
+    "shareBalanceBreakdown": "Share Balance Breakdown"
   },
   "createGroup": {
     "title": "New Group",

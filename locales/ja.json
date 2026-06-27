@@ -65,7 +65,8 @@
     "noExpenses": "費用はまだありません。+ をタップして追加しましょう。",
     "expensePaidBy": "{{name}} が支払い · {{date}}",
     "receipt": "レシート",
-    "tripSummary": "旅行まとめ"
+    "tripSummary": "旅行まとめ",
+    "shareBalanceBreakdown": "残高明細をシェア"
   },
   "createGroup": {
     "title": "新しいグループ",

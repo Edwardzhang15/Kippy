@@ -65,7 +65,8 @@
     "noExpenses": "暂无费用，点击 + 添加。",
     "expensePaidBy": "{{name}} 支付 · {{date}}",
     "receipt": "收据",
-    "tripSummary": "行程总结"
+    "tripSummary": "行程总结",
+    "shareBalanceBreakdown": "分享余额明细"
   },
   "createGroup": {
     "title": "新建群组",

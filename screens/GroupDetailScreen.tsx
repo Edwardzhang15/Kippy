@@ -41,6 +41,7 @@ import { getCachedRates } from '../currencyRates';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import AnimatedFAB from '../components/AnimatedFAB';
 import TripSummaryCard from '../components/TripSummaryCard';
+import BalanceBreakdownShareCard from '../components/BalanceBreakdownShareCard';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'GroupDetail'>;
 type NavProp = NativeStackNavigationProp<HomeStackParamList, 'GroupDetail'>;
@@ -242,9 +243,12 @@ export default function GroupDetailScreen({ route }: Props) {
   const [toolsExpanded, setToolsExpanded] = useState(true);
   const [subgroupHintExpanded, setSubgroupHintExpanded] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [sharing, setSharing]   = useState(false);
+  const [sharingBalance, setSharingBalance] = useState(false);
   const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
   const cardRef = useRef<View>(null);
+  const balanceCardRef = useRef<View>(null);
   const toggleTools = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setToolsExpanded(prev => !prev);
@@ -300,6 +304,22 @@ export default function GroupDetailScreen({ route }: Props) {
       Alert.alert(t('groupDetail.shareError'), t('groupDetail.shareErrorMsg'));
     } finally {
       setSharing(false);
+    }
+  };
+
+  const handleShareBalance = async () => {
+    if (!balanceCardRef.current) return;
+    setSharingBalance(true);
+    try {
+      const uri = await captureRef(balanceCardRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: t('groupDetail.shareBalanceBreakdown'),
+      });
+    } catch {
+      Alert.alert(t('groupDetail.shareError'), t('groupDetail.shareErrorMsg'));
+    } finally {
+      setSharingBalance(false);
     }
   };
 
@@ -392,15 +412,24 @@ export default function GroupDetailScreen({ route }: Props) {
           </View>
         )}
 
-        {group.is_archived ? (
+        <View style={styles.shareBtnRow}>
           <Pressable
-            style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}
-            onPress={() => setShowShareModal(true)}
+            style={({ pressed }) => [styles.shareBreakdownBtn, cardShadow, pressed && { opacity: 0.8 }]}
+            onPress={() => setShowBalanceModal(true)}
           >
-            <Ionicons name="share-outline" size={18} color="#fff" />
-            <Text style={styles.shareBtnText}>{t('groupDetail.shareTripSummary')}</Text>
+            <Ionicons name="people-outline" size={16} color={colors.coral} />
+            <Text style={styles.shareBreakdownBtnText}>{t('groupDetail.shareBalanceBreakdown')}</Text>
           </Pressable>
-        ) : null}
+          {group.is_archived && (
+            <Pressable
+              style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}
+              onPress={() => setShowShareModal(true)}
+            >
+              <Ionicons name="share-outline" size={16} color="#fff" />
+              <Text style={styles.shareBtnText}>{t('groupDetail.shareTripSummary')}</Text>
+            </Pressable>
+          )}
+        </View>
 
         {stops.length > 0 && (
           <View style={styles.stopsSection}>
@@ -706,6 +735,38 @@ export default function GroupDetailScreen({ route }: Props) {
             )}
           </SafeAreaView>
         </View>
+      </Modal>
+
+      {/* Balance Breakdown Share Modal */}
+      <Modal
+        visible={showBalanceModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowBalanceModal(false)}
+      >
+        <SafeAreaView style={styles.modalSafe}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{t('groupDetail.shareBalanceBreakdown')}</Text>
+            <Pressable onPress={() => setShowBalanceModal(false)} hitSlop={12}>
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            </Pressable>
+          </View>
+          <View style={styles.modalCardWrap}>
+            <BalanceBreakdownShareCard ref={balanceCardRef} group={group} />
+          </View>
+          <View style={styles.modalFooter}>
+            <Pressable
+              style={({ pressed }) => [styles.shareSheetBtn, pressed && { opacity: 0.8 }, sharingBalance && { opacity: 0.6 }]}
+              onPress={handleShareBalance}
+              disabled={sharingBalance}
+            >
+              <Ionicons name="share-outline" size={20} color="#fff" />
+              <Text style={styles.shareSheetBtnText}>
+                {sharingBalance ? t('common.sharing') : t('common.share')}
+              </Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
       </Modal>
 
       <Modal
@@ -1282,16 +1343,40 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     marginHorizontal: 6,
   },
 
+  // Share buttons row
+  shareBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 20,
+  },
+  shareBreakdownBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    backgroundColor: c.card,
+    borderRadius: radii.button,
+    paddingVertical: 12,
+    borderWidth: 1.5,
+    borderColor: c.coral,
+  },
+  shareBreakdownBtnText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: c.coral,
+  },
+
   // Share button (visible on archived trips)
   shareBtn: {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
     backgroundColor: c.coral,
     borderRadius: radii.button,
-    paddingVertical: 14,
-    marginBottom: 28,
+    paddingVertical: 12,
     shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
