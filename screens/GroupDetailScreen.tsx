@@ -240,6 +240,7 @@ export default function GroupDetailScreen({ route }: Props) {
   const [stops, setStops]       = useState<TripStop[]>([]);
   const [loading, setLoading]   = useState(true);
   const [toolsExpanded, setToolsExpanded] = useState(true);
+  const [subgroupHintExpanded, setSubgroupHintExpanded] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharing, setSharing]   = useState(false);
   const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
@@ -568,8 +569,23 @@ export default function GroupDetailScreen({ route }: Props) {
           </Pressable>
         </View>
         {subgroups.length === 0 ? (
-          <View style={[styles.subgroupEmptyCard, cardShadow]}>
-            <Text style={styles.subgroupEmptyText}>{t('groupDetail.subgroupEmpty')}</Text>
+          <View style={{ marginBottom: 28 }}>
+            {!subgroupHintExpanded ? (
+              <Pressable
+                style={({ pressed }) => [styles.subgroupClickMeBtn, cardShadow, pressed && { opacity: 0.75 }]}
+                onPress={() => {
+                  LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+                  setSubgroupHintExpanded(true);
+                }}
+              >
+                <Ionicons name="help-circle-outline" size={16} color={colors.coral} />
+                <Text style={styles.subgroupClickMeText}>{t('groupDetail.subgroupClickMe')}</Text>
+              </Pressable>
+            ) : (
+              <View style={[styles.subgroupEmptyCard, cardShadow]}>
+                <Text style={styles.subgroupEmptyText}>{t('groupDetail.subgroupEmpty')}</Text>
+              </View>
+            )}
           </View>
         ) : (
           <ScrollView
@@ -1055,6 +1071,23 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.caption,
     color: c.textSecondary,
     lineHeight: 18,
+  },
+  subgroupClickMeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    backgroundColor: c.card,
+    borderRadius: radii.button,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    alignSelf: 'flex-start',
+    borderWidth: 1.5,
+    borderColor: c.coral + '44',
+  },
+  subgroupClickMeText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.coral,
   },
   subgroupScroll: {
     flexGrow: 0,

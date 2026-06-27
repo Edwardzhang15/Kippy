@@ -56,6 +56,7 @@
     "balances": "Balances",
     "subgroups": "Subgroups",
     "subgroupNew": "New",
+    "subgroupClickMe": "Click me!",
     "subgroupEmpty": "Some people are only part of certain costs — like a 'Drinks Crew' for people who drink alcohol, or 'Late Arrivals' for people who joined after day 1. Create a subgroup to quickly include just those people when splitting an expense.",
     "deleteSubgroup": "Delete Subgroup",
     "removeSubgroupMsg": "Remove \"{{name}}\"?",

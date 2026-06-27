@@ -55,6 +55,7 @@
     "balances": "残高",
     "subgroups": "サブグループ",
     "subgroupNew": "新規",
+    "subgroupClickMe": "タップして確認！",
     "subgroupEmpty": "費用に関係する人が限られる場合があります。たとえば「お酒を飲む人グループ」や「2日目以降に合流した人グループ」など。サブグループを作ると、費用を分割するとき特定のメンバーだけを素早く選べます。",
     "deleteSubgroup": "サブグループを削除",
     "removeSubgroupMsg": "「{{name}}」を削除しますか？",

@@ -55,6 +55,7 @@
     "balances": "余额",
     "subgroups": "子群组",
     "subgroupNew": "新建",
+    "subgroupClickMe": "点击了解！",
     "subgroupEmpty": "有些人只参与部分费用——比如「喝酒小队」代表喝酒的成员，或「晚到者」代表第1天后才加入的人。创建子群组，在分摊费用时可快速选择这些成员。",
     "deleteSubgroup": "删除子群组",
     "removeSubgroupMsg": "删除「{{name}}」？",
