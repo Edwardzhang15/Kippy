@@ -239,7 +239,7 @@ export default function GroupDetailScreen({ route }: Props) {
   const [subgroups, setSubgroups] = useState<SubgroupWithMembers[]>([]);
   const [stops, setStops]       = useState<TripStop[]>([]);
   const [loading, setLoading]   = useState(true);
-  const [toolsExpanded, setToolsExpanded] = useState(false);
+  const [toolsExpanded, setToolsExpanded] = useState(true);
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharing, setSharing]   = useState(false);
   const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
