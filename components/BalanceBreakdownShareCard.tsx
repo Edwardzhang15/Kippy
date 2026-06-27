@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { GroupDetails, simplifyDebts, type ExpenseWithSplits } from '../db';
-import { colors, fontSizes, radii } from '../theme';
+import { colors } from '../theme';
 import { getCurrencySymbol, formatAmount, getAvatarColor, getInitials, formatExpenseDate } from '../utils';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 
