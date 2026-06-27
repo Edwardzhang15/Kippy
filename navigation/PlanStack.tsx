@@ -3,7 +3,6 @@ import { PlanStackParamList } from './types';
 import PlanScreen from '../screens/PlanScreen';
 import CreatePlanScreen from '../screens/CreatePlanScreen';
 import PlanDetailScreen from '../screens/PlanDetailScreen';
-import TripWizardScreen from '../screens/TripWizardScreen';
 import EditTripScreen from '../screens/EditTripScreen';
 import ItineraryScreen from '../screens/ItineraryScreen';
 import PackingListScreen from '../screens/PackingListScreen';
@@ -22,7 +21,6 @@ export default function PlanStack() {
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="PlanDetail" component={PlanDetailScreen} />
-      <Stack.Screen name="TripWizard" component={TripWizardScreen} />
       <Stack.Screen
         name="EditTrip"
         component={EditTripScreen}

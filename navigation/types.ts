@@ -20,7 +20,6 @@ export type HomeStackParamList = {
     balance: number;
     groupCurrency: string;
   };
-  TripWizard:  undefined;
   EditTrip:    { groupId: number };
   Itinerary:   { groupId: number; totalDays: number };
   PackingList: { groupId: number };

@@ -17,6 +17,7 @@ export type Group = {
   has_seen_itinerary_intro: number;
   has_seen_packing_intro: number;
   has_seen_budget_intro: number;
+  vibe: string | null;
 };
 
 export type Member = {
@@ -366,6 +367,11 @@ export async function initDatabase(): Promise<void> {
       );
     `);
   } catch { /* table already exists */ }
+
+  // Migration v20: trip vibe stored on group
+  try {
+    await db.execAsync('ALTER TABLE groups ADD COLUMN vibe TEXT;');
+  } catch { /* column already exists */ }
 }
 
 // ─── Visited Countries ────────────────────────────────────────────────────────
@@ -414,6 +420,10 @@ export async function deleteGroup(groupId: number): Promise<void> {
 
 export async function getGroup(groupId: number): Promise<Group | null> {
   return db.getFirstAsync<Group>('SELECT * FROM groups WHERE id = ?', groupId);
+}
+
+export async function setGroupVibe(groupId: number, vibe: string | null): Promise<void> {
+  await db.runAsync('UPDATE groups SET vibe = ? WHERE id = ?', vibe, groupId);
 }
 
 export async function markIntroSeen(

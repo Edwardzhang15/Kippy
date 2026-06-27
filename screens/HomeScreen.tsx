@@ -169,50 +169,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     right: 10,
   },
 
-  // Plan with Kip card
-  planWithKipCard: {
-    borderRadius: radii.card,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  planWithKipGradient: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 16,
-    paddingVertical: 14,
-  },
-  planWithKipBadgeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    marginBottom: 5,
-  },
-  planWithKipBadgeText: {
-    fontSize: 9,
-    fontWeight: '700',
-    color: 'rgba(255,255,255,0.9)',
-    letterSpacing: 0.8,
-  },
-  planWithKipTitle: {
-    fontSize: fontSizes.body,
-    fontWeight: '800',
-    color: '#fff',
-    marginBottom: 2,
-  },
-  planWithKipSub: {
-    fontSize: fontSizes.caption,
-    color: 'rgba(255,255,255,0.85)',
-  },
-  planWithKipImageWrapper: {
-    width: 80,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  planWithKipImage: {
-    width: 72,
-    height: 72,
-  },
-
   // Empty state
   emptyState: {
     flex: 1,
@@ -531,23 +487,6 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
       </View>
-      {tab === 'active' && (
-        <Pressable style={[styles.planWithKipCard, cardShadow]} onPress={() => navigation.navigate('TripWizard')}>
-          <LinearGradient colors={['#FF6B5B', '#7FA68C']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.planWithKipGradient}>
-            <View style={{ flex: 1, justifyContent: 'center' }}>
-              <View style={styles.planWithKipBadgeRow}>
-                <Ionicons name="sparkles" size={9} color="rgba(255,255,255,0.9)" />
-                <Text style={styles.planWithKipBadgeText}>WIZARD</Text>
-              </View>
-              <Text style={styles.planWithKipTitle}>Plan with Kip</Text>
-              <Text style={styles.planWithKipSub}>{t('home.planWithKipSub')}</Text>
-            </View>
-            <View style={styles.planWithKipImageWrapper}>
-              <Image source={require('../assets/Kip_jog.png')} style={styles.planWithKipImage} resizeMode="contain" />
-            </View>
-          </LinearGradient>
-        </Pressable>
-      )}
     </View>
   );
 

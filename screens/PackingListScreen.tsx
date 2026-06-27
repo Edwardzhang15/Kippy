@@ -28,6 +28,7 @@ import {
   addPackingItem,
   deletePackingItem,
   markIntroSeen,
+  setGroupVibe,
   PackingItem,
   Group,
 } from '../db';
@@ -333,6 +334,56 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.body,
     fontWeight: '700',
   },
+
+  // Vibe prompt modal
+  vibePromptOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  vibePromptCard: {
+    width: '100%',
+    borderRadius: radii.card,
+    padding: 24,
+    gap: 8,
+  },
+  vibePromptTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    marginBottom: 2,
+  },
+  vibePromptSub: {
+    fontSize: fontSizes.caption,
+    lineHeight: 18,
+    marginBottom: 12,
+  },
+  vibePromptChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginBottom: 8,
+  },
+  vibePromptChip: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 20,
+    borderWidth: 1.5,
+  },
+  vibePromptChipText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+  },
+  vibePromptSkip: {
+    alignSelf: 'center',
+    paddingVertical: 8,
+    marginTop: 4,
+  },
+  vibePromptSkipText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '500',
+  },
 });
 
 export default function PackingListScreen() {
@@ -353,6 +404,7 @@ export default function PackingListScreen() {
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [customLabel, setCustomLabel] = useState('');
   const [loading, setLoading] = useState(true);
+  const [showVibePrompt, setShowVibePrompt] = useState(false);
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -402,16 +454,25 @@ export default function PackingListScreen() {
       ]);
       setGroup(g);
       if (g && !g.has_seen_packing_intro) setShowIntro(true);
+      const savedVibe = (g?.vibe ?? null) as Vibe | null;
+      setVibe(savedVibe);
       if (existing.length === 0 && g) {
-        const days = getTripDays(g.planned_start_date, g.planned_end_date);
-        const season = getSeason(g.planned_start_date);
-        const generated = buildPackingList(null, days, season);
-        await setPackingItems(groupId, generated);
-        setItems(await getPackingItems(groupId));
+        if (savedVibe === null) {
+          // First time with no saved vibe — prompt for vibe before generating
+          setLoading(false);
+          setShowVibePrompt(true);
+        } else {
+          const days = getTripDays(g.planned_start_date, g.planned_end_date);
+          const season = getSeason(g.planned_start_date);
+          const generated = buildPackingList(savedVibe, days, season);
+          await setPackingItems(groupId, generated);
+          setItems(await getPackingItems(groupId));
+          setLoading(false);
+        }
       } else {
         setItems(existing);
+        setLoading(false);
       }
-      setLoading(false);
     })();
   }, [groupId]);
 
@@ -423,25 +484,38 @@ export default function PackingListScreen() {
     setItems(await getPackingItems(groupId));
   };
 
-  const handleVibeSelect = (newVibe: Vibe | null) => {
+  const handleVibeSelect = async (newVibe: Vibe | null) => {
     if (newVibe === vibe || !group) return;
     const checked = items.filter((i) => i.is_checked).length;
+    const applyVibe = async () => {
+      setVibe(newVibe);
+      await setGroupVibe(groupId, newVibe);
+      doRegenerate(newVibe, group);
+    };
     if (checked > 0) {
       Alert.alert(
         t('packingList.regenerateTitle'),
         t('packingList.regenerateMsg', { checked }),
         [
           { text: t('common.cancel'), style: 'cancel' },
-          {
-            text: t('packingList.regenerate'),
-            style: 'destructive',
-            onPress: () => { setVibe(newVibe); doRegenerate(newVibe, group); },
-          },
+          { text: t('packingList.regenerate'), style: 'destructive', onPress: applyVibe },
         ],
       );
     } else {
-      setVibe(newVibe);
-      doRegenerate(newVibe, group);
+      applyVibe();
+    }
+  };
+
+  const handleVibePromptSelect = async (selectedVibe: Vibe | null) => {
+    setShowVibePrompt(false);
+    setVibe(selectedVibe);
+    if (group) {
+      await setGroupVibe(groupId, selectedVibe);
+      const days = getTripDays(group.planned_start_date, group.planned_end_date);
+      const season = getSeason(group.planned_start_date);
+      const generated = buildPackingList(selectedVibe, days, season);
+      await setPackingItems(groupId, generated);
+      setItems(await getPackingItems(groupId));
     }
   };
 
@@ -714,6 +788,44 @@ export default function PackingListScreen() {
           }}
         />
       )}
+
+      {/* Vibe prompt — shown first time when no vibe is saved */}
+      <Modal
+        visible={showVibePrompt}
+        transparent
+        animationType="fade"
+        onRequestClose={() => handleVibePromptSelect(null)}
+      >
+        <View style={styles.vibePromptOverlay}>
+          <View style={[styles.vibePromptCard, { backgroundColor: colors.card }]}>
+            <Text style={[styles.vibePromptTitle, { color: colors.textPrimary }]}>
+              {t('packingList.vibePromptTitle')}
+            </Text>
+            <Text style={[styles.vibePromptSub, { color: colors.textSecondary }]}>
+              {t('packingList.vibePromptSub')}
+            </Text>
+            <View style={styles.vibePromptChips}>
+              {VIBES.filter(v => v.key !== null).map(({ key, labelKey }) => (
+                <Pressable
+                  key={String(key)}
+                  style={({ pressed }) => [styles.vibePromptChip, { borderColor: colors.coral, backgroundColor: pressed ? '#FFF0EE' : colors.background }]}
+                  onPress={() => handleVibePromptSelect(key)}
+                >
+                  <Text style={[styles.vibePromptChipText, { color: colors.coral }]}>{t(labelKey)}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable
+              style={styles.vibePromptSkip}
+              onPress={() => handleVibePromptSelect(null)}
+            >
+              <Text style={[styles.vibePromptSkipText, { color: colors.textSecondary }]}>
+                {t('packingList.vibePromptSkip')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

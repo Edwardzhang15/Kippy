@@ -419,7 +419,7 @@ export default function PlanScreen() {
           showsVerticalScrollIndicator={false}
         />
       )}
-      <AnimatedFAB onPress={() => navigation.navigate('TripWizard')} />
+      <AnimatedFAB onPress={() => navigation.navigate('CreatePlan')} />
     </SafeAreaView>
   );
 }
