@@ -14,7 +14,6 @@
     "home": "Group Trips",
     "personal": "Personal",
     "insights": "Insights",
-    "been": "Been",
     "settings": "Settings"
   },
   "home": {
@@ -480,22 +479,6 @@
     "kipApproaching": "You're getting close to your budget. Time to watch those last few purchases!",
     "kipOver": "You've gone over budget this trip. It happens — enjoy it anyway!",
     "kipNoBudget": "No budget set for this trip. Add one to track your spending against a goal!"
-  },
-  "been": {
-    "title": "Been",
-    "subtitle": "Countries you've explored",
-    "country_one": "country visited",
-    "country_other": "countries visited",
-    "ofTheWorld": "{{pct}}% of the world",
-    "kipEmpty": "Your map is blank — every journey starts somewhere. Tap + to add your first country!",
-    "kipFew": "{{count}} countries down! The world is waiting. Keep exploring!",
-    "kipMany": "{{count}} countries and counting — you're a seasoned explorer!",
-    "countries": "Countries",
-    "visited": "Visited",
-    "searchPlaceholder": "Search countries…",
-    "addCountry": "Add country",
-    "emptyHint": "No countries yet — search above or create a trip to auto-detect them.",
-    "mapOffline": "Map unavailable offline — your country list still works below."
   },
   "settleUp": {
     "title": "Settle Up",

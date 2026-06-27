@@ -28,21 +28,27 @@ type Props = NativeStackScreenProps<PersonalStackParamList, 'PersonalMain'>;
 type TripWithSpent = PersonalTrip & { spent: number };
 
 const makeStyles = (c: ColorPalette) => StyleSheet.create({
-  root:          { flex: 1, backgroundColor: c.background },
-  header:        { paddingHorizontal: 20, paddingTop: 20, paddingBottom: 8 },
+  safe:          { flex: 1, backgroundColor: c.background },
+  header:        { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
   screenTitle:   { fontSize: fontSizes.screenTitle, fontWeight: '800', color: c.textPrimary },
-  screenSub:     { fontSize: fontSizes.body, color: c.textSecondary, marginTop: 2 },
-  tripCard:      { marginHorizontal: 16, marginBottom: 12, borderRadius: radii.card, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', padding: 16, gap: 14 },
-  tripInfo:      { flex: 1 },
+  screenSub:     { fontSize: fontSizes.body, color: c.textSecondary, marginTop: 3 },
+
+  list:          { paddingHorizontal: 16, paddingBottom: 100 },
+  tripGroup:     { borderRadius: radii.card, backgroundColor: c.card, overflow: 'hidden', marginBottom: 12, ...cardShadow },
+  tripCard:      { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 14, gap: 14 },
+  tripDivider:   { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginLeft: 16 + 72 + 14 },
+  tripInfo:      { flex: 1, gap: 2 },
   tripName:      { fontSize: fontSizes.body, fontWeight: '700', color: c.textPrimary },
-  tripSub:       { fontSize: fontSizes.caption, color: c.textSecondary, marginTop: 2 },
-  chevron:       { opacity: 0.4 },
-  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32, paddingBottom: 80 },
-  kipImage:      { width: 100, height: 100, marginBottom: 16 },
-  emptyTitle:    { fontSize: fontSizes.sectionTitle, fontWeight: '700', color: c.textPrimary, textAlign: 'center', marginBottom: 8 },
-  emptyBody:     { fontSize: fontSizes.body, color: c.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 24 },
+  tripSub:       { fontSize: fontSizes.caption, color: c.textSecondary },
+  chevron:       { opacity: 0.35 },
+
+  emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 36, paddingBottom: 80 },
+  kipImage:      { width: 96, height: 96, marginBottom: 20 },
+  emptyTitle:    { fontSize: fontSizes.sectionTitle, fontWeight: '800', color: c.textPrimary, textAlign: 'center', marginBottom: 10 },
+  emptyBody:     { fontSize: fontSizes.body, color: c.textSecondary, textAlign: 'center', lineHeight: 22, marginBottom: 28 },
   createBtn:     { backgroundColor: c.coral, borderRadius: radii.button, paddingHorizontal: 28, paddingVertical: 14 },
   createBtnText: { fontSize: fontSizes.body, fontWeight: '700', color: '#fff' },
+
   fab:           { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.coral, alignItems: 'center', justifyContent: 'center' },
 });
 
@@ -67,18 +73,18 @@ export default function PersonalScreen({ navigation }: Props) {
       );
       setTrips(withSpent);
       setLoading(false);
+      listAnim.setValue(0);
       Animated.spring(listAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 }).start();
     }
     load();
-    listAnim.setValue(0);
   }, [listAnim]));
 
-  if (loading) return <View style={styles.root} />;
+  if (loading) return <SafeAreaView style={styles.safe} />;
 
   const noTrips = trips.length === 0;
 
   return (
-    <SafeAreaView style={styles.root}>
+    <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
         <Text style={styles.screenTitle}>{t('personalTrip.tabTitle')}</Text>
         <Text style={styles.screenSub}>{t('personalTrip.tabSub')}</Text>
@@ -102,7 +108,7 @@ export default function PersonalScreen({ navigation }: Props) {
         </View>
       ) : (
         <>
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingTop: 8, paddingBottom: 100 }}>
+          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.list}>
             {trips.map((trip, i) => {
               const sym = getCurrencySymbol(trip.currency);
               const hasBudget = trip.budget_amount != null && trip.budget_amount > 0;
@@ -115,14 +121,14 @@ export default function PersonalScreen({ navigation }: Props) {
                   }}
                 >
                   <Pressable
-                    style={[styles.tripCard, cardShadow]}
+                    style={({ pressed }) => [styles.tripCard, cardShadow, pressed && { opacity: 0.75 }]}
                     onPress={() => navigation.navigate('PersonalTripDetail', { tripId: trip.id })}
                   >
                     <TripBudgetRing
                       spent={trip.spent}
                       budget={trip.budget_amount}
                       currency={trip.currency}
-                      size={72}
+                      size={68}
                       strokeWidth={6}
                     />
                     <View style={styles.tripInfo}>
@@ -140,7 +146,7 @@ export default function PersonalScreen({ navigation }: Props) {
           </ScrollView>
 
           <Pressable
-            style={[styles.fab, cardShadow]}
+            style={styles.fab}
             onPress={() => navigation.navigate('CreatePersonalTrip', {})}
           >
             <Ionicons name="add" size={28} color="#fff" />

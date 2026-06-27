@@ -45,7 +45,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   amountHint:    { fontSize: fontSizes.caption, color: c.textSecondary, marginTop: 4 },
   hiddenInput:   { position: 'absolute', width: 1, height: 1, opacity: 0 },
   arrowContainer: { alignItems: 'center', marginTop: 6 },
-  arrow:         { fontSize: 20, color: c.coral },
   catGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   catChip:       { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: c.card, borderWidth: 1.5, borderColor: c.border },
   catChipActive: { borderColor: c.coral, backgroundColor: '#FFF0EE' },
@@ -92,7 +91,7 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
 
     const bounce = Animated.loop(
       Animated.sequence([
-        Animated.timing(arrowAnim, { toValue: 6, duration: 500, useNativeDriver: true }),
+        Animated.timing(arrowAnim, { toValue: -6, duration: 500, useNativeDriver: true }),
         Animated.timing(arrowAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
       ])
     );
@@ -174,7 +173,9 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           {!amountText && (
             <>
               <View style={styles.arrowContainer}>
-                <Animated.Text style={[styles.arrow, { transform: [{ translateY: arrowAnim }] }]}>↓</Animated.Text>
+                <Animated.View style={{ transform: [{ translateY: arrowAnim }] }}>
+                  <Ionicons name="arrow-up-circle" size={22} color={colors.coral} />
+                </Animated.View>
               </View>
               <Text style={styles.amountHint}>{t('addExpense.tapToEnterAmount')}</Text>
             </>

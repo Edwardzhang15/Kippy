@@ -4,6 +4,7 @@ import {
   Animated,
   Image,
   Pressable,
+  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
@@ -26,36 +27,52 @@ import { getCurrencySymbol, formatAmount, formatExpenseDate } from '../utils';
 
 type Props = NativeStackScreenProps<PersonalStackParamList, 'PersonalTripDetail'>;
 
-const KIP_STATES = {
-  under:      require('../assets/Kip_jog.png'),
-  approaching: require('../assets/Kip_jog.png'),
-  over:       require('../assets/Kip_jog.png'),
-};
-
 const makeStyles = (c: ColorPalette) => StyleSheet.create({
-  root:          { flex: 1, backgroundColor: c.background },
-  header:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
+  safe:          { flex: 1, backgroundColor: c.background },
+  header:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 8, paddingBottom: 4 },
   backBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center' },
+  headerSpacer:  { flex: 1 },
   headerActions: { flexDirection: 'row', gap: 8 },
   actionBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center' },
-  heroCard:      { margin: 16, borderRadius: radii.card, backgroundColor: c.card, padding: 20, alignItems: 'center' },
-  tripName:      { fontSize: fontSizes.sectionTitle, fontWeight: '700', color: c.textPrimary, marginTop: 12, textAlign: 'center' },
-  spentLabel:    { fontSize: fontSizes.caption, color: c.textSecondary, marginTop: 4 },
-  actionRow:     { flexDirection: 'row', gap: 10, marginTop: 16 },
-  actionChip:    { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.background },
-  actionChipText: { fontSize: fontSizes.caption, fontWeight: '600', color: c.textPrimary },
-  kipCard:       { marginHorizontal: 16, marginBottom: 12, borderRadius: radii.card, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', padding: 14, gap: 10 },
+
+  heroCard:      {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 14,
+    borderRadius: radii.card,
+    backgroundColor: c.card,
+    paddingTop: 28,
+    paddingBottom: 20,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  tripName:      { fontSize: 22, fontWeight: '800', color: c.textPrimary, marginTop: 16, textAlign: 'center' },
+  spentLabel:    { fontSize: fontSizes.body, color: c.textSecondary, marginTop: 6, textAlign: 'center' },
+  chipRow:       { flexDirection: 'row', gap: 8, marginTop: 18, flexWrap: 'wrap', justifyContent: 'center' },
+  chip:          { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: c.border, backgroundColor: c.background },
+  chipText:      { fontSize: fontSizes.caption, fontWeight: '600', color: c.textPrimary },
+
+  kipCard:       { marginHorizontal: 16, marginBottom: 16, borderRadius: radii.card, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 14, gap: 12 },
   kipImage:      { width: 48, height: 48 },
-  kipText:       { flex: 1, fontSize: fontSizes.caption, color: c.textPrimary, lineHeight: 18 },
-  sectionLabel:  { fontSize: fontSizes.caption, fontWeight: '700', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5, marginHorizontal: 20, marginBottom: 8 },
-  expenseCard:   { marginHorizontal: 16, marginBottom: 8, borderRadius: radii.card, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 12, gap: 12 },
-  catIcon:       { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  expMain:       { flex: 1 },
+  kipText:       { flex: 1, fontSize: fontSizes.body, color: c.textPrimary, lineHeight: 20 },
+
+  sectionHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 20, marginTop: 4, marginBottom: 10 },
+  sectionLabel:  { fontSize: fontSizes.caption, fontWeight: '700', color: c.textSecondary, textTransform: 'uppercase', letterSpacing: 0.6 },
+  sectionCount:  { fontSize: fontSizes.caption, color: c.textSecondary },
+
+  expenseCard:   { marginHorizontal: 16, borderRadius: radii.card, backgroundColor: c.card, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, paddingVertical: 13, gap: 12, ...cardShadow },
+  expDivider:    { height: StyleSheet.hairlineWidth, backgroundColor: c.border, marginHorizontal: 16 + 14 },
+  catIcon:       { width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+  expMain:       { flex: 1, gap: 2 },
   expNote:       { fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary },
-  expSub:        { fontSize: fontSizes.caption, color: c.textSecondary, marginTop: 2 },
+  expSub:        { fontSize: fontSizes.caption, color: c.textSecondary },
   expAmount:     { fontSize: fontSizes.body, fontWeight: '700', color: c.textPrimary },
-  emptyCard:     { margin: 20, borderRadius: radii.card, backgroundColor: c.card, padding: 24, alignItems: 'center', gap: 8 },
+
+  expenseGroup:  { marginBottom: 16, borderRadius: radii.card, overflow: 'hidden', marginHorizontal: 16 },
+
+  emptyCard:     { marginHorizontal: 16, marginBottom: 16, borderRadius: radii.card, backgroundColor: c.card, padding: 32, alignItems: 'center', gap: 10 },
   emptyText:     { fontSize: fontSizes.body, color: c.textSecondary, textAlign: 'center' },
+
   fab:           { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.coral, alignItems: 'center', justifyContent: 'center' },
 });
 
@@ -79,14 +96,15 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
       setExpenses(e_);
     }
     load();
+    enterAnim.setValue(0);
     Animated.spring(enterAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 }).start();
   }, [tripId, enterAnim]));
 
   function getKipMessage(spent: number, budget: number | null): string {
     if (!budget || budget <= 0) return t('personalTrip.kipNoBudget');
     const pct = spent / budget;
-    if (pct >= 1)    return t('personalTrip.kipOver');
-    if (pct >= 0.8)  return t('personalTrip.kipApproaching');
+    if (pct >= 1)   return t('personalTrip.kipOver');
+    if (pct >= 0.8) return t('personalTrip.kipApproaching');
     return t('personalTrip.kipUnder');
   }
 
@@ -111,48 +129,51 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
   const sym = getCurrencySymbol(trip?.currency ?? 'CAD');
 
   return (
-    <View style={styles.root}>
+    <SafeAreaView style={styles.safe}>
       <View style={styles.header}>
-        <Pressable style={styles.backBtn} onPress={() => navigation.goBack()}>
+        <Pressable style={[styles.backBtn, cardShadow]} onPress={() => navigation.goBack()}>
           <Ionicons name="chevron-back" size={18} color={colors.textPrimary} />
         </Pressable>
-        <View style={{ flex: 1 }} />
+        <View style={styles.headerSpacer} />
         <View style={styles.headerActions}>
           <Pressable
-            style={styles.actionBtn}
+            style={[styles.actionBtn, cardShadow]}
             onPress={() => navigation.navigate('CreatePersonalTrip', { tripId })}
           >
             <Ionicons name="pencil-outline" size={16} color={colors.textPrimary} />
           </Pressable>
-          <Pressable style={styles.actionBtn} onPress={handleDelete}>
+          <Pressable style={[styles.actionBtn, cardShadow]} onPress={handleDelete}>
             <Ionicons name="trash-outline" size={16} color={colors.coral} />
           </Pressable>
         </View>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Animated.View style={{ opacity: enterAnim, transform: [{ scale: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) }] }}>
-          {/* Hero card */}
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 100 }}>
+        <Animated.View style={{
+          opacity: enterAnim,
+          transform: [{ scale: enterAnim.interpolate({ inputRange: [0, 1], outputRange: [0.96, 1] }) }],
+        }}>
+          {/* Hero card with large ring */}
           <View style={[styles.heroCard, cardShadow]}>
             <TripBudgetRing
               spent={spent}
               budget={trip?.budget_amount ?? null}
               currency={trip?.currency ?? 'CAD'}
-              size={100}
-              strokeWidth={8}
+              size={148}
+              strokeWidth={11}
             />
             <Text style={styles.tripName}>{trip?.name ?? ''}</Text>
             <Text style={styles.spentLabel}>
               {sym}{formatAmount(spent, trip?.currency ?? 'CAD')} {t('personalTrip.spent')}
               {trip?.budget_amount ? ` / ${sym}${formatAmount(trip.budget_amount, trip.currency)} ${t('personalTrip.budget')}` : ''}
             </Text>
-            <View style={styles.actionRow}>
+            <View style={styles.chipRow}>
               <Pressable
-                style={[styles.actionChip, cardShadow]}
+                style={styles.chip}
                 onPress={() => navigation.navigate('ManageCategoryBudgets', { tripId })}
               >
                 <Ionicons name="pie-chart-outline" size={14} color={colors.textPrimary} />
-                <Text style={styles.actionChipText}>{t('personalTrip.categoryBudgets')}</Text>
+                <Text style={styles.chipText}>{t('personalTrip.categoryBudgets')}</Text>
               </Pressable>
             </View>
           </View>
@@ -160,54 +181,65 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
           {/* Kip message */}
           {trip && (
             <View style={[styles.kipCard, cardShadow]}>
-              <Image source={KIP_STATES.under} style={styles.kipImage} resizeMode="contain" />
+              <Image
+                source={require('../assets/Kip_jog.png')}
+                style={styles.kipImage}
+                resizeMode="contain"
+              />
               <Text style={styles.kipText}>{getKipMessage(spent, trip.budget_amount)}</Text>
             </View>
           )}
 
-          {/* Expenses */}
-          {expenses.length > 0 && (
-            <Text style={styles.sectionLabel}>{t('personalTrip.expenses')}</Text>
-          )}
-          {expenses.map(exp => {
-            const cat = CATEGORY_MAP[exp.category] ?? FALLBACK_CATEGORY;
-            return (
-              <Pressable
-                key={exp.id}
-                style={[styles.expenseCard, cardShadow]}
-                onPress={() => navigation.navigate('AddPersonalTripExpense', { tripId, expenseId: exp.id })}
-              >
-                <View style={[styles.catIcon, { backgroundColor: (cat as any).bg ?? '#F5F5F5' }]}>
-                  <Ionicons name={cat.icon} size={18} color={cat.color} />
-                </View>
-                <View style={styles.expMain}>
-                  <Text style={styles.expNote} numberOfLines={1}>
-                    {exp.note || t(`categories.${exp.category}`)}
-                  </Text>
-                  <Text style={styles.expSub}>
-                    {t(`categories.${exp.category}`)} · {formatExpenseDate(exp.date)}
-                  </Text>
-                </View>
-                <Text style={styles.expAmount}>{sym}{formatAmount(exp.amount, exp.currency)}</Text>
-              </Pressable>
-            );
-          })}
-
-          {expenses.length === 0 && (
-            <View style={[styles.emptyCard, cardShadow]}>
-              <Ionicons name="receipt-outline" size={32} color={colors.textSecondary} />
+          {/* Expenses list */}
+          {expenses.length === 0 ? (
+            <View style={styles.emptyCard}>
+              <Ionicons name="receipt-outline" size={36} color={colors.textSecondary} />
               <Text style={styles.emptyText}>{t('personalTrip.noExpenses')}</Text>
             </View>
+          ) : (
+            <>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionLabel}>{t('personalTrip.expenses')}</Text>
+                <Text style={styles.sectionCount}>{expenses.length}</Text>
+              </View>
+              <View style={[styles.expenseGroup, cardShadow]}>
+                {expenses.map((exp, i) => {
+                  const cat = CATEGORY_MAP[exp.category] ?? FALLBACK_CATEGORY;
+                  return (
+                    <View key={exp.id}>
+                      <Pressable
+                        style={({ pressed }) => [styles.expenseCard, pressed && { opacity: 0.75 }]}
+                        onPress={() => navigation.navigate('AddPersonalTripExpense', { tripId, expenseId: exp.id })}
+                      >
+                        <View style={[styles.catIcon, { backgroundColor: (cat as any).bg ?? '#F5F5F5' }]}>
+                          <Ionicons name={cat.icon} size={18} color={cat.color} />
+                        </View>
+                        <View style={styles.expMain}>
+                          <Text style={styles.expNote} numberOfLines={1}>
+                            {exp.note || t(`categories.${exp.category}`)}
+                          </Text>
+                          <Text style={styles.expSub}>
+                            {t(`categories.${exp.category}`)} · {formatExpenseDate(exp.date)}
+                          </Text>
+                        </View>
+                        <Text style={styles.expAmount}>{sym}{formatAmount(exp.amount, exp.currency)}</Text>
+                      </Pressable>
+                      {i < expenses.length - 1 && <View style={styles.expDivider} />}
+                    </View>
+                  );
+                })}
+              </View>
+            </>
           )}
         </Animated.View>
       </ScrollView>
 
       <Pressable
-        style={[styles.fab, cardShadow]}
+        style={styles.fab}
         onPress={() => navigation.navigate('AddPersonalTripExpense', { tripId })}
       >
         <Ionicons name="add" size={28} color="#fff" />
       </Pressable>
-    </View>
+    </SafeAreaView>
   );
 }

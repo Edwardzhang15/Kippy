@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { getCurrencySymbol, formatAmount } from '../utils';
-import { fontSizes } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 
 const SAGE  = '#7FA68C';
@@ -16,8 +15,8 @@ function lerpHex(a: string, b: string, t: number): string {
   });
   const ca = parse(a);
   const cb = parse(b);
-  const r = Math.round(ca.r + (cb.r - ca.r) * t);
-  const g = Math.round(ca.g + (cb.g - ca.g) * t);
+  const r  = Math.round(ca.r + (cb.r - ca.r) * t);
+  const g  = Math.round(ca.g + (cb.g - ca.g) * t);
   const bv = Math.round(ca.b + (cb.b - ca.b) * t);
   return `rgb(${r},${g},${bv})`;
 }
@@ -38,15 +37,22 @@ export default function TripBudgetRing({
   strokeWidth = 7,
 }: Props) {
   const { colors } = useTheme();
-  const radius = (size - strokeWidth) / 2;
+  const radius      = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
 
   const hasBudget = budget != null && budget > 0;
-  const pct = hasBudget ? Math.min(spent / budget!, 1) : 0;
+  const pct       = hasBudget ? Math.min(spent / budget!, 1) : 0;
   const ringColor = pct <= 0 ? SAGE : lerpHex(SAGE, CORAL, pct);
-  const offset = circumference * (1 - pct);
+  const offset    = circumference * (1 - pct);
+  const sym       = getCurrencySymbol(currency);
 
-  const sym = getCurrencySymbol(currency);
+  // Scale text to ring size so it always fits
+  const spentFontSize  = Math.max(9,  Math.round(size * 0.14));
+  const budgetFontSize = Math.max(7,  Math.round(size * 0.10));
+  // For small rings (<= 80) hide the budget label to avoid overflow
+  const showBudgetLabel = hasBudget && size > 80;
+
+  const textColor = pct <= 0 || !hasBudget ? colors.textPrimary : ringColor;
 
   return (
     <View style={styles.container}>
@@ -76,12 +82,17 @@ export default function TripBudgetRing({
         )}
       </Svg>
       <View style={[StyleSheet.absoluteFill, styles.center]}>
-        <Text style={[styles.spent, { color: ringColor === SAGE || !hasBudget ? colors.textPrimary : ringColor }]}>
+        <Text style={[styles.spent, { fontSize: spentFontSize, color: textColor }]} numberOfLines={1} adjustsFontSizeToFit>
           {sym}{formatAmount(spent, currency)}
         </Text>
-        {hasBudget && (
-          <Text style={[styles.budget, { color: colors.textSecondary }]}>
+        {showBudgetLabel && (
+          <Text style={[styles.budget, { fontSize: budgetFontSize, color: colors.textSecondary }]} numberOfLines={1}>
             / {sym}{formatAmount(budget!, currency)}
+          </Text>
+        )}
+        {hasBudget && size > 100 && (
+          <Text style={[styles.pct, { fontSize: Math.round(size * 0.09), color: ringColor }]}>
+            {Math.round(pct * 100)}%
           </Text>
         )}
       </View>
@@ -91,21 +102,26 @@ export default function TripBudgetRing({
 
 const styles = StyleSheet.create({
   container: {
-    position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
   center: {
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: 8,
   },
   spent: {
-    fontSize: 11,
     fontWeight: '700',
+    textAlign: 'center',
   },
   budget: {
-    fontSize: 9,
     fontWeight: '500',
     marginTop: 1,
+    textAlign: 'center',
+  },
+  pct: {
+    fontWeight: '600',
+    marginTop: 2,
+    textAlign: 'center',
   },
 });

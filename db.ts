@@ -444,34 +444,6 @@ export async function initDatabase(): Promise<void> {
   } catch { /* table already exists */ }
 }
 
-// ─── Visited Countries ────────────────────────────────────────────────────────
-
-export async function getVisitedCountries(): Promise<string[]> {
-  const rows = await db.getAllAsync<{ iso2: string }>('SELECT iso2 FROM visited_countries');
-  return rows.map(r => r.iso2);
-}
-
-export async function setVisitedCountry(iso2: string, visited: boolean): Promise<void> {
-  if (visited) {
-    await db.runAsync(
-      'INSERT OR IGNORE INTO visited_countries (iso2, source) VALUES (?, ?)',
-      iso2, 'manual',
-    );
-  } else {
-    await db.runAsync('DELETE FROM visited_countries WHERE iso2 = ?', iso2);
-  }
-}
-
-export async function syncAutoCountries(iso2Codes: string[]): Promise<void> {
-  // Upsert auto-detected countries without overwriting manual ones
-  for (const iso2 of iso2Codes) {
-    await db.runAsync(
-      'INSERT OR IGNORE INTO visited_countries (iso2, source) VALUES (?, ?)',
-      iso2, 'auto',
-    );
-  }
-}
-
 // ─── Writes ───────────────────────────────────────────────────────────────────
 
 export async function archiveGroup(groupId: number): Promise<void> {
@@ -1042,21 +1014,6 @@ export async function setPersonalBudget(category: string, amount: number): Promi
   }
 }
 
-export async function getAllTripDestinations(): Promise<Array<{ destination: string | null; stops: string[] }>> {
-  const groups = await db.getAllAsync<Pick<Group, 'id' | 'destination'>>(
-    'SELECT id, destination FROM groups',
-  );
-  return Promise.all(
-    groups.map(async (g) => {
-      const stops = await db.getAllAsync<{ stop_name: string }>(
-        'SELECT stop_name FROM trip_stops WHERE group_id = ? ORDER BY order_index ASC',
-        g.id,
-      );
-      return { destination: g.destination, stops: stops.map(s => s.stop_name) };
-    }),
-  );
-}
-
 export async function createPlanTrip(
   name: string,
   currency: string,
@@ -1079,6 +1036,28 @@ export async function createPlanTrip(
     budgetPerPerson ?? null,
   );
   return result.lastInsertRowId;
+}
+
+export type ExpenseWithSplits = Expense & { splitMemberNames: string[] };
+
+export async function getGroupExpensesWithSplits(groupId: number): Promise<ExpenseWithSplits[]> {
+  const expenses = await db.getAllAsync<Expense>(
+    `SELECT e.*, m.name AS paid_by_name
+     FROM expenses e
+     JOIN members m ON e.paid_by = m.id
+     WHERE e.group_id = ?
+     ORDER BY e.date DESC`,
+    groupId,
+  );
+  return Promise.all(
+    expenses.map(async exp => {
+      const splitRows = await db.getAllAsync<{ name: string }>(
+        `SELECT m.name FROM expense_splits es JOIN members m ON es.member_id = m.id WHERE es.expense_id = ? ORDER BY m.name`,
+        exp.id,
+      );
+      return { ...exp, splitMemberNames: splitRows.map(r => r.name) };
+    }),
+  );
 }
 
 export async function getGroupDetails(groupId: number): Promise<GroupDetails | null> {

@@ -22,6 +22,7 @@ import { useTranslation } from 'react-i18next';
 import { HomeStackParamList } from '../navigation/types';
 import {
   getGroupDetails,
+  getGroupExpensesWithSplits,
   getSubgroups,
   archiveGroup,
   deleteSubgroup,
@@ -33,6 +34,7 @@ import {
   SuggestedTransaction,
   SubgroupWithMembers,
   TripStop,
+  type ExpenseWithSplits,
 } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
@@ -247,6 +249,7 @@ export default function GroupDetailScreen({ route }: Props) {
   const [sharing, setSharing]   = useState(false);
   const [sharingBalance, setSharingBalance] = useState(false);
   const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
+  const [expensesWithSplits, setExpensesWithSplits] = useState<ExpenseWithSplits[]>([]);
   const cardRef = useRef<View>(null);
   const balanceCardRef = useRef<View>(null);
   const toggleTools = () => {
@@ -415,7 +418,10 @@ export default function GroupDetailScreen({ route }: Props) {
         <View style={styles.shareBtnRow}>
           <Pressable
             style={({ pressed }) => [styles.shareBreakdownBtn, cardShadow, pressed && { opacity: 0.8 }]}
-            onPress={() => setShowBalanceModal(true)}
+            onPress={() => {
+              getGroupExpensesWithSplits(group.id).then(setExpensesWithSplits);
+              setShowBalanceModal(true);
+            }}
           >
             <Ionicons name="people-outline" size={16} color={colors.coral} />
             <Text style={styles.shareBreakdownBtnText}>{t('groupDetail.shareBalanceBreakdown')}</Text>
@@ -751,9 +757,17 @@ export default function GroupDetailScreen({ route }: Props) {
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
           </View>
-          <View style={styles.modalCardWrap}>
-            <BalanceBreakdownShareCard ref={balanceCardRef} group={group} />
-          </View>
+          <ScrollView
+            style={{ flex: 1 }}
+            contentContainerStyle={styles.modalCardWrap}
+            showsVerticalScrollIndicator={false}
+          >
+            <BalanceBreakdownShareCard
+              ref={balanceCardRef}
+              group={group}
+              expensesWithSplits={expensesWithSplits}
+            />
+          </ScrollView>
           <View style={styles.modalFooter}>
             <Pressable
               style={({ pressed }) => [styles.shareSheetBtn, pressed && { opacity: 0.8 }, sharingBalance && { opacity: 0.6 }]}
@@ -1408,10 +1422,9 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textPrimary,
   },
   modalCardWrap: {
-    flex: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     paddingHorizontal: 20,
+    paddingVertical: 20,
   },
   modalFooter: {
     paddingHorizontal: 20,
