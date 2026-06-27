@@ -25,7 +25,7 @@ const MIN_LOADING_MS = 1500;
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 const TAB_ICONS: Record<string, { focused: IoniconName; unfocused: IoniconName }> = {
-  Home:     { focused: 'home',         unfocused: 'home-outline' },
+  Home:     { focused: 'car',           unfocused: 'car-outline' },
   Personal: { focused: 'person',       unfocused: 'person-outline' },
   Insights: { focused: 'bar-chart',    unfocused: 'bar-chart-outline' },
   Been:     { focused: 'earth',        unfocused: 'earth-outline' },
