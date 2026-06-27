@@ -384,6 +384,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
               onChangeText={setAmount}
               onFocus={dismissAmountPrompt}
             />
+            <Text style={[styles.currencySymbol, { opacity: 0 }]} aria-hidden>{getCurrencySymbol(expenseCurrency || group.currency)}</Text>
           </View>
 
           {showAmountPrompt && (

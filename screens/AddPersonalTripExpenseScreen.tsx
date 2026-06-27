@@ -169,6 +169,7 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           <View style={styles.amountDisplay}>
             <Text style={styles.currSym}>{sym}</Text>
             <Text style={styles.amountText}>{formatDisplay(amountText)}</Text>
+            <Text style={[styles.currSym, { opacity: 0 }]} aria-hidden>{sym}</Text>
           </View>
           {!amountText && (
             <>
