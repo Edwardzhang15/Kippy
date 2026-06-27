@@ -40,7 +40,7 @@ import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, form
 import { getCachedRates } from '../currencyRates';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import AnimatedFAB from '../components/AnimatedFAB';
-import TripSummaryCard from '../components/TripSummaryCard';
+import TripShareGridCard from '../components/TripShareGridCard';
 import BalanceBreakdownShareCard from '../components/BalanceBreakdownShareCard';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'GroupDetail'>;
@@ -784,7 +784,7 @@ export default function GroupDetailScreen({ route }: Props) {
           </View>
 
           <View style={styles.modalCardWrap}>
-            <TripSummaryCard ref={cardRef} group={group} />
+            <TripShareGridCard ref={cardRef} group={group} />
           </View>
 
           <View style={styles.modalFooter}>
