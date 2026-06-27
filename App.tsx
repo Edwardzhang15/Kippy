@@ -11,8 +11,10 @@ import { initRates } from './currencyRates';
 import { applyPersistedLanguage } from './i18n';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './context/OnboardingContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingScreen from './components/LoadingScreen';
 import OnboardingScreen from './screens/OnboardingScreen';
+import LanguagePickerScreen from './screens/LanguagePickerScreen';
 import HomeStack from './navigation/HomeStack';
 import InsightsScreen from './screens/InsightsScreen';
 import SettingScreen from './screens/SettingScreen';
@@ -39,8 +41,10 @@ function AppCore() {
   const [dbReady, setDbReady]           = useState(false);
   const [minTimeReady, setMinTimeReady] = useState(false);
   const [overlayVisible, setOverlayVisible] = useState(true);
+  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [langPickerReady, setLangPickerReady] = useState(false);
 
-  const appReady = dbReady && minTimeReady && onboardingReady;
+  const appReady = dbReady && minTimeReady && onboardingReady && langPickerReady;
 
   useEffect(() => {
     Promise.all([
@@ -50,6 +54,11 @@ function AppCore() {
     ])
       .then(() => setDbReady(true))
       .catch((e) => console.error('Init failed:', e));
+
+    AsyncStorage.getItem('@kippy/lang_selected').then(v => {
+      setShowLangPicker(!v);
+      setLangPickerReady(true);
+    });
 
     const timer = setTimeout(() => setMinTimeReady(true), MIN_LOADING_MS);
     return () => clearTimeout(timer);
@@ -115,7 +124,18 @@ function AppCore() {
         </NavigationContainer>
       )}
 
-      {!overlayVisible && showOnboarding && (
+      {!overlayVisible && showLangPicker && (
+        <View style={StyleSheet.absoluteFill}>
+          <LanguagePickerScreen
+            onComplete={async () => {
+              await AsyncStorage.setItem('@kippy/lang_selected', 'true');
+              setShowLangPicker(false);
+            }}
+          />
+        </View>
+      )}
+
+      {!overlayVisible && !showLangPicker && showOnboarding && (
         <View style={StyleSheet.absoluteFill}>
           <OnboardingScreen />
         </View>
