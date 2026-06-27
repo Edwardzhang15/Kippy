@@ -122,6 +122,33 @@ export type TripStop = {
   order_index: number;
 };
 
+export type PersonalTrip = {
+  id: number;
+  name: string;
+  budget_amount: number | null;
+  currency: string;
+  created_date: string;
+  is_archived: number;
+};
+
+export type PersonalTripExpense = {
+  id: number;
+  personal_trip_id: number;
+  amount: number;
+  currency: string;
+  category: string;
+  date: string;
+  note: string | null;
+  receipt_photo_uri: string | null;
+};
+
+export type PersonalTripBudget = {
+  id: number;
+  personal_trip_id: number;
+  category: string;
+  planned_amount: number;
+};
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 let db: SQLite.SQLiteDatabase;
@@ -372,6 +399,49 @@ export async function initDatabase(): Promise<void> {
   try {
     await db.execAsync('ALTER TABLE groups ADD COLUMN vibe TEXT;');
   } catch { /* column already exists */ }
+
+  // Migration v21: personal trips table
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS personal_trips (
+        id             INTEGER PRIMARY KEY AUTOINCREMENT,
+        name           TEXT    NOT NULL,
+        budget_amount  REAL,
+        currency       TEXT    NOT NULL DEFAULT 'CAD',
+        created_date   TEXT    NOT NULL,
+        is_archived    INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+  } catch { /* table already exists */ }
+
+  // Migration v22: personal trip expenses table
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS personal_trip_expenses (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        personal_trip_id INTEGER NOT NULL REFERENCES personal_trips(id) ON DELETE CASCADE,
+        amount           REAL    NOT NULL,
+        currency         TEXT    NOT NULL,
+        category         TEXT    NOT NULL DEFAULT 'other',
+        date             TEXT    NOT NULL,
+        note             TEXT,
+        receipt_photo_uri TEXT
+      );
+    `);
+  } catch { /* table already exists */ }
+
+  // Migration v23: personal trip category budgets
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS personal_trip_budgets (
+        id               INTEGER PRIMARY KEY AUTOINCREMENT,
+        personal_trip_id INTEGER NOT NULL REFERENCES personal_trips(id) ON DELETE CASCADE,
+        category         TEXT    NOT NULL,
+        planned_amount   REAL    NOT NULL DEFAULT 0,
+        UNIQUE(personal_trip_id, category)
+      );
+    `);
+  } catch { /* table already exists */ }
 }
 
 // ─── Visited Countries ────────────────────────────────────────────────────────
@@ -1184,6 +1254,117 @@ export async function getMemberExpenses(
   }, 0));
 
   return { member, includedIn, paidFor, totalCharged, groupCurrency: gc };
+}
+
+// ─── Personal Trips ───────────────────────────────────────────────────────────
+
+export async function createPersonalTrip(
+  name: string,
+  currency: string,
+  budgetAmount: number | null,
+): Promise<number> {
+  const today = new Date().toISOString().slice(0, 10);
+  const r = await db.runAsync(
+    'INSERT INTO personal_trips (name, currency, budget_amount, created_date) VALUES (?, ?, ?, ?)',
+    name, currency, budgetAmount ?? null, today,
+  );
+  return r.lastInsertRowId;
+}
+
+export async function getPersonalTrips(): Promise<PersonalTrip[]> {
+  return db.getAllAsync<PersonalTrip>(
+    'SELECT * FROM personal_trips WHERE is_archived = 0 ORDER BY id DESC',
+  );
+}
+
+export async function getPersonalTrip(id: number): Promise<PersonalTrip | null> {
+  return db.getFirstAsync<PersonalTrip>('SELECT * FROM personal_trips WHERE id = ?', id);
+}
+
+export async function updatePersonalTrip(
+  id: number,
+  name: string,
+  currency: string,
+  budgetAmount: number | null,
+): Promise<void> {
+  await db.runAsync(
+    'UPDATE personal_trips SET name=?, currency=?, budget_amount=? WHERE id=?',
+    name, currency, budgetAmount ?? null, id,
+  );
+}
+
+export async function deletePersonalTrip(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM personal_trips WHERE id = ?', id);
+}
+
+export async function addPersonalTripExpense(
+  data: Omit<PersonalTripExpense, 'id'>,
+): Promise<number> {
+  const r = await db.runAsync(
+    `INSERT INTO personal_trip_expenses
+       (personal_trip_id, amount, currency, category, date, note, receipt_photo_uri)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+    data.personal_trip_id, data.amount, data.currency, data.category,
+    data.date, data.note ?? null, data.receipt_photo_uri ?? null,
+  );
+  return r.lastInsertRowId;
+}
+
+export async function getPersonalTripExpenses(tripId: number): Promise<PersonalTripExpense[]> {
+  return db.getAllAsync<PersonalTripExpense>(
+    'SELECT * FROM personal_trip_expenses WHERE personal_trip_id = ? ORDER BY date DESC, id DESC',
+    tripId,
+  );
+}
+
+export async function getPersonalTripExpense(id: number): Promise<PersonalTripExpense | null> {
+  return db.getFirstAsync<PersonalTripExpense>(
+    'SELECT * FROM personal_trip_expenses WHERE id = ?', id,
+  );
+}
+
+export async function updatePersonalTripExpense(
+  id: number,
+  data: Omit<PersonalTripExpense, 'id' | 'personal_trip_id'>,
+): Promise<void> {
+  await db.runAsync(
+    `UPDATE personal_trip_expenses
+     SET amount=?, currency=?, category=?, date=?, note=?, receipt_photo_uri=?
+     WHERE id=?`,
+    data.amount, data.currency, data.category, data.date,
+    data.note ?? null, data.receipt_photo_uri ?? null, id,
+  );
+}
+
+export async function deletePersonalTripExpense(id: number): Promise<void> {
+  await db.runAsync('DELETE FROM personal_trip_expenses WHERE id = ?', id);
+}
+
+export async function getPersonalTripBudgets(tripId: number): Promise<PersonalTripBudget[]> {
+  return db.getAllAsync<PersonalTripBudget>(
+    'SELECT * FROM personal_trip_budgets WHERE personal_trip_id = ? ORDER BY category ASC',
+    tripId,
+  );
+}
+
+export async function setPersonalTripBudget(
+  tripId: number,
+  category: string,
+  amount: number,
+): Promise<void> {
+  if (amount <= 0) {
+    await db.runAsync(
+      'DELETE FROM personal_trip_budgets WHERE personal_trip_id = ? AND category = ?',
+      tripId, category,
+    );
+  } else {
+    await db.runAsync(
+      `INSERT INTO personal_trip_budgets (personal_trip_id, category, planned_amount)
+       VALUES (?, ?, ?)
+       ON CONFLICT(personal_trip_id, category) DO UPDATE SET planned_amount=excluded.planned_amount`,
+      tripId, category, amount,
+    );
+  }
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

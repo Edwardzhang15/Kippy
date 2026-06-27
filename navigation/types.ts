@@ -33,7 +33,9 @@ export type InsightsStackParamList = {
 };
 
 export type PersonalStackParamList = {
-  PersonalMain:          undefined;
-  AddPersonalExpense:    { expenseId?: number };
-  SetBudgets:            undefined;
+  PersonalMain:           undefined;
+  CreatePersonalTrip:     { tripId?: number };
+  PersonalTripDetail:     { tripId: number };
+  AddPersonalTripExpense: { tripId: number; expenseId?: number };
+  ManageCategoryBudgets:  { tripId: number };
 };
