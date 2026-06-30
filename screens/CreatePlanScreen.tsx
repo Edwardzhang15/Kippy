@@ -18,6 +18,7 @@ import { PlanStackParamList } from '../navigation/types';
 import { createPlanTrip, addTripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'CreatePlan'>;
 
@@ -138,6 +139,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
               style={styles.input}
               placeholder={t('createPlan.tripNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              inputAccessoryViewID={DONE_BAR_ID}
               value={tripName}
               onChangeText={setTripName}
               returnKeyType="done"
@@ -150,6 +152,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
               style={styles.input}
               placeholder={t('createPlan.destinationPlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              inputAccessoryViewID={DONE_BAR_ID}
               value={destination}
               onChangeText={(v) => { setDestination(v); if (destError) setDestError(false); }}
               returnKeyType="done"
@@ -170,6 +173,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                       style={[styles.input, { flex: 1 }]}
                       placeholder={t('createPlan.stopPlaceholder', { number: index + 1, city: STOP_CITY_EXAMPLES[index % STOP_CITY_EXAMPLES.length] })}
                       placeholderTextColor={colors.textSecondary}
+                      inputAccessoryViewID={DONE_BAR_ID}
                       value={stop}
                       onChangeText={(v) => updateStop(index, v)}
                       returnKeyType="done"
@@ -282,6 +286,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
                 placeholder="0.00"
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="decimal-pad"
+                inputAccessoryViewID={DONE_BAR_ID}
                 value={budget}
                 onChangeText={setBudget}
                 returnKeyType="done"

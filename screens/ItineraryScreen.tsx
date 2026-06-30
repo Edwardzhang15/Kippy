@@ -33,6 +33,7 @@ import {
   Group,
 } from '../db';
 import { ACTIVITY_TYPES, getActivityType } from '../data/activityTypes';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 import { useTranslation } from 'react-i18next';
 import ItineraryShareCard from '../components/ItineraryShareCard';
 import SharePreviewModal from '../components/SharePreviewModal';
@@ -831,6 +832,7 @@ export default function ItineraryScreen() {
                 style={styles.textInput}
                 placeholder={t('itinerary.activityPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
+                inputAccessoryViewID={DONE_BAR_ID}
                 value={form.title}
                 onChangeText={v => setForm(f => ({ ...f, title: v }))}
                 returnKeyType="next"
@@ -870,6 +872,7 @@ export default function ItineraryScreen() {
                 style={styles.textInput}
                 placeholder={t('itinerary.locationPlaceholder')}
                 placeholderTextColor={colors.textSecondary}
+                inputAccessoryViewID={DONE_BAR_ID}
                 value={form.location}
                 onChangeText={v => setForm(f => ({
                   ...f, location: v,
@@ -942,6 +945,7 @@ export default function ItineraryScreen() {
                 style={[styles.textInput, styles.noteInput]}
                 placeholder={t('itinerary.notePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
+                inputAccessoryViewID={DONE_BAR_ID}
                 value={form.note}
                 onChangeText={v => setForm(f => ({ ...f, note: v }))}
                 multiline

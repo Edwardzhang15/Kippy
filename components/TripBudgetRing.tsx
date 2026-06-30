@@ -46,13 +46,17 @@ export default function TripBudgetRing({
   const offset    = circumference * (1 - pct);
   const sym       = getCurrencySymbol(currency);
 
-  // Scale text to ring size so it always fits
-  const spentFontSize  = Math.max(9,  Math.round(size * 0.14));
-  const budgetFontSize = Math.max(7,  Math.round(size * 0.10));
-  // For small rings (<= 80) hide the budget label to avoid overflow
-  const showBudgetLabel = hasBudget && size > 80;
+  // Inner usable diameter (inside the stroke on both sides)
+  const innerDiameter = size - strokeWidth * 2;
+  // Keep text clear of the stroke with a small buffer
+  const innerPad      = strokeWidth + 5;
 
-  const textColor = pct <= 0 || !hasBudget ? colors.textPrimary : ringColor;
+  // Percentage label (when budget set)
+  const pctFontSize   = Math.max(11, Math.round(innerDiameter * 0.27));
+  // Compact spent label (when no budget)
+  const spentFontSize = Math.max(9,  Math.round(innerDiameter * 0.20));
+
+  const textColor = colors.textPrimary;
 
   return (
     <View style={styles.container}>
@@ -81,18 +85,22 @@ export default function TripBudgetRing({
           />
         )}
       </Svg>
-      <View style={[StyleSheet.absoluteFill, styles.center]}>
-        <Text style={[styles.spent, { fontSize: spentFontSize, color: textColor }]} numberOfLines={1} adjustsFontSizeToFit>
-          {sym}{formatAmount(spent, currency)}
-        </Text>
-        {showBudgetLabel && (
-          <Text style={[styles.budget, { fontSize: budgetFontSize, color: colors.textSecondary }]} numberOfLines={1}>
-            / {sym}{formatAmount(budget!, currency)}
+      <View style={[StyleSheet.absoluteFill, styles.center, { paddingHorizontal: innerPad }]}>
+        {hasBudget ? (
+          <Text
+            style={[styles.pct, { fontSize: pctFontSize, color: ringColor }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {`${Math.round(pct * 100)}%`}
           </Text>
-        )}
-        {hasBudget && size > 100 && (
-          <Text style={[styles.pct, { fontSize: Math.round(size * 0.09), color: ringColor }]}>
-            {Math.round(pct * 100)}%
+        ) : (
+          <Text
+            style={[styles.spent, { fontSize: spentFontSize, color: textColor }]}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {`${sym}${formatAmount(spent, currency)}`}
           </Text>
         )}
       </View>
@@ -108,20 +116,13 @@ const styles = StyleSheet.create({
   center: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 8,
   },
-  spent: {
+  pct: {
     fontWeight: '700',
     textAlign: 'center',
   },
-  budget: {
-    fontWeight: '500',
-    marginTop: 1,
-    textAlign: 'center',
-  },
-  pct: {
+  spent: {
     fontWeight: '600',
-    marginTop: 2,
     textAlign: 'center',
   },
 });

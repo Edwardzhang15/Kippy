@@ -19,6 +19,7 @@ import { getGroupDetails, createSubgroup, MemberWithBalance } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { getAvatarColor, getInitials } from '../utils';
 import { useTheme } from '../context/ThemeContext';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CreateSubgroup'>;
 
@@ -215,6 +216,7 @@ export default function CreateSubgroupScreen({ route, navigation }: Props) {
                 style={styles.input}
                 placeholder={t('createSubgroup.namePlaceholder')}
                 placeholderTextColor={colors.textSecondary}
+                inputAccessoryViewID={DONE_BAR_ID}
                 value={name}
                 onChangeText={setName}
                 returnKeyType="done"

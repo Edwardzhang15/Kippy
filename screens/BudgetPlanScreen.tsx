@@ -40,6 +40,7 @@ import {
   getBudgetCategoryDef,
   BudgetCategoryDef,
 } from '../data/budgetCategories';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 function fmt(n: number, currency: string): string {
   return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
@@ -90,6 +91,7 @@ function BudgetRow({
           placeholder="0"
           placeholderTextColor={colors.border}
           returnKeyType="done"
+          inputAccessoryViewID={DONE_BAR_ID}
           selectTextOnFocus
         />
         <Pressable onPress={onDelete} hitSlop={10} style={styles.rowDeleteBtn}>

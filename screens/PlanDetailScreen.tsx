@@ -20,6 +20,7 @@ import { PlanStackParamList } from '../navigation/types';
 import { getGroupDetails, addMember, activatePlanTrip, getTripStops, GroupDetails, TripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'PlanDetail'>;
 
@@ -759,6 +760,7 @@ export default function PlanDetailScreen({ route }: Props) {
                   style={styles.memberInput}
                   placeholder={t('planDetail.memberPlaceholder', { number: index + 1 })}
                   placeholderTextColor={colors.textSecondary}
+                  inputAccessoryViewID={DONE_BAR_ID}
                   value={name}
                   onChangeText={(v) => updateMember(index, v)}
                   returnKeyType="done"

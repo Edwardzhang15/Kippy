@@ -17,6 +17,7 @@ import { HomeStackParamList } from '../navigation/types';
 import { createGroup, addMember, addTripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'CreateGroup'>;
 
@@ -265,6 +266,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
               style={styles.input}
               placeholder={t('createGroup.groupNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              inputAccessoryViewID={DONE_BAR_ID}
               value={groupName}
               onChangeText={setGroupName}
               returnKeyType="done"
@@ -277,6 +279,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
               style={styles.input}
               placeholder={t('createGroup.destinationPlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              inputAccessoryViewID={DONE_BAR_ID}
               value={destination}
               onChangeText={(v) => { setDestination(v); if (destError) setDestError(false); }}
               returnKeyType="done"
@@ -297,6 +300,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
                       style={styles.memberInput}
                       placeholder={t('createGroup.stopPlaceholder', { number: index + 1, city: STOP_CITY_EXAMPLES[index % STOP_CITY_EXAMPLES.length] })}
                       placeholderTextColor={colors.textSecondary}
+                      inputAccessoryViewID={DONE_BAR_ID}
                       value={stop}
                       onChangeText={(v) => updateStop(index, v)}
                       returnKeyType="done"
@@ -341,6 +345,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
                     style={styles.memberInput}
                     placeholder={t('createGroup.memberPlaceholder', { number: index + 1 })}
                     placeholderTextColor={colors.textSecondary}
+                    inputAccessoryViewID={DONE_BAR_ID}
                     value={name}
                     onChangeText={(v) => updateMember(index, v)}
                     returnKeyType="done"

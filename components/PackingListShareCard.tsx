@@ -1,13 +1,15 @@
 import React, { forwardRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { PackingItem } from '../db';
-import { colors } from '../theme';
+import { SC } from './shareCardTheme';
 
 export type PackingListShareCardProps = {
   tripName: string;
+  destination?: string;
+  photoUrl?: string;
   category: string;
   categoryItems: PackingItem[];
   pageNumber: number;
@@ -16,92 +18,107 @@ export type PackingListShareCardProps = {
   totalItems: number;
 };
 
-const CARD_W  = 300;
-const CARD_H  = 533;
-const PHOTO_H = 190;
-const OVERLAP = 20;
+const BODY_H = SC.CARD_H - SC.HEADER_H + SC.OVERLAP;
+
+// Neutral chip for checked/unchecked state
+const CHECK_DONE_BG    = '#E9F5EC';
+const CHECK_DONE_COLOR = '#3D9A55';
+const CHECK_EMPTY_BG   = '#F2F2F2';
+const CHECK_EMPTY_COLOR = '#AAAAAA';
 
 const PackingListShareCard = forwardRef<View, PackingListShareCardProps>(
-  ({ tripName, category, categoryItems, pageNumber, totalPages, totalChecked, totalItems }, ref) => {
+  ({
+    tripName, destination, photoUrl,
+    category, categoryItems,
+    pageNumber, totalPages,
+    totalChecked, totalItems,
+  }, ref) => {
     const { t } = useTranslation();
+    const isFirst = pageNumber === 1;
+
+    const paginationPart = totalPages > 1 ? ` · ${pageNumber}/${totalPages}` : '';
+    const packedPart     = t('shareCard.packed', { checked: totalChecked, total: totalItems });
+    const labelText      = `${t('shareCard.packingList')}${paginationPart} · ${packedPart}`;
+
     return (
       <View ref={ref} style={styles.card}>
-        {/* ── Gradient header ──────────────────────────────────── */}
-        <View style={styles.photoSection}>
+        {/* ── Header ──────────────────────────────────────────────── */}
+        <View style={styles.header}>
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={StyleSheet.absoluteFill} resizeMode="cover" />
+          ) : (
+            <LinearGradient
+              colors={SC.headerGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={StyleSheet.absoluteFill}
+            />
+          )}
           <LinearGradient
-            colors={[colors.coral, '#E05448', colors.sage]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
+            colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.30)', 'rgba(0,0,0,0.72)']}
+            locations={[0, 0.45, 1]}
             style={StyleSheet.absoluteFill}
           />
-          <Ionicons
-            name="airplane-outline"
-            size={88}
-            color="rgba(255,255,255,0.11)"
-            style={styles.decoA}
-          />
-          <Ionicons
-            name="compass-outline"
-            size={64}
-            color="rgba(255,255,255,0.09)"
-            style={styles.decoB}
-          />
-          <Ionicons
-            name="map-outline"
-            size={46}
-            color="rgba(255,255,255,0.09)"
-            style={styles.decoC}
-          />
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.40)']}
-            style={styles.photoEdgeGradient}
-          />
-          <View style={styles.photoOverlay}>
-            <Text style={styles.tripName} numberOfLines={2}>{tripName}</Text>
-            <View style={styles.badgeRow}>
-              <Ionicons name="bag-handle-outline" size={11} color="rgba(255,255,255,0.85)" />
-              <Text style={styles.badgeText}>
-                {t('shareCard.packingListBadge', { page: pageNumber, total: totalPages })}
-              </Text>
-              <Text style={styles.checkedBadge}>  {t('shareCard.packed', { checked: totalChecked, total: totalItems })}</Text>
+          {isFirst && (
+            <Image
+              source={require('../assets/Kip_packing.png')}
+              style={styles.kipMascot}
+              resizeMode="contain"
+            />
+          )}
+          <View style={styles.headerText}>
+            <Text style={styles.cardTitle} numberOfLines={2}>{tripName}</Text>
+            {destination ? (
+              <View style={styles.headerRow}>
+                <Ionicons name="location-outline" size={10} color="rgba(255,255,255,0.75)" />
+                <Text style={styles.headerSub}>{destination}</Text>
+              </View>
+            ) : null}
+            <View style={styles.headerRow}>
+              <Ionicons name="bag-handle-outline" size={10} color="rgba(255,255,255,0.65)" />
+              <Text style={styles.headerLabel}>{labelText}</Text>
             </View>
           </View>
         </View>
 
-        {/* ── White content area ───────────────────────────────── */}
+        {/* ── Body ────────────────────────────────────────────────── */}
         <View style={styles.body}>
           <View style={styles.content}>
-            <Text style={styles.categoryTitle}>{category}</Text>
+            <Text style={styles.sectionLabel}>{category.toUpperCase()}</Text>
 
             {categoryItems.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Ionicons name="bag-outline" size={28} color={colors.border} />
+              <View style={styles.empty}>
+                <Ionicons name="bag-outline" size={28} color={SC.divider} />
                 <Text style={styles.emptyText}>{t('shareCard.noItemsInCategory')}</Text>
               </View>
             ) : (
-              categoryItems.map((item, idx) => (
-                <View
-                  key={item.id}
-                  style={[styles.itemRow, idx > 0 && styles.itemRowBorder]}
-                >
-                  <View style={[styles.checkbox, item.is_checked ? styles.checkboxDone : null]}>
-                    {item.is_checked ? (
-                      <Ionicons name="checkmark" size={9} color="#fff" />
-                    ) : null}
+              categoryItems.map(item => {
+                const done      = item.is_checked === 1;
+                const chipBg    = done ? CHECK_DONE_BG    : CHECK_EMPTY_BG;
+                const chipColor = done ? CHECK_DONE_COLOR : CHECK_EMPTY_COLOR;
+                const chipIcon  = done ? 'checkmark'      : 'ellipse-outline';
+                return (
+                  <View key={item.id} style={styles.row}>
+                    <View style={[styles.iconChip, { backgroundColor: chipBg }]}>
+                      <Ionicons name={chipIcon} size={15} color={chipColor} />
+                    </View>
+                    <Text
+                      style={[styles.rowLabel, done && styles.rowLabelDone]}
+                      numberOfLines={1}
+                    >
+                      {item.label}
+                    </Text>
+                    {done && (
+                      <Text style={[styles.rowValue, { color: CHECK_DONE_COLOR }]}>✓</Text>
+                    )}
                   </View>
-                  <Text
-                    style={[styles.itemLabel, item.is_checked && styles.itemLabelDone]}
-                    numberOfLines={1}
-                  >
-                    {item.label}
-                  </Text>
-                </View>
-              ))
+                );
+              })
             )}
           </View>
 
-          <View style={styles.footerRow}>
-            <Ionicons name="navigate-circle-outline" size={11} color={colors.tabInactive} />
+          <View style={styles.footer}>
+            <Ionicons name="navigate-circle-outline" size={10} color={SC.footerGray} />
             <Text style={styles.footerText}>{t('shareCard.madeWithKippy')}</Text>
           </View>
         </View>
@@ -115,157 +132,132 @@ export default PackingListShareCard;
 
 const styles = StyleSheet.create({
   card: {
-    width: CARD_W,
-    height: CARD_H,
+    width: SC.CARD_W,
+    height: SC.CARD_H,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: SC.card,
   },
 
-  photoSection: {
-    height: PHOTO_H,
+  header: {
+    height: SC.HEADER_H,
     overflow: 'hidden',
   },
-  decoA: {
+  kipMascot: {
     position: 'absolute',
-    top: -10,
-    left: -12,
-    transform: [{ rotate: '-22deg' }],
+    top: 12,
+    right: 12,
+    width: 52,
+    height: 52,
   },
-  decoB: {
+  headerText: {
     position: 'absolute',
-    top: 14,
-    right: 22,
-  },
-  decoC: {
-    position: 'absolute',
-    bottom: 30,
-    right: 8,
-  },
-  photoEdgeGradient: {
-    position: 'absolute',
-    bottom: 0,
+    bottom: SC.OVERLAP + 8,
     left: 0,
     right: 0,
-    height: 80,
+    paddingHorizontal: SC.H_PAD,
+    gap: 3,
   },
-  photoOverlay: {
-    position: 'absolute',
-    bottom: OVERLAP + 8,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
-    gap: 5,
-  },
-  tripName: {
-    fontSize: 21,
+  cardTitle: {
+    fontSize: 20,
     fontWeight: '800',
     color: '#fff',
-    lineHeight: 25,
-    textShadowColor: 'rgba(0,0,0,0.25)',
+    lineHeight: 24,
+    textShadowColor: 'rgba(0,0,0,0.30)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  badgeRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  badgeText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
+  headerSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
     fontWeight: '500',
   },
-  checkedBadge: {
+  headerLabel: {
     fontSize: 11,
-    color: 'rgba(255,255,255,0.70)',
+    color: 'rgba(255,255,255,0.65)',
     fontWeight: '500',
   },
 
   body: {
-    height: CARD_H - PHOTO_H + OVERLAP,
-    marginTop: -OVERLAP,
-    borderTopLeftRadius: OVERLAP,
-    borderTopRightRadius: OVERLAP,
-    backgroundColor: '#fff',
-    paddingHorizontal: 16,
+    height: BODY_H,
+    marginTop: -SC.OVERLAP,
+    borderTopLeftRadius: SC.OVERLAP,
+    borderTopRightRadius: SC.OVERLAP,
+    backgroundColor: SC.card,
+    paddingHorizontal: SC.H_PAD,
     paddingTop: 14,
-    paddingBottom: 12,
-    justifyContent: 'space-between',
+    paddingBottom: 10,
   },
-
   content: {
     flex: 1,
   },
 
-  categoryTitle: {
-    fontSize: 10,
-    fontWeight: '800',
-    color: colors.coral,
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginBottom: 8,
+  sectionLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: SC.labelGray,
+    letterSpacing: 0.9,
+    marginBottom: 5,
   },
 
-  itemRow: {
+  row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
-    paddingVertical: 7,
+    gap: 10,
+    paddingVertical: 4,
   },
-  itemRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  checkbox: {
-    width: 15,
-    height: 15,
-    borderRadius: 4,
-    borderWidth: 1.5,
-    borderColor: colors.border,
+  iconChip: {
+    width: SC.ICON_CHIP,
+    height: SC.ICON_CHIP,
+    borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
   },
-  checkboxDone: {
-    backgroundColor: colors.coral,
-    borderColor: colors.coral,
-  },
-  itemLabel: {
+  rowLabel: {
     flex: 1,
-    fontSize: 12.5,
-    color: colors.textPrimary,
-    fontWeight: '400',
+    fontSize: 12,
+    fontWeight: '600',
+    color: SC.dark,
   },
-  itemLabelDone: {
-    color: colors.textSecondary,
+  rowLabelDone: {
+    color: SC.rowSecondary,
     textDecorationLine: 'line-through',
   },
+  rowValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    flexShrink: 0,
+  },
 
-  emptyState: {
+  empty: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
     gap: 8,
   },
   emptyText: {
-    fontSize: 13,
-    color: colors.textSecondary,
+    fontSize: 12,
+    color: SC.labelGray,
     fontWeight: '500',
   },
 
-  footerRow: {
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
     paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
+    marginTop: 'auto',
   },
   footerText: {
-    fontSize: 10,
-    color: colors.tabInactive,
+    fontSize: 9,
+    color: SC.footerGray,
     fontWeight: '500',
   },
 });

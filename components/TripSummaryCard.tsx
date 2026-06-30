@@ -4,45 +4,45 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { GroupDetails } from '../db';
-import { colors, fontSizes } from '../theme';
 import { getCurrencySymbol, formatAmount } from '../utils';
+import { SC, scAvatarColor, scInitials } from './shareCardTheme';
 
 export type TripSummaryCardProps = {
   group: GroupDetails;
 };
 
-const CARD_W = 300;
-const CARD_H = 533;
-const PHOTO_H = 190;
-const OVERLAP = 20;
+const BODY_H  = SC.CARD_H - SC.HEADER_H + SC.OVERLAP;
+const MAX_MEM = 5;
 
 function getTripDates(group: GroupDetails) {
   if (group.expenses.length === 0) return null;
-  const dates = group.expenses.map((e) => e.date).sort();
-  return { start: formatDate(dates[0]), end: formatDate(dates[dates.length - 1]) };
+  const dates = group.expenses.map(e => e.date).sort();
+  return { start: fmtDate(dates[0]), end: fmtDate(dates[dates.length - 1]) };
 }
 
-function formatDate(iso: string): string {
+function fmtDate(iso: string): string {
   const [year, month, day] = iso.split('T')[0].split('-');
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   return `${months[parseInt(month, 10) - 1]} ${parseInt(day, 10)}, ${year}`;
 }
 
 const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) => {
   const { t } = useTranslation();
-  const hasPhoto = Boolean(group.destination_photo_url);
+  const hasPhoto  = Boolean(group.destination_photo_url);
+  const sym       = getCurrencySymbol(group.currency);
   const tripDates = getTripDates(group);
 
-  const totalSpent = group.totalSpent;
   const totalOutstanding = group.members
-    .filter((m) => m.balance < -0.005)
+    .filter(m => m.balance < -0.005)
     .reduce((sum, m) => sum + Math.abs(m.balance), 0);
   const allSettled = totalOutstanding < 0.005;
+  const visMembers = group.members.slice(0, MAX_MEM);
+  const extraMem   = group.members.length - visMembers.length;
 
   return (
     <View ref={ref} style={styles.card}>
-      {/* ── Photo / gradient header ───────────────────────────── */}
-      <View style={styles.photoSection}>
+      {/* ── Header ──────────────────────────────────────────────── */}
+      <View style={styles.header}>
         {hasPhoto ? (
           <Image
             source={{ uri: group.destination_photo_url! }}
@@ -51,116 +51,105 @@ const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) 
           />
         ) : (
           <LinearGradient
-            colors={[colors.coral, '#E05448', colors.sage]}
+            colors={SC.headerGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={StyleSheet.absoluteFill}
           />
         )}
-
-        {/* Decorative background icons — gradient mode only */}
-        {!hasPhoto && (
-          <>
-            <Ionicons
-              name="airplane-outline"
-              size={88}
-              color="rgba(255,255,255,0.11)"
-              style={styles.decoA}
-            />
-            <Ionicons
-              name="compass-outline"
-              size={64}
-              color="rgba(255,255,255,0.09)"
-              style={styles.decoB}
-            />
-            <Ionicons
-              name="map-outline"
-              size={46}
-              color="rgba(255,255,255,0.09)"
-              style={styles.decoC}
-            />
-          </>
-        )}
-
         <LinearGradient
-          colors={['transparent', 'rgba(0,0,0,0.62)']}
-          style={styles.photoEdgeGradient}
+          colors={['rgba(0,0,0,0)', 'rgba(0,0,0,0.30)', 'rgba(0,0,0,0.72)']}
+          locations={[0, 0.45, 1]}
+          style={StyleSheet.absoluteFill}
         />
-
-        <View style={styles.photoOverlay}>
-          <Text style={styles.groupName} numberOfLines={2}>{group.name}</Text>
+        <Image
+          source={require('../assets/Kip_wave.png')}
+          style={styles.kipMascot}
+          resizeMode="contain"
+        />
+        <View style={styles.headerText}>
+          <Text style={styles.cardTitle} numberOfLines={2}>{group.name}</Text>
           {group.destination ? (
-            <View style={styles.destinationRow}>
-              <Ionicons name="location-outline" size={12} color="rgba(255,255,255,0.82)" />
-              <Text style={styles.destinationText}>{group.destination}</Text>
+            <View style={styles.headerRow}>
+              <Ionicons name="location-outline" size={10} color="rgba(255,255,255,0.75)" />
+              <Text style={styles.headerSub}>{group.destination}</Text>
             </View>
           ) : null}
+          <View style={styles.headerRow}>
+            <Ionicons name="receipt-outline" size={10} color="rgba(255,255,255,0.65)" />
+            <Text style={styles.headerLabel}>{t('shareCard.tripSummaryBadge')}</Text>
+          </View>
         </View>
       </View>
 
-      {/* ── White stats card ──────────────────────────────────── */}
-      <View style={styles.whiteCard}>
-        <Text style={styles.totalLabel}>{t('shareCard.totalTripCost')}</Text>
-        <View style={styles.totalAmountRow}>
-          <Text style={styles.totalAmount}>{getCurrencySymbol(group.currency)}{formatAmount(totalSpent, group.currency)}</Text>
-          <Text style={styles.totalCurrency}>{group.currency}</Text>
-        </View>
+      {/* ── Body ────────────────────────────────────────────────── */}
+      <View style={styles.body}>
+        <View style={styles.content}>
+          {/* Total */}
+          <Text style={styles.totalLabel}>{t('shareCard.totalTripCost').toUpperCase()}</Text>
+          <Text style={styles.totalAmount}>
+            {sym}{formatAmount(group.totalSpent, group.currency)}
+            {'  '}<Text style={styles.totalCurrency}>{group.currency}</Text>
+          </Text>
 
-        <View style={styles.divider} />
-
-        <View style={styles.balanceRow}>
-          <Text style={styles.balanceLabel}>{t('shareCard.outstandingBalance')}</Text>
-          {allSettled ? (
-            <View style={styles.allSettledRow}>
-              <Ionicons name="checkmark-circle" size={14} color={colors.sage} />
-              <Text style={styles.allSettledText}>{t('shareCard.allSettledUp')}</Text>
-            </View>
-          ) : (
-            <Text style={styles.outstandingText}>
-              {t('shareCard.remaining', { amount: formatAmount(totalOutstanding, group.currency) })}
+          {tripDates && (
+            <Text style={styles.dates}>
+              {tripDates.start === tripDates.end
+                ? tripDates.start
+                : `${tripDates.start} – ${tripDates.end}`}
             </Text>
           )}
-        </View>
 
-        <View style={styles.divider} />
+          <View style={styles.sectionDivider} />
 
-        <View style={styles.memberList}>
-          {group.members.slice(0, 6).map((m) => {
+          {/* Outstanding */}
+          <Text style={styles.sectionLabel}>{t('shareCard.outstandingBalance').toUpperCase()}</Text>
+          {allSettled ? (
+            <View style={styles.row}>
+              <Ionicons name="checkmark-circle" size={16} color={SC.sage} />
+              <Text style={[styles.rowLabel, { color: SC.sage }]}>
+                {t('shareCard.allSettledUp')}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.row}>
+              <Ionicons name="alert-circle-outline" size={16} color={SC.coral} />
+              <Text style={styles.rowLabel} numberOfLines={1}>
+                {t('shareCard.remaining', {
+                  amount: formatAmount(totalOutstanding, group.currency),
+                })}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.sectionDivider} />
+
+          {/* Members */}
+          <Text style={styles.sectionLabel}>{t('createGroup.members').toUpperCase()}</Text>
+          {visMembers.map((m, i) => {
             const settled = Math.abs(m.balance) < 0.005;
-            const owed = m.balance < -0.005;
+            const isPos   = m.balance >= 0;
+            const color   = settled ? SC.labelGray : isPos ? SC.sage : SC.coral;
+            const val     = settled
+              ? '✓'
+              : (isPos ? '+' : '−') + sym + formatAmount(Math.abs(m.balance), group.currency);
             return (
-              <View key={m.id} style={styles.memberRow}>
-                <Text style={styles.memberName} numberOfLines={1}>{m.name}</Text>
-                {settled ? (
-                  <View style={styles.settledBadge}>
-                    <Ionicons name="checkmark" size={11} color={colors.sage} />
-                    <Text style={styles.settledText}>{t('shareCard.settled')}</Text>
-                  </View>
-                ) : owed ? (
-                  <Text style={styles.owedText}>
-                    {t('shareCard.owed', { amount: formatAmount(Math.abs(m.balance), group.currency) })}
-                  </Text>
-                ) : (
-                  <Text style={styles.paidText}>+{getCurrencySymbol(group.currency)}{formatAmount(m.balance, group.currency)}</Text>
-                )}
+              <View key={m.id} style={styles.row}>
+                <View style={[styles.avatar, { backgroundColor: scAvatarColor(i) }]}>
+                  <Text style={styles.avatarText}>{scInitials(m.name)}</Text>
+                </View>
+                <Text style={styles.rowLabel} numberOfLines={1}>{m.name}</Text>
+                <Text style={[styles.rowValue, { color }]}>{val}</Text>
               </View>
             );
           })}
-          {group.members.length > 6 && (
-            <Text style={styles.moreMembers}>{t('shareCard.moreMembers', { count: group.members.length - 6 })}</Text>
+          {extraMem > 0 && (
+            <Text style={styles.overflow}>+{extraMem} more</Text>
           )}
         </View>
 
-        {tripDates && (
-          <Text style={styles.tripDates}>
-            {tripDates.start === tripDates.end
-              ? tripDates.start
-              : `${tripDates.start} – ${tripDates.end}`}
-          </Text>
-        )}
-
-        <View style={styles.footerRow}>
-          <Ionicons name="navigate-circle-outline" size={11} color={colors.tabInactive} />
+        <View style={styles.footer}>
+          <Ionicons name="navigate-circle-outline" size={10} color={SC.footerGray} />
           <Text style={styles.footerText}>{t('shareCard.madeWithKippy')}</Text>
         </View>
       </View>
@@ -173,198 +162,159 @@ export default TripSummaryCard;
 
 const styles = StyleSheet.create({
   card: {
-    width: CARD_W,
-    height: CARD_H,
+    width: SC.CARD_W,
+    height: SC.CARD_H,
     borderRadius: 20,
     overflow: 'hidden',
-    backgroundColor: '#fff',
+    backgroundColor: SC.card,
   },
 
-  photoSection: {
-    height: PHOTO_H,
+  header: {
+    height: SC.HEADER_H,
     overflow: 'hidden',
   },
-  decoA: {
+  kipMascot: {
     position: 'absolute',
-    top: -10,
-    left: -12,
-    transform: [{ rotate: '-22deg' }],
+    top: 12,
+    right: 12,
+    width: 52,
+    height: 52,
   },
-  decoB: {
+  headerText: {
     position: 'absolute',
-    top: 14,
-    right: 22,
-  },
-  decoC: {
-    position: 'absolute',
-    bottom: 30,
-    right: 8,
-  },
-  photoEdgeGradient: {
-    position: 'absolute',
-    bottom: 0,
+    bottom: SC.OVERLAP + 8,
     left: 0,
     right: 0,
-    height: 80,
-  },
-  photoOverlay: {
-    position: 'absolute',
-    bottom: OVERLAP + 8,
-    left: 0,
-    right: 0,
-    paddingHorizontal: 16,
+    paddingHorizontal: SC.H_PAD,
     gap: 3,
   },
-  groupName: {
-    fontSize: 21,
+  cardTitle: {
+    fontSize: 20,
     fontWeight: '800',
     color: '#fff',
-    lineHeight: 25,
-    textShadowColor: 'rgba(0,0,0,0.25)',
+    lineHeight: 24,
+    textShadowColor: 'rgba(0,0,0,0.30)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
-  destinationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  destinationText: {
-    fontSize: 12,
-    color: 'rgba(255,255,255,0.85)',
-    fontWeight: '500',
-  },
-
-  whiteCard: {
-    height: CARD_H - PHOTO_H + OVERLAP,
-    marginTop: -OVERLAP,
-    borderTopLeftRadius: OVERLAP,
-    borderTopRightRadius: OVERLAP,
-    backgroundColor: '#fff',
-    paddingHorizontal: 18,
-    paddingTop: 16,
-    paddingBottom: 14,
-  },
-  totalLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-    marginBottom: 2,
-  },
-  totalAmountRow: {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: 6,
-    marginBottom: 12,
-  },
-  totalAmount: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: colors.textPrimary,
-  },
-  totalCurrency: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: 10,
-  },
-  balanceRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  balanceLabel: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: colors.textSecondary,
-    textTransform: 'uppercase',
-    letterSpacing: 0.7,
-  },
-  allSettledRow: {
+  headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 4,
   },
-  allSettledText: {
-    fontSize: fontSizes.caption,
-    fontWeight: '700',
-    color: colors.sage,
-  },
-  outstandingText: {
-    fontSize: fontSizes.caption,
-    fontWeight: '700',
-    color: colors.coral,
-  },
-  memberList: {
-    gap: 7,
-    marginTop: 2,
-  },
-  memberRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  memberName: {
-    fontSize: 13,
+  headerSub: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.75)',
     fontWeight: '500',
-    color: colors.textPrimary,
-    flex: 1,
-    marginRight: 8,
   },
-  settledBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 3,
-  },
-  settledText: {
-    fontSize: 12,
-    color: colors.sage,
-    fontWeight: '600',
-  },
-  owedText: {
-    fontSize: 12,
-    color: colors.coral,
-    fontWeight: '700',
-  },
-  paidText: {
-    fontSize: 12,
-    color: colors.sage,
-    fontWeight: '700',
-  },
-  moreMembers: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
+  headerLabel: {
+    fontSize: 11,
+    color: 'rgba(255,255,255,0.65)',
     fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  tripDates: {
-    fontSize: fontSizes.caption,
-    color: colors.textSecondary,
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 10,
   },
 
-  footerRow: {
+  body: {
+    height: BODY_H,
+    marginTop: -SC.OVERLAP,
+    borderTopLeftRadius: SC.OVERLAP,
+    borderTopRightRadius: SC.OVERLAP,
+    backgroundColor: SC.card,
+    paddingHorizontal: SC.H_PAD,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  content: {
+    flex: 1,
+  },
+
+  totalLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: SC.labelGray,
+    letterSpacing: 0.9,
+    marginBottom: 3,
+  },
+  totalAmount: {
+    fontSize: 26,
+    fontWeight: '800',
+    color: SC.dark,
+    lineHeight: 31,
+  },
+  totalCurrency: {
+    fontSize: 13,
+    fontWeight: '600',
+    color: SC.labelGray,
+  },
+  dates: {
+    fontSize: 10,
+    color: SC.labelGray,
+    fontWeight: '500',
+    marginTop: 2,
+  },
+
+  sectionLabel: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: SC.labelGray,
+    letterSpacing: 0.9,
+    marginBottom: 5,
+  },
+  sectionDivider: {
+    height: 1,
+    backgroundColor: SC.divider,
+    marginVertical: 9,
+    marginHorizontal: -SC.H_PAD,
+  },
+
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    paddingVertical: 4,
+  },
+  avatar: {
+    width: SC.AVATAR,
+    height: SC.AVATAR,
+    borderRadius: SC.AVATAR / 2,
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexShrink: 0,
+  },
+  avatarText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#fff',
+  },
+  rowLabel: {
+    flex: 1,
+    fontSize: 12,
+    fontWeight: '600',
+    color: SC.dark,
+  },
+  rowValue: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: SC.dark,
+    flexShrink: 0,
+  },
+  overflow: {
+    fontSize: 10,
+    color: SC.labelGray,
+    fontWeight: '500',
+    paddingTop: 2,
+  },
+
+  footer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 5,
+    gap: 4,
     paddingTop: 8,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
     marginTop: 'auto',
   },
   footerText: {
-    fontSize: 10,
-    color: colors.tabInactive,
+    fontSize: 9,
+    color: SC.footerGray,
     fontWeight: '500',
   },
 });

@@ -23,6 +23,7 @@ import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getCurrencySymbol, formatAmount } from '../utils';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<PersonalStackParamList, 'ManageCategoryBudgets'>;
 
@@ -55,7 +56,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   catHeader:   { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 8 },
   catIcon:     { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   catName:     { flex: 1, fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary },
-  catSpent:    { fontSize: fontSizes.caption, color: c.textSecondary },
   inputRow:    { flexDirection: 'row', alignItems: 'center', gap: 8 },
   budgetInput: { flex: 1, backgroundColor: c.background, borderRadius: radii.button, paddingHorizontal: 12, paddingVertical: 9, fontSize: fontSizes.body, color: c.textPrimary },
   bar:         { height: 4, borderRadius: 2, overflow: 'hidden', marginTop: 8 },
@@ -134,9 +134,6 @@ export default function ManageCategoryBudgetsScreen({ navigation, route }: Props
                   <Ionicons name={cat.icon} size={16} color={cat.color} />
                 </View>
                 <Text style={styles.catName}>{t(`categories.${cat.id}`)}</Text>
-                {spent > 0 && (
-                  <Text style={styles.catSpent}>{sym}{formatAmount(spent, trip?.currency ?? 'CAD')}</Text>
-                )}
               </View>
               <View style={styles.inputRow}>
                 <Text style={{ color: colors.textSecondary, fontSize: fontSizes.body }}>{sym}</Text>
@@ -147,6 +144,8 @@ export default function ManageCategoryBudgetsScreen({ navigation, route }: Props
                   placeholder={t('personalTrip.budgetPlaceholder')}
                   placeholderTextColor={colors.textSecondary}
                   keyboardType="decimal-pad"
+                  inputAccessoryViewID={DONE_BAR_ID}
+                  returnKeyType="done"
                 />
               </View>
               {budgetVal > 0 && (

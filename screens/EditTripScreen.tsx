@@ -22,6 +22,7 @@ import {
 } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 const UNSPLASH_KEY = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
@@ -396,6 +397,7 @@ export default function EditTripScreen() {
               style={styles.input}
               placeholder={t('editTrip.tripNamePlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              inputAccessoryViewID={DONE_BAR_ID}
               value={tripName}
               onChangeText={setTripName}
               returnKeyType="done"
@@ -408,6 +410,7 @@ export default function EditTripScreen() {
               style={styles.input}
               placeholder={t('editTrip.destinationPlaceholder')}
               placeholderTextColor={colors.textSecondary}
+              inputAccessoryViewID={DONE_BAR_ID}
               value={destination}
               onChangeText={setDestination}
               returnKeyType="done"
@@ -449,6 +452,7 @@ export default function EditTripScreen() {
                     style={styles.memberInput}
                     placeholder={m.id === null ? t('editTrip.newMemberPlaceholder') : m.name}
                     placeholderTextColor={colors.textSecondary}
+                    inputAccessoryViewID={DONE_BAR_ID}
                     value={m.name}
                     onChangeText={(v) =>
                       setMembers((prev) => prev.map((x, i) => (i === index ? { ...x, name: v } : x)))
@@ -544,6 +548,7 @@ export default function EditTripScreen() {
                     placeholder="0.00"
                     placeholderTextColor={colors.textSecondary}
                     keyboardType="decimal-pad"
+                    inputAccessoryViewID={DONE_BAR_ID}
                     value={budget}
                     onChangeText={setBudget}
                     returnKeyType="done"

@@ -126,6 +126,7 @@ function ExpenseRow({
   isLast,
   onPress,
   onReceiptPress,
+  splitNames,
 }: {
   expense: Expense;
   index: number;
@@ -133,6 +134,7 @@ function ExpenseRow({
   isLast: boolean;
   onPress: () => void;
   onReceiptPress?: () => void;
+  splitNames?: string[];
 }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
@@ -182,6 +184,11 @@ function ExpenseRow({
               date: formatExpenseDate(expense.date),
             })}
           </Text>
+          {splitNames && splitNames.length > 0 && (
+            <Text style={styles.expenseSplit} numberOfLines={1}>
+              {'Split: ' + splitNames.join(', ')}
+            </Text>
+          )}
         </View>
         <View style={styles.expenseRight}>
           <Text style={styles.expenseAmount}>{getCurrencySymbol(expense.currency)}{formatAmount(expense.amount, expense.currency)}</Text>
@@ -248,10 +255,12 @@ export default function GroupDetailScreen({ route }: Props) {
   const [showBalanceModal, setShowBalanceModal] = useState(false);
   const [sharing, setSharing]   = useState(false);
   const [sharingBalance, setSharingBalance] = useState(false);
+  const [sharingSummary, setSharingSummary] = useState(false);
   const [receiptViewUri, setReceiptViewUri] = useState<string | null>(null);
   const [expensesWithSplits, setExpensesWithSplits] = useState<ExpenseWithSplits[]>([]);
   const cardRef = useRef<View>(null);
   const balanceCardRef = useRef<View>(null);
+  const pageRefs = useRef<(View | null)[]>([]);
   const toggleTools = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setToolsExpanded(prev => !prev);
@@ -264,11 +273,13 @@ export default function GroupDetailScreen({ route }: Props) {
         getGroupDetails(route.params.groupId),
         getSubgroups(route.params.groupId),
         getTripStops(route.params.groupId),
-      ]).then(([groupData, subgroupData, stopsData]) => {
+        getGroupExpensesWithSplits(route.params.groupId),
+      ]).then(([groupData, subgroupData, stopsData, expWithSplits]) => {
         if (active) {
           setGroup(groupData);
           setSubgroups(subgroupData);
           setStops(stopsData);
+          setExpensesWithSplits(expWithSplits);
           setLoading(false);
         }
       });
@@ -326,6 +337,23 @@ export default function GroupDetailScreen({ route }: Props) {
     }
   };
 
+  const handleShareSummary = async () => {
+    const summaryRef = pageRefs.current[0];
+    if (!summaryRef) return;
+    setSharingSummary(true);
+    try {
+      const uri = await captureRef(summaryRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      await Sharing.shareAsync(uri, {
+        mimeType: 'image/png',
+        dialogTitle: t('groupDetail.shareBalanceBreakdown'),
+      });
+    } catch {
+      Alert.alert(t('groupDetail.shareError'), t('groupDetail.shareErrorMsg'));
+    } finally {
+      setSharingSummary(false);
+    }
+  };
+
   const handleConclude = () => {
     Alert.alert(
       t('groupDetail.concludeTitle'),
@@ -345,6 +373,7 @@ export default function GroupDetailScreen({ route }: Props) {
   };
 
   const hasPhoto = Boolean(group.destination_photo_url);
+  const splitNamesMap = new Map(expensesWithSplits.map(e => [e.id, e.splitMemberNames]));
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -418,15 +447,12 @@ export default function GroupDetailScreen({ route }: Props) {
         <View style={styles.shareBtnRow}>
           <Pressable
             style={({ pressed }) => [styles.shareBreakdownBtn, cardShadow, pressed && { opacity: 0.8 }]}
-            onPress={() => {
-              getGroupExpensesWithSplits(group.id).then(setExpensesWithSplits);
-              setShowBalanceModal(true);
-            }}
+            onPress={() => setShowBalanceModal(true)}
           >
             <Ionicons name="people-outline" size={16} color={colors.coral} />
             <Text style={styles.shareBreakdownBtnText}>{t('groupDetail.shareBalanceBreakdown')}</Text>
           </Pressable>
-          {group.is_archived && (
+          {!!group.is_archived && (
             <Pressable
               style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.8 }]}
               onPress={() => setShowShareModal(true)}
@@ -450,7 +476,14 @@ export default function GroupDetailScreen({ route }: Props) {
             >
               {stops.map((stop, i) => (
                 <View key={stop.id} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                  {i > 0 && <Text style={styles.stopsArrow}>{'→'}</Text>}
+                  {i > 0 && (
+                    <Ionicons
+                      name="arrow-forward"
+                      size={11}
+                      color={colors.textSecondary}
+                      style={styles.stopsArrow}
+                    />
+                  )}
                   <View style={styles.stopChip}>
                     <Text style={styles.stopChipText}>{stop.stop_name}</Text>
                   </View>
@@ -696,6 +729,7 @@ export default function GroupDetailScreen({ route }: Props) {
                 index={i}
                 memberCount={group.members.length}
                 isLast={i === group.expenses.length - 1}
+                splitNames={splitNamesMap.get(expense.id)}
                 onPress={() =>
                   navigation.navigate('AddExpense', {
                     groupId: group.id,
@@ -766,17 +800,28 @@ export default function GroupDetailScreen({ route }: Props) {
               ref={balanceCardRef}
               group={group}
               expensesWithSplits={expensesWithSplits}
+              onPageRef={(i, r) => { pageRefs.current[i] = r; }}
             />
           </ScrollView>
           <View style={styles.modalFooter}>
             <Pressable
+              style={({ pressed }) => [styles.shareSheetBtnOutline, pressed && { opacity: 0.8 }, sharingSummary && { opacity: 0.6 }]}
+              onPress={handleShareSummary}
+              disabled={sharingSummary || sharingBalance}
+            >
+              <Ionicons name="image-outline" size={18} color={colors.coral} />
+              <Text style={styles.shareSheetBtnOutlineText}>
+                {sharingSummary ? t('common.sharing') : t('shareCard.shareSummary')}
+              </Text>
+            </Pressable>
+            <Pressable
               style={({ pressed }) => [styles.shareSheetBtn, pressed && { opacity: 0.8 }, sharingBalance && { opacity: 0.6 }]}
               onPress={handleShareBalance}
-              disabled={sharingBalance}
+              disabled={sharingBalance || sharingSummary}
             >
               <Ionicons name="share-outline" size={20} color="#fff" />
               <Text style={styles.shareSheetBtnText}>
-                {sharingBalance ? t('common.sharing') : t('common.share')}
+                {sharingBalance ? t('common.sharing') : t('shareCard.shareAll')}
               </Text>
             </Pressable>
           </View>
@@ -1037,6 +1082,10 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   expenseMeta: {
     fontSize: fontSizes.caption,
     color: c.textSecondary,
+  },
+  expenseSplit: {
+    fontSize: fontSizes.caption,
+    color: c.tabInactive,
   },
   expenseRight: {
     alignItems: 'flex-end',
@@ -1317,7 +1366,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   },
 
   stopsSection: {
-    paddingHorizontal: 20,
     marginBottom: 16,
   },
   stopsLabelRow: {
@@ -1336,7 +1384,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   stopsChipRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 0,
+    paddingRight: 20,
   },
   stopChip: {
     paddingHorizontal: 12,
@@ -1352,9 +1400,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textPrimary,
   },
   stopsArrow: {
-    fontSize: fontSizes.caption,
-    color: c.textSecondary,
-    marginHorizontal: 6,
+    marginHorizontal: 5,
   },
 
   // Share buttons row
@@ -1431,6 +1477,23 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     paddingBottom: 16,
     paddingTop: 12,
     backgroundColor: c.background,
+    gap: 8,
+  },
+  shareSheetBtnOutline: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    borderWidth: 1.5,
+    borderColor: c.coral,
+    borderRadius: radii.button,
+    paddingVertical: 14,
+  },
+  shareSheetBtnOutlineText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.coral,
+    letterSpacing: 0.3,
   },
   shareSheetBtn: {
     flexDirection: 'row',

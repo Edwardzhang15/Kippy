@@ -129,6 +129,15 @@ export type PersonalTrip = {
   currency: string;
   created_date: string;
   is_archived: number;
+  is_current: number;
+  destination: string | null;
+  destination_photo_url: string | null;
+};
+
+export type CategoryBudgetWithSpent = {
+  category: string;
+  budget_amount: number;
+  spent: number;
 };
 
 export type PersonalTripExpense = {
@@ -442,6 +451,19 @@ export async function initDatabase(): Promise<void> {
       );
     `);
   } catch { /* table already exists */ }
+
+  // Migration v24: is_current flag for personal trips
+  try {
+    await db.execAsync('ALTER TABLE personal_trips ADD COLUMN is_current INTEGER NOT NULL DEFAULT 0');
+  } catch { /* column already exists */ }
+
+  // Migration v25: destination + cover photo on personal trips
+  try {
+    await db.execAsync('ALTER TABLE personal_trips ADD COLUMN destination TEXT;');
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE personal_trips ADD COLUMN destination_photo_url TEXT;');
+  } catch { /* column already exists */ }
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
@@ -1241,11 +1263,13 @@ export async function createPersonalTrip(
   name: string,
   currency: string,
   budgetAmount: number | null,
+  destination?: string | null,
+  destinationPhotoUrl?: string | null,
 ): Promise<number> {
   const today = new Date().toISOString().slice(0, 10);
   const r = await db.runAsync(
-    'INSERT INTO personal_trips (name, currency, budget_amount, created_date) VALUES (?, ?, ?, ?)',
-    name, currency, budgetAmount ?? null, today,
+    'INSERT INTO personal_trips (name, currency, budget_amount, created_date, destination, destination_photo_url) VALUES (?, ?, ?, ?, ?, ?)',
+    name, currency, budgetAmount ?? null, today, destination ?? null, destinationPhotoUrl ?? null,
   );
   return r.lastInsertRowId;
 }
@@ -1254,6 +1278,20 @@ export async function getPersonalTrips(): Promise<PersonalTrip[]> {
   return db.getAllAsync<PersonalTrip>(
     'SELECT * FROM personal_trips WHERE is_archived = 0 ORDER BY id DESC',
   );
+}
+
+export async function getArchivedPersonalTrips(): Promise<PersonalTrip[]> {
+  return db.getAllAsync<PersonalTrip>(
+    'SELECT * FROM personal_trips WHERE is_archived = 1 ORDER BY id DESC',
+  );
+}
+
+export async function archivePersonalTrip(id: number): Promise<void> {
+  await db.runAsync('UPDATE personal_trips SET is_archived = 1, is_current = 0 WHERE id = ?', id);
+}
+
+export async function unarchivePersonalTrip(id: number): Promise<void> {
+  await db.runAsync('UPDATE personal_trips SET is_archived = 0 WHERE id = ?', id);
 }
 
 export async function getPersonalTrip(id: number): Promise<PersonalTrip | null> {
@@ -1265,15 +1303,37 @@ export async function updatePersonalTrip(
   name: string,
   currency: string,
   budgetAmount: number | null,
+  destination?: string | null,
+  destinationPhotoUrl?: string | null,
 ): Promise<void> {
   await db.runAsync(
-    'UPDATE personal_trips SET name=?, currency=?, budget_amount=? WHERE id=?',
-    name, currency, budgetAmount ?? null, id,
+    'UPDATE personal_trips SET name=?, currency=?, budget_amount=?, destination=?, destination_photo_url=? WHERE id=?',
+    name, currency, budgetAmount ?? null, destination ?? null, destinationPhotoUrl ?? null, id,
   );
 }
 
 export async function deletePersonalTrip(id: number): Promise<void> {
   await db.runAsync('DELETE FROM personal_trips WHERE id = ?', id);
+}
+
+export async function setCurrentPersonalTrip(tripId: number): Promise<void> {
+  await db.execAsync('UPDATE personal_trips SET is_current = 0');
+  await db.runAsync('UPDATE personal_trips SET is_current = 1 WHERE id = ?', tripId);
+}
+
+export async function getPersonalTripCategoryBudgetsWithSpent(tripId: number): Promise<CategoryBudgetWithSpent[]> {
+  return db.getAllAsync<CategoryBudgetWithSpent>(
+    `SELECT ptb.category,
+            ptb.planned_amount AS budget_amount,
+            COALESCE(SUM(pte.amount), 0) AS spent
+     FROM personal_trip_budgets ptb
+     LEFT JOIN personal_trip_expenses pte
+       ON pte.personal_trip_id = ptb.personal_trip_id AND pte.category = ptb.category
+     WHERE ptb.personal_trip_id = ?
+     GROUP BY ptb.category, ptb.planned_amount
+     ORDER BY ptb.category`,
+    tripId,
+  );
 }
 
 export async function addPersonalTripExpense(

@@ -37,12 +37,28 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 100,
   },
+
+  titleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 24,
+    marginBottom: 16,
+  },
   screenTitle: {
     fontSize: fontSizes.screenTitle,
     fontWeight: '700',
     color: c.textPrimary,
-    marginTop: 24,
-    marginBottom: 16,
+  },
+  selectToggleTxt: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.coral,
+  },
+  selectAllTxt: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
   },
 
   // Segmented control
@@ -169,6 +185,70 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     right: 10,
   },
 
+  // Selection
+  selectCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: 'rgba(255,255,255,0.75)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  selectCirclePlain: {
+    borderColor: c.textSecondary,
+  },
+  selectCircleActive: {
+    borderColor: c.coral,
+    backgroundColor: c.coral,
+  },
+
+  // Bulk bar
+  bulkBar: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: c.card,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    paddingBottom: Platform.OS === 'ios' ? 28 : 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  bulkCount: {
+    flex: 1,
+    fontSize: fontSizes.body,
+    fontWeight: '600',
+    color: c.textPrimary,
+  },
+  bulkDeleteBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: c.coral,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radii.button,
+  },
+  bulkConcludeBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: c.sage,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: radii.button,
+  },
+  bulkBtnTxt: {
+    fontSize: fontSizes.caption,
+    fontWeight: '700',
+    color: '#fff',
+  },
+
   // Empty state
   emptyState: {
     flex: 1,
@@ -195,12 +275,18 @@ function GroupCard({
   isArchived,
   onConclude,
   onDelete,
+  selectMode,
+  selected,
+  onToggleSelect,
 }: {
   group: GroupSummary;
   index: number;
   isArchived: boolean;
   onConclude: () => void;
   onDelete: () => void;
+  selectMode: boolean;
+  selected: boolean;
+  onToggleSelect: () => void;
 }) {
   const navigation    = useNavigation<NavProp>();
   const { t }         = useTranslation();
@@ -274,7 +360,10 @@ function GroupCard({
               hasPhoto  && styles.photoCard,
               pressed   && styles.cardPressed,
             ]}
-            onPress={() => navigation.navigate('GroupDetail', { groupId: group.id })}
+            onPress={() => {
+              if (selectMode) onToggleSelect();
+              else navigation.navigate('GroupDetail', { groupId: group.id });
+            }}
           >
             {hasPhoto && (
               <>
@@ -327,17 +416,38 @@ function GroupCard({
             </View>
           </Pressable>
 
-          {/* Three-dot menu button — sibling of card Pressable so it isn't clipped */}
+          {/* Selection overlay border */}
+          {selectMode && selected && (
+            <View
+              pointerEvents="none"
+              style={[
+                StyleSheet.absoluteFill,
+                { borderRadius: radii.card, borderWidth: 2, borderColor: colors.coral, marginBottom: 14 },
+              ]}
+            />
+          )}
+
+          {/* Three-dot or selection circle — same absolute position */}
           <Pressable
             style={[styles.menuBtn, hasPhoto && styles.menuBtnPhoto]}
-            onPress={openMenu}
+            onPress={selectMode ? onToggleSelect : openMenu}
             hitSlop={8}
           >
-            <Ionicons
-              name="ellipsis-vertical"
-              size={18}
-              color={hasPhoto ? 'rgba(255,255,255,0.85)' : colors.textSecondary}
-            />
+            {selectMode ? (
+              <View style={[
+                styles.selectCircle,
+                !hasPhoto && styles.selectCirclePlain,
+                selected  && styles.selectCircleActive,
+              ]}>
+                {selected && <Ionicons name="checkmark" size={13} color="#fff" />}
+              </View>
+            ) : (
+              <Ionicons
+                name="ellipsis-vertical"
+                size={18}
+                color={hasPhoto ? 'rgba(255,255,255,0.85)' : colors.textSecondary}
+              />
+            )}
           </Pressable>
         </View>
 
@@ -406,6 +516,10 @@ export default function HomeScreen() {
   const [tab, setTab]             = useState<'active' | 'archived'>('active');
   const [focusTick, setFocusTick] = useState(0);
 
+  // Multi-select state
+  const [selectMode, setSelectMode]   = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+
   useEffect(() => {
     const initialTab = route.params?.initialTab;
     if (initialTab) {
@@ -420,6 +534,12 @@ export default function HomeScreen() {
     }, []),
   );
 
+  // Reset select mode when tab changes
+  useEffect(() => {
+    setSelectMode(false);
+    setSelectedIds(new Set());
+  }, [tab]);
+
   useEffect(() => {
     let active = true;
     getGroupSummaries(tab === 'archived').then((data) => {
@@ -430,6 +550,22 @@ export default function HomeScreen() {
     });
     return () => { active = false; };
   }, [tab, focusTick]);
+
+  function toggleSelectGroup(id: number) {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  const allSelected = groups.length > 0 && groups.every(g => selectedIds.has(g.id));
+
+  function handleSelectAll() {
+    if (allSelected) setSelectedIds(new Set());
+    else setSelectedIds(new Set(groups.map(g => g.id)));
+  }
 
   const handleConclude = (group: GroupSummary) => {
     Alert.alert(
@@ -466,9 +602,70 @@ export default function HomeScreen() {
     );
   };
 
+  function handleBulkDelete() {
+    Alert.alert(
+      t('home.bulkDeleteTitle', { count: selectedIds.size }),
+      t('home.bulkDeleteMsg'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            await Promise.all([...selectedIds].map(id => deleteGroup(id)));
+            setGroups(prev => prev.filter(g => !selectedIds.has(g.id)));
+            setSelectMode(false);
+            setSelectedIds(new Set());
+          },
+        },
+      ],
+    );
+  }
+
+  function handleBulkConclude() {
+    Alert.alert(
+      t('home.bulkConcludeTitle', { count: selectedIds.size }),
+      t('home.bulkConcludeMsg'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('groupDetail.conclude'),
+          onPress: async () => {
+            await Promise.all([...selectedIds].map(id => archiveGroup(id)));
+            setGroups(prev => prev.filter(g => !selectedIds.has(g.id)));
+            setSelectMode(false);
+            setSelectedIds(new Set());
+          },
+        },
+      ],
+    );
+  }
+
   const header = (
     <View>
-      <Text style={styles.screenTitle}>{t('home.title')}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.screenTitle}>{t('home.title')}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          {selectMode && (
+            <Pressable onPress={handleSelectAll} hitSlop={8}>
+              <Text style={styles.selectAllTxt}>
+                {allSelected ? t('home.deselectAll') : t('home.selectAll')}
+              </Text>
+            </Pressable>
+          )}
+          <Pressable
+            onPress={() => {
+              if (selectMode) { setSelectMode(false); setSelectedIds(new Set()); }
+              else setSelectMode(true);
+            }}
+            hitSlop={8}
+          >
+            <Text style={styles.selectToggleTxt}>
+              {selectMode ? t('common.cancel') : t('home.select')}
+            </Text>
+          </Pressable>
+        </View>
+      </View>
       <View style={[styles.segmentRow, cardShadow]}>
         <Pressable
           style={[styles.segment, tab === 'active' && styles.segmentSelected]}
@@ -496,7 +693,11 @@ export default function HomeScreen() {
         <FlatList
           data={groups}
           keyExtractor={(item) => String(item.id)}
-          contentContainerStyle={[styles.list, groups.length === 0 && { flex: 1 }]}
+          contentContainerStyle={[
+            styles.list,
+            groups.length === 0 && { flex: 1 },
+            selectMode && { paddingBottom: 140 },
+          ]}
           ListHeaderComponent={header}
           ListEmptyComponent={<EmptyState variant={tab} />}
           renderItem={({ item, index }) => (
@@ -506,13 +707,39 @@ export default function HomeScreen() {
               isArchived={tab === 'archived'}
               onConclude={() => handleConclude(item)}
               onDelete={() => handleDelete(item)}
+              selectMode={selectMode}
+              selected={selectedIds.has(item.id)}
+              onToggleSelect={() => toggleSelectGroup(item.id)}
             />
           )}
           showsVerticalScrollIndicator={false}
         />
       )}
 
-      {tab === 'active' && (
+      {/* Bulk action bar */}
+      {selectMode && (
+        <View style={styles.bulkBar}>
+          <Text style={styles.bulkCount}>
+            {t('home.selectedCount', { count: selectedIds.size })}
+          </Text>
+          {selectedIds.size > 0 && (
+            <>
+              {tab === 'active' && (
+                <Pressable style={styles.bulkConcludeBtn} onPress={handleBulkConclude}>
+                  <Ionicons name="checkmark-done-outline" size={15} color="#fff" />
+                  <Text style={styles.bulkBtnTxt}>{t('groupDetail.conclude')}</Text>
+                </Pressable>
+              )}
+              <Pressable style={styles.bulkDeleteBtn} onPress={handleBulkDelete}>
+                <Ionicons name="trash-outline" size={15} color="#fff" />
+                <Text style={styles.bulkBtnTxt}>{t('common.delete')}</Text>
+              </Pressable>
+            </>
+          )}
+        </View>
+      )}
+
+      {tab === 'active' && !selectMode && (
         <AnimatedFAB onPress={() => navigation.navigate('CreateGroup')} />
       )}
     </SafeAreaView>

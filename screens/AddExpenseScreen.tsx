@@ -31,6 +31,7 @@ import { CATEGORIES, Category } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, getCurrencySymbol } from '../utils';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'AddExpense'>;
 
@@ -75,7 +76,12 @@ function CategoryButton({
           color={selected ? cat.color : colors.tabInactive}
         />
       </View>
-      <Text style={[styles.categoryLabel, selected && styles.categoryLabelSelected]}>
+      <Text
+        style={[styles.categoryLabel, selected && styles.categoryLabelSelected]}
+        numberOfLines={1}
+        adjustsFontSizeToFit
+        minimumFontScale={0.7}
+      >
         {t(`categories.${cat.id}`, cat.label)}
       </Text>
     </Pressable>
@@ -380,6 +386,8 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
               placeholder={expenseCurrency === 'JPY' ? '0' : '0.00'}
               placeholderTextColor={colors.border}
               keyboardType="decimal-pad"
+              returnKeyType="done"
+              inputAccessoryViewID={DONE_BAR_ID}
               value={amount}
               onChangeText={setAmount}
               onFocus={dismissAmountPrompt}
@@ -436,6 +444,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
                   style={styles.customCatInput}
                   placeholder={t('addExpense.describePlaceholder')}
                   placeholderTextColor={colors.textSecondary}
+                  inputAccessoryViewID={DONE_BAR_ID}
                   value={customCategoryText}
                   onChangeText={setCustomCategoryText}
                   returnKeyType="done"

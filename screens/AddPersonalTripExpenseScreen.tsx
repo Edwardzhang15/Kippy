@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import {
   Alert,
-  Animated,
+  Dimensions,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -22,39 +22,51 @@ import {
   deletePersonalTripExpense, getPersonalTripExpense,
   getPersonalTrip,
 } from '../db';
-import { CATEGORIES, CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
+import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getCurrencySymbol } from '../utils';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<PersonalStackParamList, 'AddPersonalTripExpense'>;
 
+const GRID_COLS = 4;
+const GRID_GAP  = 8;
+const H_PAD     = 20;
+const ITEM_W    = (Dimensions.get('window').width - H_PAD * 2 - GRID_GAP * (GRID_COLS - 1)) / GRID_COLS;
+
 const makeStyles = (c: ColorPalette) => StyleSheet.create({
-  root:          { flex: 1, backgroundColor: c.background },
-  header:        { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
-  backBtn:       { width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center' },
-  title:         { flex: 1, fontSize: fontSizes.sectionTitle, fontWeight: '700', color: c.textPrimary, textAlign: 'center' },
-  deleteBtn:     { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF0EE', alignItems: 'center', justifyContent: 'center' },
-  spacer:        { width: 36 },
-  body:          { flex: 1, paddingHorizontal: 20 },
-  label:         { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 20, textTransform: 'uppercase', letterSpacing: 0.5 },
-  amountRow:     { alignItems: 'center', marginTop: 12, marginBottom: 4 },
-  amountDisplay: { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
-  currSym:       { fontSize: 28, fontWeight: '700', color: c.textPrimary },
-  amountText:    { fontSize: 48, fontWeight: '700', color: c.textPrimary, minWidth: 80, textAlign: 'center' },
-  amountHint:    { fontSize: fontSizes.caption, color: c.textSecondary, marginTop: 4 },
-  hiddenInput:   { position: 'absolute', width: 1, height: 1, opacity: 0 },
-  arrowContainer: { alignItems: 'center', marginTop: 6 },
-  catGrid:       { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  catChip:       { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 20, backgroundColor: c.card, borderWidth: 1.5, borderColor: c.border },
-  catChipActive: { borderColor: c.coral, backgroundColor: '#FFF0EE' },
-  catText:       { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary },
-  catTextActive: { color: c.coral },
-  noteInput:     { backgroundColor: c.card, borderRadius: radii.button, paddingHorizontal: 16, paddingVertical: 13, fontSize: fontSizes.body, color: c.textPrimary, minHeight: 56 },
-  dateRow:       { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: c.card, borderRadius: radii.button, paddingHorizontal: 16, paddingVertical: 13 },
-  dateText:      { fontSize: fontSizes.body, color: c.textPrimary, flex: 1 },
-  saveBtn:       { margin: 20, marginTop: 24, backgroundColor: c.coral, borderRadius: radii.button, paddingVertical: 16, alignItems: 'center' },
-  saveBtnText:   { fontSize: fontSizes.body, fontWeight: '700', color: '#fff' },
+  root:           { flex: 1, backgroundColor: c.background },
+  header:         { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 56, paddingBottom: 12 },
+  backBtn:        { width: 36, height: 36, borderRadius: 18, backgroundColor: c.card, alignItems: 'center', justifyContent: 'center' },
+  title:          { flex: 1, fontSize: fontSizes.sectionTitle, fontWeight: '700', color: c.textPrimary, textAlign: 'center' },
+  deleteBtn:      { width: 36, height: 36, borderRadius: 18, backgroundColor: '#FFF0EE', alignItems: 'center', justifyContent: 'center' },
+  spacer:         { width: 36 },
+  body:           { flex: 1, paddingHorizontal: H_PAD },
+  label:          { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary, marginBottom: 6, marginTop: 20, textTransform: 'uppercase', letterSpacing: 0.5 },
+  amountRow:      { alignItems: 'center', marginTop: 12, marginBottom: 4 },
+  amountDisplay:  { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
+  currSym:        { fontSize: 28, fontWeight: '700', color: c.textPrimary },
+  amountText:     { fontSize: 48, fontWeight: '700', color: c.textPrimary, minWidth: 80, textAlign: 'center' },
+  hiddenInput:    { position: 'absolute', width: 1, height: 1, opacity: 0 },
+
+  // Fixed-width 4-column category grid
+  catGrid:        { flexDirection: 'row', flexWrap: 'wrap', gap: GRID_GAP },
+  catItem:        { width: ITEM_W, backgroundColor: c.card, borderRadius: radii.button, alignItems: 'center', paddingVertical: 10, gap: 4, borderWidth: 2, borderColor: 'transparent' },
+  catItemActive:  { borderColor: c.coral },
+  catIconBg:      { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  catLabel:       { fontSize: 10, fontWeight: '500', color: c.textSecondary, textAlign: 'center' },
+  catLabelActive: { color: c.coral, fontWeight: '700' },
+
+  // Single-line note — no multiline so placeholder is vertically centred
+  noteInput:      { backgroundColor: c.card, borderRadius: radii.button, paddingHorizontal: 16, paddingVertical: 13, fontSize: fontSizes.body, color: c.textPrimary },
+  dateRow:        { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: c.card, borderRadius: radii.button, paddingHorizontal: 16, paddingVertical: 13 },
+  dateText:       { fontSize: fontSizes.body, color: c.textPrimary, flex: 1 },
+  datePickerWrap:    { backgroundColor: c.card, borderRadius: radii.button, marginTop: 8, overflow: 'hidden' },
+  datePickerDoneRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
+  datePickerDone:    { fontSize: fontSizes.body, fontWeight: '600', color: c.coral },
+  saveBtn:        { margin: 20, marginTop: 24, backgroundColor: c.coral, borderRadius: radii.button, paddingVertical: 16, alignItems: 'center' },
+  saveBtnText:    { fontSize: fontSizes.body, fontWeight: '700', color: '#fff' },
 });
 
 export default function AddPersonalTripExpenseScreen({ navigation, route }: Props) {
@@ -72,7 +84,6 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const arrowAnim = useRef(new Animated.Value(0)).current;
 
   useFocusEffect(useCallback(() => {
     getPersonalTrip(tripId).then(trip => {
@@ -88,16 +99,7 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
         }
       });
     }
-
-    const bounce = Animated.loop(
-      Animated.sequence([
-        Animated.timing(arrowAnim, { toValue: -6, duration: 500, useNativeDriver: true }),
-        Animated.timing(arrowAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
-      ])
-    );
-    bounce.start();
-    return () => bounce.stop();
-  }, [tripId, expenseId, isEditing, arrowAnim]));
+  }, [tripId, expenseId, isEditing]));
 
   const sym = getCurrencySymbol(tripCurrency);
 
@@ -162,7 +164,7 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
         )}
       </View>
 
-      <ScrollView style={styles.body} keyboardShouldPersistTaps="handled">
+      <ScrollView style={styles.body} keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingBottom: 20 }}>
         {/* Amount */}
         <Pressable style={styles.amountRow} onPress={() => inputRef.current?.focus()}>
           <View style={styles.amountDisplay}>
@@ -170,16 +172,6 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
             <Text style={styles.amountText}>{formatDisplay(amountText)}</Text>
             <Text style={[styles.currSym, { opacity: 0 }]} aria-hidden>{sym}</Text>
           </View>
-          {!amountText && (
-            <>
-              <View style={styles.arrowContainer}>
-                <Animated.View style={{ transform: [{ translateY: arrowAnim }] }}>
-                  <Ionicons name="arrow-up-circle" size={22} color={colors.coral} />
-                </Animated.View>
-              </View>
-              <Text style={styles.amountHint}>{t('addExpense.tapToEnterAmount')}</Text>
-            </>
-          )}
         </Pressable>
         <TextInput
           ref={inputRef}
@@ -187,27 +179,39 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           value={amountText}
           onChangeText={setAmountText}
           keyboardType="decimal-pad"
+          returnKeyType="done"
+          inputAccessoryViewID={DONE_BAR_ID}
         />
 
         {/* Category */}
         <Text style={styles.label}>{t('addExpense.category')}</Text>
         <View style={styles.catGrid}>
-          {CATEGORIES.map(cat => (
-            <Pressable
-              key={cat.id}
-              style={[styles.catChip, cardShadow, category === cat.id && styles.catChipActive]}
-              onPress={() => setCategory(cat.id)}
-            >
-              <Ionicons
-                name={cat.icon}
-                size={14}
-                color={category === cat.id ? colors.coral : colors.textSecondary}
-              />
-              <Text style={[styles.catText, category === cat.id && styles.catTextActive]}>
-                {t(`categories.${cat.id}`)}
-              </Text>
-            </Pressable>
-          ))}
+          {CATEGORIES.map(cat => {
+            const selected = category === cat.id;
+            return (
+              <Pressable
+                key={cat.id}
+                style={[styles.catItem, cardShadow, selected && styles.catItemActive]}
+                onPress={() => setCategory(cat.id)}
+              >
+                <View style={[styles.catIconBg, { backgroundColor: selected ? cat.bg : colors.border }]}>
+                  <Ionicons
+                    name={cat.icon}
+                    size={18}
+                    color={selected ? cat.color : colors.textSecondary}
+                  />
+                </View>
+                <Text
+                  style={[styles.catLabel, selected && styles.catLabelActive]}
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  minimumFontScale={0.7}
+                >
+                  {t(`categories.${cat.id}`)}
+                </Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Note */}
@@ -218,7 +222,8 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           onChangeText={setNote}
           placeholder={t('personalTrip.notePlaceholder')}
           placeholderTextColor={colors.textSecondary}
-          multiline
+          inputAccessoryViewID={DONE_BAR_ID}
+          returnKeyType="done"
         />
 
         {/* Date */}
@@ -228,15 +233,24 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           <Text style={styles.dateText}>{date}</Text>
         </Pressable>
         {showDatePicker && (
-          <DateTimePicker
-            value={new Date(date + 'T12:00:00')}
-            mode="date"
-            display="default"
-            onChange={(_, d) => {
-              setShowDatePicker(false);
-              if (d) setDate(d.toISOString().slice(0, 10));
-            }}
-          />
+          <View style={styles.datePickerWrap}>
+            {Platform.OS === 'ios' && (
+              <View style={styles.datePickerDoneRow}>
+                <Pressable onPress={() => setShowDatePicker(false)} hitSlop={8}>
+                  <Text style={styles.datePickerDone}>{t('common.done')}</Text>
+                </Pressable>
+              </View>
+            )}
+            <DateTimePicker
+              value={new Date(date + 'T12:00:00')}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+              onChange={(_, d) => {
+                if (Platform.OS === 'android') setShowDatePicker(false);
+                if (d) setDate(d.toISOString().slice(0, 10));
+              }}
+            />
+          </View>
         )}
       </ScrollView>
 

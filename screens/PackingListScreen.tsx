@@ -18,6 +18,7 @@ import * as Sharing from 'expo-sharing';
 import { useTranslation } from 'react-i18next';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
+import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 import PackingListShareCard from '../components/PackingListShareCard';
 import FeatureIntroSplash from '../components/FeatureIntroSplash';
 import {
@@ -664,6 +665,7 @@ export default function PackingListScreen() {
                         style={styles.addInput}
                         placeholder={t('packingList.addItemPlaceholder')}
                         placeholderTextColor={colors.textSecondary}
+                        inputAccessoryViewID={DONE_BAR_ID}
                         value={customLabel}
                         onChangeText={setCustomLabel}
                         returnKeyType="done"

@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './context/OnboardingContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingScreen from './components/LoadingScreen';
+import KeyboardDoneBar from './components/KeyboardDoneBar';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LanguagePickerScreen from './screens/LanguagePickerScreen';
 import HomeStack from './navigation/HomeStack';
@@ -68,6 +69,7 @@ function AppCore() {
 
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
+      <KeyboardDoneBar />
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
       {dbReady && (
