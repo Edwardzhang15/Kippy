@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import {
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -8,6 +9,8 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { captureRef } from 'react-native-view-shot';
+import * as Sharing from 'expo-sharing';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
@@ -17,6 +20,7 @@ import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, formatAmount } from '../utils';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
+import MemberExpenseShareCard from '../components/MemberExpenseShareCard';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'MemberExpenses'>;
 type NavProp = NativeStackNavigationProp<HomeStackParamList, 'MemberExpenses'>;
@@ -167,6 +171,77 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     backgroundColor: c.border,
     marginLeft: 66,
   },
+
+  // ── Share button in header ──
+  shareBtn: {
+    padding: 6,
+  },
+
+  // ── Share modal ──
+  modalSafe: {
+    flex: 1,
+    backgroundColor: c.background,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: c.border,
+  },
+  modalTitle: {
+    fontSize: fontSizes.sectionTitle,
+    fontWeight: '700',
+    color: c.textPrimary,
+  },
+  modalScroll: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    alignItems: 'center',
+    paddingVertical: 24,
+  },
+  modalActions: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: c.border,
+  },
+  modalBtnOutline: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 13,
+    borderRadius: radii.button,
+    borderWidth: 1.5,
+    borderColor: c.coral,
+  },
+  modalBtnOutlineText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: c.coral,
+  },
+  modalBtnFill: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 13,
+    borderRadius: radii.button,
+    backgroundColor: c.coral,
+  },
+  modalBtnFillText: {
+    fontSize: fontSizes.body,
+    fontWeight: '700',
+    color: '#fff',
+  },
 });
 
 function ExpenseItem({
@@ -235,6 +310,15 @@ export default function MemberExpensesScreen({ route }: Props) {
   const styles = makeStyles(colors);
   const { groupId, memberId, memberName, avatarIndex, balance, groupCurrency } = route.params;
   const [data, setData] = useState<MemberExpensesData | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [sharingSummary, setSharingSummary] = useState(false);
+  const [sharingAll, setSharingAll] = useState(false);
+
+  const memberCardRef = useRef<View>(null);
+  const pageRefs = useRef<Array<View | null>>([]);
+  const pageRefCallback = useCallback((i: number, r: View | null) => {
+    pageRefs.current[i] = r;
+  }, []);
 
   useFocusEffect(
     useCallback(() => {
@@ -245,6 +329,27 @@ export default function MemberExpensesScreen({ route }: Props) {
       return () => { active = false; };
     }, [groupId, memberId]),
   );
+
+  const handleShareSummary = async () => {
+    const ref = pageRefs.current[0];
+    if (!ref) return;
+    setSharingSummary(true);
+    try {
+      const uri = await captureRef(ref, { format: 'png', quality: 1, pixelRatio: 3 });
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('memberExpenses.shareTitle') });
+    } catch {}
+    setSharingSummary(false);
+  };
+
+  const handleShareAll = async () => {
+    if (!memberCardRef.current) return;
+    setSharingAll(true);
+    try {
+      const uri = await captureRef(memberCardRef.current, { format: 'png', quality: 1, pixelRatio: 3 });
+      await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('memberExpenses.shareTitle') });
+    } catch {}
+    setSharingAll(false);
+  };
 
   const goToSettle = () => {
     navigation.navigate('SettleUp', {
@@ -264,6 +369,13 @@ export default function MemberExpensesScreen({ route }: Props) {
           <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
         </Pressable>
         <Text style={styles.headerTitle}>{t('memberExpenses.title')}</Text>
+        <Pressable
+          style={({ pressed }) => [styles.shareBtn, pressed && { opacity: 0.6 }]}
+          onPress={() => setShowShareModal(true)}
+          hitSlop={12}
+        >
+          <Ionicons name="share-outline" size={22} color={colors.textPrimary} />
+        </Pressable>
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
@@ -332,6 +444,67 @@ export default function MemberExpensesScreen({ route }: Props) {
           <Text style={styles.emptyText}>{t('memberExpenses.noExpenses')}</Text>
         )}
       </ScrollView>
+
+      <Modal
+        visible={showShareModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowShareModal(false)}
+      >
+        <SafeAreaView style={styles.modalSafe}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>{t('memberExpenses.shareTitle')}</Text>
+            <Pressable onPress={() => setShowShareModal(false)} hitSlop={12}>
+              <Ionicons name="close" size={24} color={colors.textPrimary} />
+            </Pressable>
+          </View>
+
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+            showsVerticalScrollIndicator={false}
+          >
+            {data && (
+              <MemberExpenseShareCard
+                ref={memberCardRef}
+                groupName={data.groupName}
+                destinationPhotoUrl={data.destinationPhotoUrl}
+                memberName={memberName}
+                avatarIndex={avatarIndex}
+                balance={balance}
+                groupCurrency={groupCurrency}
+                includedIn={data.includedIn}
+                paidFor={data.paidFor}
+                totalCharged={data.totalCharged}
+                onPageRef={pageRefCallback}
+              />
+            )}
+          </ScrollView>
+
+          <View style={styles.modalActions}>
+            <Pressable
+              style={({ pressed }) => [styles.modalBtnOutline, pressed && { opacity: 0.8 }, sharingSummary && { opacity: 0.6 }]}
+              onPress={handleShareSummary}
+              disabled={sharingSummary || sharingAll}
+            >
+              <Ionicons name="image-outline" size={18} color={colors.coral} />
+              <Text style={styles.modalBtnOutlineText}>
+                {sharingSummary ? t('common.sharing') : t('memberExpenses.shareSummary')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={({ pressed }) => [styles.modalBtnFill, pressed && { opacity: 0.8 }, sharingAll && { opacity: 0.6 }]}
+              onPress={handleShareAll}
+              disabled={sharingAll || sharingSummary}
+            >
+              <Ionicons name="share-outline" size={18} color="#fff" />
+              <Text style={styles.modalBtnFillText}>
+                {sharingAll ? t('common.sharing') : t('memberExpenses.shareAll')}
+              </Text>
+            </Pressable>
+          </View>
+        </SafeAreaView>
+      </Modal>
     </SafeAreaView>
   );
 }

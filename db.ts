@@ -1209,6 +1209,8 @@ export type MemberExpenseRow = {
 
 export type MemberExpensesData = {
   member: Member;
+  groupName: string;
+  destinationPhotoUrl: string | null;
   includedIn: MemberExpenseRow[];
   paidFor: MemberExpenseRow[];
   totalCharged: number;
@@ -1224,10 +1226,12 @@ export async function getMemberExpenses(
   );
   if (!member) throw new Error(`Member ${memberId} not found`);
 
-  const group = await db.getFirstAsync<{ currency: string }>(
-    'SELECT currency FROM groups WHERE id = ?', groupId,
+  const group = await db.getFirstAsync<{ currency: string; name: string; destination_photo_url: string | null }>(
+    'SELECT currency, name, destination_photo_url FROM groups WHERE id = ?', groupId,
   );
   const gc = group?.currency ?? 'CAD';
+  const groupName = group?.name ?? '';
+  const destinationPhotoUrl = group?.destination_photo_url ?? null;
 
   const includedIn = await db.getAllAsync<MemberExpenseRow>(
     `SELECT e.*, m.name AS paid_by_name, es.share_amount
@@ -1254,7 +1258,7 @@ export async function getMemberExpenses(
     return sum + (rates ? convertAmount(share, e.currency, gc, rates) : share);
   }, 0));
 
-  return { member, includedIn, paidFor, totalCharged, groupCurrency: gc };
+  return { member, groupName, destinationPhotoUrl, includedIn, paidFor, totalCharged, groupCurrency: gc };
 }
 
 // ─── Personal Trips ───────────────────────────────────────────────────────────

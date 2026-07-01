@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { Fragment, useState } from 'react';
 import {
   KeyboardAvoidingView,
   Platform,
@@ -18,7 +18,7 @@ import { createPersonalTrip, updatePersonalTrip, getPersonalTrip, setPersonalTri
 import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getCurrencySymbol } from '../utils';
+import { getCurrencySymbol, formatAmount } from '../utils';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
@@ -64,12 +64,19 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   catToggleRight:  { flexDirection: 'row', alignItems: 'center', gap: 4 },
   catToggleSub:    { fontSize: fontSizes.caption, color: c.textSecondary },
   catHint:         { fontSize: fontSizes.caption, color: c.textSecondary, marginBottom: 12 },
-  catRow:          { backgroundColor: c.card, borderRadius: radii.card, paddingHorizontal: 14, paddingVertical: 12, marginBottom: 8, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  catRow:          { backgroundColor: c.card, borderRadius: radii.card, paddingHorizontal: 14, paddingVertical: 12, flexDirection: 'row', alignItems: 'center', gap: 10 },
+  catRowOver:      { borderWidth: 1.5, borderColor: c.coral },
   catIcon:         { width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   catName:         { flex: 1, fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary },
   catInputWrap:    { flexDirection: 'row', alignItems: 'center', gap: 4 },
   catSym:          { fontSize: fontSizes.body, color: c.textSecondary },
   catInput:        { backgroundColor: c.background, borderRadius: radii.button, paddingHorizontal: 10, paddingVertical: 7, fontSize: fontSizes.body, color: c.textPrimary, minWidth: 72, textAlign: 'right' },
+  totalRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 4, marginTop: 4, marginBottom: 6 },
+  totalLabel:      { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary },
+  totalValue:      { fontSize: fontSizes.caption, fontWeight: '700', color: c.textPrimary },
+  totalValueOver:  { color: c.coral },
+  warningBox:      { flexDirection: 'row', alignItems: 'flex-start', gap: 8, backgroundColor: `${c.coral}1A`, borderRadius: radii.card, padding: 10, marginTop: 6 },
+  warningText:     { flex: 1, fontSize: fontSizes.caption, fontWeight: '600', color: c.coral, lineHeight: 18 },
 
   saveBtn:         { margin: 20, marginTop: 32, backgroundColor: c.coral, borderRadius: radii.button, paddingVertical: 16, alignItems: 'center' },
   saveBtnText:     { fontSize: fontSizes.body, fontWeight: '700', color: '#fff' },
@@ -148,6 +155,19 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
 
   const sym = getCurrencySymbol(currency);
   const filledCatCount = CATEGORIES.filter(cat => parseFloat(catBudgets[cat.id] ?? '') > 0).length;
+
+  const tripBudget = budgetText ? parseFloat(budgetText) : null;
+  const catTotal = CATEGORIES.reduce((sum, cat) => sum + (parseFloat(catBudgets[cat.id] ?? '') || 0), 0);
+  const isOverBudget = tripBudget !== null && !isNaN(tripBudget) && tripBudget > 0 && catTotal >= tripBudget;
+
+  let overflowCat: string | null = null;
+  if (isOverBudget && tripBudget) {
+    let running = 0;
+    for (const cat of CATEGORIES) {
+      running += parseFloat(catBudgets[cat.id] ?? '') || 0;
+      if (running >= tripBudget) { overflowCat = cat.id; break; }
+    }
+  }
 
   return (
     <KeyboardAvoidingView style={styles.root} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -230,29 +250,51 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
             {catExpanded && (
               <>
                 <Text style={styles.catHint}>{t('personalTrip.catBudgetCreationHint')}</Text>
-                {CATEGORIES.map(cat => (
-                  <View key={cat.id} style={[styles.catRow, cardShadow]}>
-                    <View style={[styles.catIcon, { backgroundColor: cat.bg }]}>
-                      <Ionicons name={cat.icon} size={14} color={cat.color} />
+                {CATEGORIES.map(cat => {
+                  const isOverflowTrigger = cat.id === overflowCat;
+                  return (
+                    <View key={cat.id} style={{ marginBottom: 8 }}>
+                      <View style={[styles.catRow, cardShadow, isOverflowTrigger && styles.catRowOver]}>
+                        <View style={[styles.catIcon, { backgroundColor: cat.bg }]}>
+                          <Ionicons name={cat.icon} size={14} color={cat.color} />
+                        </View>
+                        <Text style={styles.catName} numberOfLines={1}>
+                          {t(`categories.${cat.id}`)}
+                        </Text>
+                        <View style={styles.catInputWrap}>
+                          <Text style={styles.catSym}>{sym}</Text>
+                          <TextInput
+                            style={styles.catInput}
+                            value={catBudgets[cat.id] ?? ''}
+                            onChangeText={v => setCatBudgets(prev => ({ ...prev, [cat.id]: v }))}
+                            placeholder="—"
+                            placeholderTextColor={colors.textSecondary}
+                            keyboardType="decimal-pad"
+                            inputAccessoryViewID={DONE_BAR_ID}
+                            returnKeyType="done"
+                          />
+                        </View>
+                      </View>
+                      {isOverflowTrigger && tripBudget !== null && !isNaN(tripBudget) && tripBudget > 0 && (
+                        <View style={styles.warningBox}>
+                          <Ionicons name="warning-outline" size={14} color={colors.coral} />
+                          <Text style={styles.warningText}>
+                            {t('personalTrip.budgetOverflowWarning', { sym, amount: formatAmount(catTotal - tripBudget, currency) })}
+                          </Text>
+                        </View>
+                      )}
                     </View>
-                    <Text style={styles.catName} numberOfLines={1}>
-                      {t(`categories.${cat.id}`)}
+                  );
+                })}
+
+                {tripBudget !== null && !isNaN(tripBudget) && tripBudget > 0 && (
+                  <View style={styles.totalRow}>
+                    <Text style={styles.totalLabel}>{t('personalTrip.categoryTotal')}</Text>
+                    <Text style={[styles.totalValue, isOverBudget && styles.totalValueOver]}>
+                      {sym}{formatAmount(catTotal, currency)} / {sym}{formatAmount(tripBudget, currency)}
                     </Text>
-                    <View style={styles.catInputWrap}>
-                      <Text style={styles.catSym}>{sym}</Text>
-                      <TextInput
-                        style={styles.catInput}
-                        value={catBudgets[cat.id] ?? ''}
-                        onChangeText={v => setCatBudgets(prev => ({ ...prev, [cat.id]: v }))}
-                        placeholder="—"
-                        placeholderTextColor={colors.textSecondary}
-                        keyboardType="decimal-pad"
-                        inputAccessoryViewID={DONE_BAR_ID}
-                        returnKeyType="done"
-                      />
-                    </View>
                   </View>
-                ))}
+                )}
               </>
             )}
           </>

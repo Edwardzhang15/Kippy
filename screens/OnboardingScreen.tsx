@@ -15,10 +15,11 @@ import { useOnboarding } from '../context/OnboardingContext';
 
 const { width: SCREEN_W, height: SCREEN_H } = Dimensions.get('window');
 const KIP_RUN_SIZE = 100;
+const KIP_SIZE = Math.min(Math.max(SCREEN_W * 0.62, 200), 240);
 
 // Absolute position for the run-off Kip image (approximates where Kip sits in the slide)
 const KIP_START_LEFT = (SCREEN_W - KIP_RUN_SIZE) / 2;
-const KIP_START_TOP  = SCREEN_H * 0.27;
+const KIP_START_TOP  = SCREEN_H * 0.30;
 
 // Settings tab is the 4th of 4 tabs — its icon center in screen coordinates
 const SETTINGS_CX = SCREEN_W * 0.875;
@@ -29,11 +30,14 @@ const RUN_DELTA_X = SETTINGS_CX - (KIP_START_LEFT + KIP_RUN_SIZE / 2);
 const RUN_DELTA_Y = SETTINGS_CY - (KIP_START_TOP  + KIP_RUN_SIZE / 2);
 
 const STEPS = [
-  { image: require('../assets/Kip_wave.png'),  titleKey: 'onboarding.step1Title', bodyKey: 'onboarding.step1Body' },
-  { image: require('../assets/Kip_jog.png'),   titleKey: 'onboarding.step2Title', bodyKey: 'onboarding.step2Body' },
-  { image: require('../assets/Kip_map.png'),   titleKey: 'onboarding.step3Title', bodyKey: 'onboarding.step3Body' },
-  { image: require('../assets/Kip_think.png'), titleKey: 'onboarding.step4Title', bodyKey: 'onboarding.step4Body' },
-  { image: require('../assets/Kip_wave.png'),  titleKey: 'onboarding.step5Title', bodyKey: 'onboarding.step5Body' },
+  { image: require('../assets/Kip_wave.png'),   titleKey: 'onboarding.step1Title', bodyKey: 'onboarding.step1Body' },
+  { image: require('../assets/Kip_jog.png'),    titleKey: 'onboarding.step2Title', bodyKey: 'onboarding.step2Body' },
+  { image: require('../assets/Kip_think.png'),  titleKey: 'onboarding.step3Title', bodyKey: 'onboarding.step3Body' },
+  { image: require('../assets/Kip_map.png'),    titleKey: 'onboarding.step4Title', bodyKey: 'onboarding.step4Body' },
+  { image: require('../assets/Kip_jog.png'),    titleKey: 'onboarding.step5Title', bodyKey: 'onboarding.step5Body' },
+  { image: require('../assets/Kip_budget.png'), titleKey: 'onboarding.step6Title', bodyKey: 'onboarding.step6Body' },
+  { image: require('../assets/Kip_packing.png'), titleKey: 'onboarding.step7Title', bodyKey: 'onboarding.step7Body' },
+  { image: require('../assets/Kip_wave.png'),   titleKey: 'onboarding.step8Title', bodyKey: 'onboarding.step8Body' },
 ] as const;
 
 const STEP_COUNT = STEPS.length;
@@ -54,17 +58,20 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textSecondary,
   },
   slidesClip: { flex: 1, overflow: 'hidden' },
-  slidesRow: { flexDirection: 'row', height: '100%' },
+  // flex: 1 gives the Animated.View a definite height from its flex parent,
+  // avoiding the percentage-height resolution issue with Animated.View.
+  slidesRow: { flex: 1, flexDirection: 'row' },
   slide: {
     width: SCREEN_W,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 36,
-    gap: 18,
+    paddingBottom: SCREEN_H * 0.05,
+    gap: 20,
   },
   kipImage: {
-    width: SCREEN_W * 0.62,
-    height: SCREEN_W * 0.62,
+    width: KIP_SIZE,
+    height: KIP_SIZE,
   },
   slideTitle: {
     fontSize: 26,
