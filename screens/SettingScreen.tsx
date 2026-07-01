@@ -12,6 +12,7 @@ const LANGUAGES = [
   { code: 'ja',    label: '日本語' },
   { code: 'es',    label: 'Español' },
   { code: 'fr',    label: 'Français' },
+  { code: 'ko',    label: '한국어' },
 ];
 
 const THEME_OPTIONS: { mode: ThemeMode; labelKey: string }[] = [
