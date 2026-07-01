@@ -7,6 +7,7 @@ import en from './locales/en.json';
 import zhCN from './locales/zh-CN.json';
 import ja from './locales/ja.json';
 import es from './locales/es.json';
+import fr from './locales/fr.json';
 
 const LANG_KEY = '@kippy_language';
 
@@ -15,6 +16,7 @@ function deviceLang(): string {
   if (tag.startsWith('zh')) return 'zh-CN';
   if (tag.startsWith('ja')) return 'ja';
   if (tag.startsWith('es')) return 'es';
+  if (tag.startsWith('fr')) return 'fr';
   return 'en';
 }
 
@@ -29,6 +31,7 @@ i18next.use(initReactI18next).init({
     'zh-CN': { translation: zhCN },
     ja:      { translation: ja },
     es:      { translation: es },
+    fr:      { translation: fr },
   },
   interpolation: { escapeValue: false },
 });

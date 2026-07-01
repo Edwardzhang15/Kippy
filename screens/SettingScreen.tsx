@@ -11,6 +11,7 @@ const LANGUAGES = [
   { code: 'zh-CN', label: '简体中文' },
   { code: 'ja',    label: '日本語' },
   { code: 'es',    label: 'Español' },
+  { code: 'fr',    label: 'Français' },
 ];
 
 const THEME_OPTIONS: { mode: ThemeMode; labelKey: string }[] = [
