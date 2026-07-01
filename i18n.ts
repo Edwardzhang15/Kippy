@@ -6,6 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import en from './locales/en.json';
 import zhCN from './locales/zh-CN.json';
 import ja from './locales/ja.json';
+import es from './locales/es.json';
 
 const LANG_KEY = '@kippy_language';
 
@@ -13,6 +14,7 @@ function deviceLang(): string {
   const tag = Localization.getLocales()[0]?.languageTag ?? 'en';
   if (tag.startsWith('zh')) return 'zh-CN';
   if (tag.startsWith('ja')) return 'ja';
+  if (tag.startsWith('es')) return 'es';
   return 'en';
 }
 
@@ -26,6 +28,7 @@ i18next.use(initReactI18next).init({
     en:      { translation: en },
     'zh-CN': { translation: zhCN },
     ja:      { translation: ja },
+    es:      { translation: es },
   },
   interpolation: { escapeValue: false },
 });
