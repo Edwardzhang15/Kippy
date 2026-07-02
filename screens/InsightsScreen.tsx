@@ -44,6 +44,23 @@ type TFn = ReturnType<typeof useTranslation>['t'];
 let rememberedMode: 'group' | 'personal' = 'group';
 let rememberedSubTab: 'all' | 'trip' = 'all';
 
+// A small dedicated pastel palette for informational stats — deliberately
+// distinct from coral ("owes") and sage ("owed") so it can never be mistaken
+// for a balance value. Every tile/highlight below is assigned exactly one of
+// these keys, hardcoded per stat kind, so the same stat always gets the same
+// color everywhere it appears, on both the Group and Personal tabs.
+const ACCENTS = {
+  peach:    { bg: '#FFEADA', icon: '#DB8A46' },
+  lavender: { bg: '#EEE8FB', icon: '#8B72BE' },
+  sky:      { bg: '#E3F1FB', icon: '#4A8FC2' },
+  mint:     { bg: '#E1F5EE', icon: '#379178' },
+  butter:   { bg: '#FFF4D6', icon: '#C99A2E' },
+} as const;
+type AccentKey = keyof typeof ACCENTS;
+// Rotation order used for decorative-only contexts (ranked list placeholders)
+// where color varies row-to-row rather than encoding a specific stat.
+const ACCENT_ROTATION: AccentKey[] = ['peach', 'lavender', 'sky', 'mint', 'butter'];
+
 function expenseLabel(
   t: TFn,
   category: string,
@@ -83,20 +100,23 @@ function RatesBanner() {
 
 // Informational stats (most expensive trip, biggest group, budget discipline,
 // average per trip, etc.) are never "owes"/"owed" values, so coral and sage
-// are off-limits here — every stat tile and highlight card shares this one
-// neutral icon treatment instead of picking its own accent color per tile.
-function StatIconChip({ icon }: { icon: IconName }) {
-  const { colors } = useTheme();
-  const styles = makeStyles(colors);
+// are off-limits here — but each stat still gets its own soft pastel chip
+// (from ACCENTS, looked up via its accent key) so the screen doesn't read as
+// flat gray. The big number itself stays in primary text color regardless —
+// the color lives in the chip, not the value.
+function StatIconChip({ icon, accent }: { icon: IconName; accent: AccentKey }) {
+  const styles = makeStyles(useTheme().colors);
+  const { bg, icon: iconColor } = ACCENTS[accent];
   return (
-    <View style={styles.hlIconBg}>
-      <Ionicons name={icon} size={18} color={colors.textSecondary} />
+    <View style={[styles.hlIconBg, { backgroundColor: bg }]}>
+      <Ionicons name={icon} size={18} color={iconColor} />
     </View>
   );
 }
 
 type OverviewTileData = {
   icon: IconName;
+  accent: AccentKey;
   amount: string;
   currency?: string;
   label: string;
@@ -112,7 +132,7 @@ function OverviewGrid({ tiles }: { tiles: OverviewTileData[] }) {
         const isLastOdd = tiles.length % 2 === 1 && i === tiles.length - 1;
         return (
           <View key={i} style={[styles.gridTile, cardShadow, isLastOdd && styles.gridTileFull]}>
-            <StatIconChip icon={tile.icon} />
+            <StatIconChip icon={tile.icon} accent={tile.accent} />
             <Text
               style={styles.hlAmount}
               numberOfLines={1}
@@ -133,6 +153,7 @@ function OverviewGrid({ tiles }: { tiles: OverviewTileData[] }) {
 
 type HighlightItem = {
   icon: IconName;
+  accent: AccentKey;
   amount: string;
   currency: string;
   label: string;
@@ -154,7 +175,7 @@ function HighlightsRow({ title, items }: { title: string; items: HighlightItem[]
       >
         {items.map((item, i) => (
           <View key={i} style={[styles.hlCard, cardShadow]}>
-            <StatIconChip icon={item.icon} />
+            <StatIconChip icon={item.icon} accent={item.accent} />
             <Text
               style={styles.hlAmount}
               numberOfLines={1}
@@ -213,8 +234,11 @@ function RankedTripList<T extends RankableTrip>({
                 resizeMode="cover"
               />
             ) : (
-              <View style={[styles.allTripThumb, styles.allTripThumbPlaceholder]}>
-                <Text style={styles.allTripThumbInitial}>
+              // No photo — cycle through the pastel palette by row so the
+              // list still has some color variety. Purely decorative (not
+              // tied to any category/meaning), so rotating is safe.
+              <View style={[styles.allTripThumb, styles.allTripThumbPlaceholder, { backgroundColor: ACCENTS[ACCENT_ROTATION[i % ACCENT_ROTATION.length]].bg }]}>
+                <Text style={[styles.allTripThumbInitial, { color: ACCENTS[ACCENT_ROTATION[i % ACCENT_ROTATION.length]].icon }]}>
                   {(trip.name[0] ?? '?').toUpperCase()}
                 </Text>
               </View>
@@ -226,7 +250,7 @@ function RankedTripList<T extends RankableTrip>({
                   of some rows being shorter than others. */}
               <Text style={styles.allTripDest} numberOfLines={1}>{trip.destination || ' '}</Text>
               <View style={styles.barTrack}>
-                <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as any, backgroundColor: colors.tabInactive }]} />
+                <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as any, backgroundColor: ACCENTS.sky.icon }]} />
               </View>
             </View>
             <View style={styles.allTripAmountCol}>
@@ -410,13 +434,17 @@ function CategoryBreakdown({
 // numbered circles for every rank, with 1-3 filled solid instead of tinted —
 // "bolder" rather than a semantic color, since rank position isn't an
 // owes/owed value and must not borrow coral or sage.
+// Ranks 1-3 get a distinct pastel each (gold/silver/bronze-adjacent, but
+// on-brand rather than literal medal colors); everything past that stays
+// the same neutral gray badge as before.
+const RANK_TIER_ACCENTS: AccentKey[] = ['peach', 'lavender', 'sky'];
+
 function RankBadge({ rank }: { rank: number }) {
-  const { colors } = useTheme();
-  const styles = makeStyles(colors);
-  const isTop3 = rank <= 3;
+  const styles = makeStyles(useTheme().colors);
+  const tierAccent = rank <= 3 ? RANK_TIER_ACCENTS[rank - 1] : null;
   return (
-    <View style={[styles.rankBadge, isTop3 && styles.rankBadgeTop]}>
-      <Text style={[styles.rankBadgeText, isTop3 && styles.rankBadgeTextTop]}>{rank}</Text>
+    <View style={[styles.rankBadge, tierAccent && { backgroundColor: ACCENTS[tierAccent].bg }]}>
+      <Text style={[styles.rankBadgeText, tierAccent && { color: ACCENTS[tierAccent].icon }]}>{rank}</Text>
     </View>
   );
 }
@@ -560,6 +588,7 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
   const items: HighlightItem[] = [
     {
       icon: 'trending-up-outline',
+      accent: 'mint',
       amount: `${sym}${formatAmount(biggestExp.amount, tripDetails.currency)}`,
       currency: tripDetails.currency,
       label: t('insights.biggestExpense'),
@@ -567,6 +596,7 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
     },
     {
       icon: 'wallet-outline',
+      accent: 'peach',
       amount: `${sym}${formatAmount(topSpenderAmt, tripDetails.currency)}`,
       currency: tripDetails.currency,
       label: t('insights.topSpender'),
@@ -574,6 +604,7 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
     },
     {
       icon: 'calendar-outline',
+      accent: 'lavender',
       amount: `${sym}${formatAmount(topDateAmt, tripDetails.currency)}`,
       currency: tripDetails.currency,
       label: t('insights.priciestDay'),
@@ -588,7 +619,7 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
 
 function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: GroupExpenseInsightRow[] }) {
   const { t }   = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = makeStyles(colors);
   const rates   = getCachedRates();
 
@@ -635,6 +666,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   if (hasEnoughTripsToCompare && mostExpensiveTrip) {
     tiles.push({
       icon: 'trophy-outline',
+      accent: 'peach',
       amount: `${getCurrencySymbol(mostExpensiveTrip.currency)}${formatAmount(mostExpensiveTrip.totalSpent, mostExpensiveTrip.currency)}`,
       currency: mostExpensiveTrip.currency,
       label: t('insights.mostExpensiveTrip'),
@@ -644,6 +676,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   if (topCatId && topCatDef) {
     tiles.push({
       icon: topCatDef.icon,
+      accent: 'lavender',
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(topCatAmt, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.mostExpensiveCategory'),
@@ -653,6 +686,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   if (hasEnoughTripsToCompare && biggestGroup && biggestGroup.members.length > 0) {
     tiles.push({
       icon: 'people-outline',
+      accent: 'sky',
       amount: String(biggestGroup.members.length),
       label: t('insights.biggestGroup'),
       sub: `${biggestGroup.name} · ${t('insights.memberCount', { count: biggestGroup.members.length })}`,
@@ -662,6 +696,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
     const be = biggestExpense as GroupExpenseInsightRow;
     tiles.push({
       icon: 'trending-up-outline',
+      accent: 'mint',
       amount: `${getCurrencySymbol(be.currency)}${formatAmount(be.amount, be.currency)}`,
       currency: be.currency,
       label: t('insights.biggestExpense'),
@@ -671,6 +706,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   if (hasEnoughTripsToCompare) {
     tiles.push({
       icon: 'stats-chart-outline',
+      accent: 'butter',
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(avgPerTrip, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.averagePerTrip'),
@@ -680,7 +716,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
 
   return (
     <>
-      <View style={[styles.card, cardShadow, styles.heroCard]}>
+      <View style={[styles.card, cardShadow, styles.heroCard, !isDark && styles.heroCardWarm]}>
         <Text
           style={styles.heroAmount}
           numberOfLines={1}
@@ -710,7 +746,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
 
 function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; expenses: PersonalExpenseInsightRow[] }) {
   const { t }   = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = makeStyles(colors);
   const rates   = getCachedRates();
 
@@ -766,6 +802,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   if (hasEnoughTripsToCompare && mostExpensiveTrip) {
     tiles.push({
       icon: 'trophy-outline',
+      accent: 'peach',
       amount: `${getCurrencySymbol(mostExpensiveTrip.currency)}${formatAmount(mostExpensiveTrip.totalSpent, mostExpensiveTrip.currency)}`,
       currency: mostExpensiveTrip.currency,
       label: t('insights.mostExpensiveTrip'),
@@ -775,6 +812,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   if (topCatId && topCatDef) {
     tiles.push({
       icon: topCatDef.icon,
+      accent: 'lavender',
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(topCatAmt, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.mostExpensiveCategory'),
@@ -786,6 +824,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
     const pct = Math.round((bbt.totalSpent / bbt.budget_amount!) * 100);
     tiles.push({
       icon: 'ribbon-outline',
+      accent: 'sky',
       amount: `${pct}%`,
       label: t('insights.bestBudgetDiscipline'),
       sub: bbt.name,
@@ -795,6 +834,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
     const be = biggestExpense as PersonalExpenseInsightRow;
     tiles.push({
       icon: 'trending-up-outline',
+      accent: 'mint',
       amount: `${getCurrencySymbol(be.currency)}${formatAmount(be.amount, be.currency)}`,
       currency: be.currency,
       label: t('insights.biggestExpense'),
@@ -804,6 +844,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   if (hasEnoughTripsToCompare) {
     tiles.push({
       icon: 'stats-chart-outline',
+      accent: 'butter',
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(avgPerTrip, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.averagePerTrip'),
@@ -813,7 +854,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
 
   return (
     <>
-      <View style={[styles.card, cardShadow, styles.heroCard]}>
+      <View style={[styles.card, cardShadow, styles.heroCard, !isDark && styles.heroCardWarm]}>
         <Text
           style={styles.heroAmount}
           numberOfLines={1}
@@ -848,6 +889,7 @@ function PersonalBiggestExpense({ trip, expenses }: { trip: PersonalTrip; expens
   const sym = getCurrencySymbol(trip.currency);
   const item: HighlightItem = {
     icon: 'trending-up-outline',
+    accent: 'mint',
     amount: `${sym}${formatAmount(biggest.amount, trip.currency)}`,
     currency: trip.currency,
     label: t('insights.biggestExpense'),
@@ -900,7 +942,7 @@ function PersonalExpenseTimeline({ expenses }: { expenses: PersonalTripExpense[]
 
 export default function InsightsScreen() {
   const { t } = useTranslation();
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const styles = makeStyles(colors);
 
   const [mode, setMode] = useState<'group' | 'personal'>(rememberedMode);
@@ -1158,7 +1200,7 @@ export default function InsightsScreen() {
                     </View>
                   ) : null}
 
-                  <View style={[styles.card, cardShadow, styles.heroCard]}>
+                  <View style={[styles.card, cardShadow, styles.heroCard, !isDark && styles.heroCardWarm]}>
                     {!tripDetails.destination_photo_url && (
                       <Text style={styles.heroTripName} numberOfLines={1}>{tripDetails.name}</Text>
                     )}
@@ -1243,7 +1285,7 @@ export default function InsightsScreen() {
                   </View>
                 ) : null}
 
-                <View style={[styles.card, cardShadow, styles.personalStatsCard]}>
+                <View style={[styles.card, cardShadow, styles.personalStatsCard, !isDark && styles.heroCardWarm]}>
                   {!personalDetail.trip.destination_photo_url && (
                     <Text style={styles.heroTripName} numberOfLines={1}>{personalDetail.trip.name}</Text>
                   )}
@@ -1442,6 +1484,13 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   // total always reads as the anchor of the screen, not a throwaway line.
   heroCard: {
     gap: 4,
+  },
+  // A very subtle warm tint (not white, not coral) so the single most
+  // important number on the screen reads as the headline rather than just
+  // another card in the list. Applied conditionally in light mode only —
+  // this hand-picked cream tone would clash against a dark theme.
+  heroCardWarm: {
+    backgroundColor: '#FFF8F2',
   },
   heroTripName: {
     fontSize: fontSizes.sectionTitle,
@@ -1675,16 +1724,10 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  rankBadgeTop: {
-    backgroundColor: c.textPrimary,
-  },
   rankBadgeText: {
     fontSize: 11,
     fontWeight: '700',
     color: c.textSecondary,
-  },
-  rankBadgeTextTop: {
-    color: '#fff',
   },
   rankAvatar: {
     width: 34,
