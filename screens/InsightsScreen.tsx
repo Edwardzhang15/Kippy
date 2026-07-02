@@ -81,10 +81,22 @@ function RatesBanner() {
   );
 }
 
+// Informational stats (most expensive trip, biggest group, budget discipline,
+// average per trip, etc.) are never "owes"/"owed" values, so coral and sage
+// are off-limits here — every stat tile and highlight card shares this one
+// neutral icon treatment instead of picking its own accent color per tile.
+function StatIconChip({ icon }: { icon: IconName }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
+  return (
+    <View style={styles.hlIconBg}>
+      <Ionicons name={icon} size={18} color={colors.textSecondary} />
+    </View>
+  );
+}
+
 type OverviewTileData = {
   icon: IconName;
-  iconColor: string;
-  iconBg: string;
   amount: string;
   currency?: string;
   label: string;
@@ -100,11 +112,9 @@ function OverviewGrid({ tiles }: { tiles: OverviewTileData[] }) {
         const isLastOdd = tiles.length % 2 === 1 && i === tiles.length - 1;
         return (
           <View key={i} style={[styles.gridTile, cardShadow, isLastOdd && styles.gridTileFull]}>
-            <View style={[styles.hlIconBg, { backgroundColor: tile.iconBg }]}>
-              <Ionicons name={tile.icon} size={18} color={tile.iconColor} />
-            </View>
+            <StatIconChip icon={tile.icon} />
             <Text
-              style={[styles.hlAmount, { color: tile.iconColor }]}
+              style={styles.hlAmount}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.6}
@@ -112,7 +122,7 @@ function OverviewGrid({ tiles }: { tiles: OverviewTileData[] }) {
               {tile.amount}
               {tile.currency ? <Text style={styles.currencyTag}> {tile.currency}</Text> : null}
             </Text>
-            <Text style={styles.hlLabel}>{tile.label}</Text>
+            <Text style={styles.hlLabel} numberOfLines={2}>{tile.label}</Text>
             <Text style={styles.hlSub} numberOfLines={2}>{tile.sub}</Text>
           </View>
         );
@@ -123,8 +133,6 @@ function OverviewGrid({ tiles }: { tiles: OverviewTileData[] }) {
 
 type HighlightItem = {
   icon: IconName;
-  iconColor: string;
-  iconBg: string;
   amount: string;
   currency: string;
   label: string;
@@ -146,11 +154,9 @@ function HighlightsRow({ title, items }: { title: string; items: HighlightItem[]
       >
         {items.map((item, i) => (
           <View key={i} style={[styles.hlCard, cardShadow]}>
-            <View style={[styles.hlIconBg, { backgroundColor: item.iconBg }]}>
-              <Ionicons name={item.icon} size={18} color={item.iconColor} />
-            </View>
+            <StatIconChip icon={item.icon} />
             <Text
-              style={[styles.hlAmount, { color: item.iconColor }]}
+              style={styles.hlAmount}
               numberOfLines={1}
               adjustsFontSizeToFit
               minimumFontScale={0.6}
@@ -158,7 +164,7 @@ function HighlightsRow({ title, items }: { title: string; items: HighlightItem[]
               {item.amount}
               <Text style={styles.currencyTag}> {item.currency}</Text>
             </Text>
-            <Text style={styles.hlLabel}>{item.label}</Text>
+            <Text style={styles.hlLabel} numberOfLines={2}>{item.label}</Text>
             <Text style={styles.hlSub} numberOfLines={2}>{item.sub}</Text>
           </View>
         ))}
@@ -199,13 +205,7 @@ function RankedTripList<T extends RankableTrip>({
         const showOriginal = trip.currency !== displayCurrency;
         return (
           <View key={trip.id} style={[styles.allTripRow, i > 0 && styles.rankRowBorder]}>
-            {i < 3 ? (
-              <Text style={styles.medal}>{MEDALS[i]}</Text>
-            ) : (
-              <View style={styles.rankNumBadge}>
-                <Text style={styles.rankNumText}>{i + 1}</Text>
-              </View>
-            )}
+            <RankBadge rank={i + 1} />
             {trip.destination_photo_url ? (
               <Image
                 source={{ uri: trip.destination_photo_url }}
@@ -221,11 +221,12 @@ function RankedTripList<T extends RankableTrip>({
             )}
             <View style={styles.allTripInfo}>
               <Text style={styles.allTripName} numberOfLines={1}>{trip.name}</Text>
-              {trip.destination ? (
-                <Text style={styles.allTripDest} numberOfLines={1}>{trip.destination}</Text>
-              ) : null}
+              {/* Always render the destination line — with a space fallback
+                  when absent — so every row reserves identical height instead
+                  of some rows being shorter than others. */}
+              <Text style={styles.allTripDest} numberOfLines={1}>{trip.destination || ' '}</Text>
               <View style={styles.barTrack}>
-                <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as any, backgroundColor: colors.coral }]} />
+                <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as any, backgroundColor: colors.tabInactive }]} />
               </View>
             </View>
             <View style={styles.allTripAmountCol}>
@@ -405,7 +406,20 @@ function CategoryBreakdown({
   );
 }
 
-const MEDALS = ['🥇', '🥈', '🥉'];
+// One consistent rank style everywhere a list is ranked (trips, who-paid-most):
+// numbered circles for every rank, with 1-3 filled solid instead of tinted —
+// "bolder" rather than a semantic color, since rank position isn't an
+// owes/owed value and must not borrow coral or sage.
+function RankBadge({ rank }: { rank: number }) {
+  const { colors } = useTheme();
+  const styles = makeStyles(colors);
+  const isTop3 = rank <= 3;
+  return (
+    <View style={[styles.rankBadge, isTop3 && styles.rankBadgeTop]}>
+      <Text style={[styles.rankBadgeText, isTop3 && styles.rankBadgeTextTop]}>{rank}</Text>
+    </View>
+  );
+}
 
 // ─── Group: per-trip breakdown pieces ─────────────────────────────────────────
 
@@ -432,13 +446,7 @@ function WhoPaidMost({ tripDetails }: { tripDetails: GroupDetails }) {
       <Text style={styles.cardTitle}>{t('insights.whoPaidMost')}</Text>
       {ranking.map((member, i) => (
         <View key={member.id} style={[styles.rankRow, i > 0 && styles.rankRowBorder]}>
-          {i < 3 ? (
-            <Text style={styles.medal}>{MEDALS[i]}</Text>
-          ) : (
-            <View style={styles.rankNumBadge}>
-              <Text style={styles.rankNumText}>{i + 1}</Text>
-            </View>
-          )}
+          <RankBadge rank={i + 1} />
           <View style={[styles.rankAvatar, { backgroundColor: getAvatarColor(member.avatarIndex) }]}>
             <Text style={styles.rankAvatarText}>{getInitials(member.name)}</Text>
           </View>
@@ -518,7 +526,6 @@ function WhoOwesMost({ tripDetails }: { tripDetails: GroupDetails }) {
 
 function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
   const { expenses } = tripDetails;
   if (expenses.length === 0) return null;
 
@@ -553,8 +560,6 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
   const items: HighlightItem[] = [
     {
       icon: 'trending-up-outline',
-      iconColor: colors.coral,
-      iconBg: '#FFF0EE',
       amount: `${sym}${formatAmount(biggestExp.amount, tripDetails.currency)}`,
       currency: tripDetails.currency,
       label: t('insights.biggestExpense'),
@@ -562,8 +567,6 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
     },
     {
       icon: 'wallet-outline',
-      iconColor: '#8B72BE',
-      iconBg: '#F3F0FF',
       amount: `${sym}${formatAmount(topSpenderAmt, tripDetails.currency)}`,
       currency: tripDetails.currency,
       label: t('insights.topSpender'),
@@ -571,8 +574,6 @@ function TripHighlights({ tripDetails }: { tripDetails: GroupDetails }) {
     },
     {
       icon: 'calendar-outline',
-      iconColor: colors.sage,
-      iconBg: '#F0F5F2',
       amount: `${sym}${formatAmount(topDateAmt, tripDetails.currency)}`,
       currency: tripDetails.currency,
       label: t('insights.priciestDay'),
@@ -633,7 +634,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   const tiles: OverviewTileData[] = [];
   if (hasEnoughTripsToCompare && mostExpensiveTrip) {
     tiles.push({
-      icon: 'trophy-outline', iconColor: colors.coral, iconBg: '#FFF0EE',
+      icon: 'trophy-outline',
       amount: `${getCurrencySymbol(mostExpensiveTrip.currency)}${formatAmount(mostExpensiveTrip.totalSpent, mostExpensiveTrip.currency)}`,
       currency: mostExpensiveTrip.currency,
       label: t('insights.mostExpensiveTrip'),
@@ -642,7 +643,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   }
   if (topCatId && topCatDef) {
     tiles.push({
-      icon: topCatDef.icon, iconColor: topCatDef.color, iconBg: topCatDef.bg,
+      icon: topCatDef.icon,
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(topCatAmt, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.mostExpensiveCategory'),
@@ -651,7 +652,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   }
   if (hasEnoughTripsToCompare && biggestGroup && biggestGroup.members.length > 0) {
     tiles.push({
-      icon: 'people-outline', iconColor: '#8B72BE', iconBg: '#F3F0FF',
+      icon: 'people-outline',
       amount: String(biggestGroup.members.length),
       label: t('insights.biggestGroup'),
       sub: `${biggestGroup.name} · ${t('insights.memberCount', { count: biggestGroup.members.length })}`,
@@ -660,7 +661,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   if (biggestExpense) {
     const be = biggestExpense as GroupExpenseInsightRow;
     tiles.push({
-      icon: 'trending-up-outline', iconColor: colors.coral, iconBg: '#FFF0EE',
+      icon: 'trending-up-outline',
       amount: `${getCurrencySymbol(be.currency)}${formatAmount(be.amount, be.currency)}`,
       currency: be.currency,
       label: t('insights.biggestExpense'),
@@ -669,7 +670,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
   }
   if (hasEnoughTripsToCompare) {
     tiles.push({
-      icon: 'stats-chart-outline', iconColor: colors.sage, iconBg: '#F0F5F2',
+      icon: 'stats-chart-outline',
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(avgPerTrip, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.averagePerTrip'),
@@ -679,13 +680,18 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
 
   return (
     <>
-      <View style={styles.summaryRow}>
-        <Text style={styles.summaryText}>
+      <View style={[styles.card, cardShadow, styles.heroCard]}>
+        <Text
+          style={styles.heroAmount}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.5}
+        >
+          {getCurrencySymbol(displayCurrency)}{formatAmount(grandTotal, displayCurrency)}
+          <Text style={styles.heroCurrency}> {displayCurrency}</Text>
+        </Text>
+        <Text style={styles.heroSub}>
           {t('insights.tripCount', { count: trips.length })}
-          {'  ·  '}
-          <Text style={styles.summaryAmount}>
-            {getCurrencySymbol(displayCurrency)}{formatAmount(grandTotal, displayCurrency)} {displayCurrency}
-          </Text>
           {mixedCurrencies ? '  ·  ' + t('insights.mixedCurrencies') : ''}
         </Text>
       </View>
@@ -759,7 +765,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   const tiles: OverviewTileData[] = [];
   if (hasEnoughTripsToCompare && mostExpensiveTrip) {
     tiles.push({
-      icon: 'trophy-outline', iconColor: colors.coral, iconBg: '#FFF0EE',
+      icon: 'trophy-outline',
       amount: `${getCurrencySymbol(mostExpensiveTrip.currency)}${formatAmount(mostExpensiveTrip.totalSpent, mostExpensiveTrip.currency)}`,
       currency: mostExpensiveTrip.currency,
       label: t('insights.mostExpensiveTrip'),
@@ -768,7 +774,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   }
   if (topCatId && topCatDef) {
     tiles.push({
-      icon: topCatDef.icon, iconColor: topCatDef.color, iconBg: topCatDef.bg,
+      icon: topCatDef.icon,
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(topCatAmt, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.mostExpensiveCategory'),
@@ -779,7 +785,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
     const bbt = bestBudgetTrip as PersonalTripSummary;
     const pct = Math.round((bbt.totalSpent / bbt.budget_amount!) * 100);
     tiles.push({
-      icon: 'ribbon-outline', iconColor: colors.sage, iconBg: '#F0F5F2',
+      icon: 'ribbon-outline',
       amount: `${pct}%`,
       label: t('insights.bestBudgetDiscipline'),
       sub: bbt.name,
@@ -788,7 +794,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   if (biggestExpense) {
     const be = biggestExpense as PersonalExpenseInsightRow;
     tiles.push({
-      icon: 'trending-up-outline', iconColor: colors.coral, iconBg: '#FFF0EE',
+      icon: 'trending-up-outline',
       amount: `${getCurrencySymbol(be.currency)}${formatAmount(be.amount, be.currency)}`,
       currency: be.currency,
       label: t('insights.biggestExpense'),
@@ -797,7 +803,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
   }
   if (hasEnoughTripsToCompare) {
     tiles.push({
-      icon: 'stats-chart-outline', iconColor: colors.sage, iconBg: '#F0F5F2',
+      icon: 'stats-chart-outline',
       amount: `${getCurrencySymbol(displayCurrency)}${formatAmount(avgPerTrip, displayCurrency)}`,
       currency: displayCurrency,
       label: t('insights.averagePerTrip'),
@@ -807,13 +813,18 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
 
   return (
     <>
-      <View style={styles.summaryRow}>
-        <Text style={styles.summaryText}>
+      <View style={[styles.card, cardShadow, styles.heroCard]}>
+        <Text
+          style={styles.heroAmount}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.5}
+        >
+          {getCurrencySymbol(displayCurrency)}{formatAmount(grandTotal, displayCurrency)}
+          <Text style={styles.heroCurrency}> {displayCurrency}</Text>
+        </Text>
+        <Text style={styles.heroSub}>
           {t('insights.tripCount', { count: trips.length })}
-          {'  ·  '}
-          <Text style={styles.summaryAmount}>
-            {getCurrencySymbol(displayCurrency)}{formatAmount(grandTotal, displayCurrency)} {displayCurrency}
-          </Text>
           {mixedCurrencies ? '  ·  ' + t('insights.mixedCurrencies') : ''}
         </Text>
       </View>
@@ -832,14 +843,11 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
 
 function PersonalBiggestExpense({ trip, expenses }: { trip: PersonalTrip; expenses: PersonalTripExpense[] }) {
   const { t } = useTranslation();
-  const { colors } = useTheme();
   if (expenses.length === 0) return null;
   const biggest = expenses.reduce((best, e) => (e.amount > best.amount ? e : best));
   const sym = getCurrencySymbol(trip.currency);
   const item: HighlightItem = {
     icon: 'trending-up-outline',
-    iconColor: colors.coral,
-    iconBg: '#FFF0EE',
     amount: `${sym}${formatAmount(biggest.amount, trip.currency)}`,
     currency: trip.currency,
     label: t('insights.biggestExpense'),
@@ -1150,20 +1158,20 @@ export default function InsightsScreen() {
                     </View>
                   ) : null}
 
-                  <View style={[styles.card, cardShadow, styles.statsCard]}>
+                  <View style={[styles.card, cardShadow, styles.heroCard]}>
                     {!tripDetails.destination_photo_url && (
-                      <Text style={styles.statsTripName} numberOfLines={1}>{tripDetails.name}</Text>
+                      <Text style={styles.heroTripName} numberOfLines={1}>{tripDetails.name}</Text>
                     )}
                     <Text
-                      style={styles.statsAmount}
+                      style={styles.heroAmount}
                       numberOfLines={1}
                       adjustsFontSizeToFit
                       minimumFontScale={0.5}
                     >
                       {getCurrencySymbol(tripDetails.currency)}{formatAmount(tripTotal, tripDetails.currency)}
-                      <Text style={styles.statsCurrency}> {tripDetails.currency}</Text>
+                      <Text style={styles.heroCurrency}> {tripDetails.currency}</Text>
                     </Text>
-                    <Text style={styles.statsSub}>
+                    <Text style={styles.heroSub}>
                       {t('insights.expenseCount', { count: tripDetails.expenses.length })}
                       {costPerPerson !== null
                         ? '  ·  ' +
@@ -1237,7 +1245,7 @@ export default function InsightsScreen() {
 
                 <View style={[styles.card, cardShadow, styles.personalStatsCard]}>
                   {!personalDetail.trip.destination_photo_url && (
-                    <Text style={styles.statsTripName} numberOfLines={1}>{personalDetail.trip.name}</Text>
+                    <Text style={styles.heroTripName} numberOfLines={1}>{personalDetail.trip.name}</Text>
                   )}
                   <TripBudgetRing
                     spent={personalSpent}
@@ -1379,32 +1387,19 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textSecondary,
   },
 
-  summaryRow: {
-    marginBottom: 16,
-  },
-  summaryText: {
-    fontSize: fontSizes.body,
-    fontWeight: '500',
-    color: c.textSecondary,
-  },
-  summaryAmount: {
-    fontWeight: '700',
-    color: c.textPrimary,
-  },
-
   gridWrap: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'space-between',
+    gap: 16,
     marginBottom: 16,
   },
   gridTile: {
-    width: '48%',
+    width: '47%',
+    minHeight: 168,
     backgroundColor: c.card,
     borderRadius: radii.card,
     padding: 14,
     gap: 5,
-    marginBottom: 10,
   },
   gridTileFull: {
     width: '100%',
@@ -1442,29 +1437,33 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontWeight: '500',
   },
 
-  statsCard: {
+  // HERO — the single most important number on each tab (overview total, or
+  // the selected trip's total in By Trip). Shared by every context so the
+  // total always reads as the anchor of the screen, not a throwaway line.
+  heroCard: {
     gap: 4,
   },
-  statsTripName: {
+  heroTripName: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
     color: c.textPrimary,
     marginBottom: 2,
   },
-  statsAmount: {
-    fontSize: fontSizes.screenTitle,
+  heroAmount: {
+    fontSize: 34,
     fontWeight: '800',
     color: c.textPrimary,
   },
-  statsCurrency: {
+  heroCurrency: {
     fontSize: fontSizes.body,
     fontWeight: '600',
     color: c.textSecondary,
   },
-  statsSub: {
+  heroSub: {
     fontSize: fontSizes.caption,
     fontWeight: '500',
     color: c.textSecondary,
+    marginTop: 2,
   },
 
   personalStatsCard: {
@@ -1625,25 +1624,36 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     width: 38,
     height: 38,
     borderRadius: 12,
+    backgroundColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 2,
   },
+  // Slightly smaller than sectionTitle so stat-card values don't compete
+  // with the hero total, and always near-black — informational stats never
+  // borrow the coral/sage owes/owed colors.
   hlAmount: {
-    fontSize: fontSizes.sectionTitle,
+    fontSize: 18,
     fontWeight: '800',
+    color: c.textPrimary,
   },
+  // minHeight reserves 2 lines' worth of space so a 1-line label and a
+  // wrapped 2-line label produce identically-sized cards.
   hlLabel: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
     color: c.textSecondary,
     textTransform: 'uppercase',
     letterSpacing: 0.5,
+    lineHeight: 15,
+    minHeight: 30,
   },
   hlSub: {
     fontSize: fontSizes.body,
     fontWeight: '500',
     color: c.textPrimary,
+    lineHeight: 19,
+    minHeight: 38,
   },
 
   rankRow: {
@@ -1656,23 +1666,25 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: c.border,
   },
-  medal: {
-    fontSize: 18,
-    width: 28,
-    textAlign: 'center',
-  },
-  rankNumBadge: {
+  rankBadge: {
     width: 28,
     height: 28,
     borderRadius: 14,
     backgroundColor: c.background,
     alignItems: 'center',
     justifyContent: 'center',
+    flexShrink: 0,
   },
-  rankNumText: {
+  rankBadgeTop: {
+    backgroundColor: c.textPrimary,
+  },
+  rankBadgeText: {
     fontSize: 11,
     fontWeight: '700',
     color: c.textSecondary,
+  },
+  rankBadgeTextTop: {
+    color: '#fff',
   },
   rankAvatar: {
     width: 34,
@@ -1743,14 +1755,14 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     flexShrink: 0,
   },
   allTripThumbPlaceholder: {
-    backgroundColor: '#FFF0EE',
+    backgroundColor: c.border,
     alignItems: 'center',
     justifyContent: 'center',
   },
   allTripThumbInitial: {
     fontSize: 17,
     fontWeight: '800',
-    color: c.coral,
+    color: c.textSecondary,
   },
   allTripInfo: {
     flex: 1,
