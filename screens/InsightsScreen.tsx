@@ -180,10 +180,15 @@ function RankedTripList<T extends RankableTrip>({
   trips,
   grandTotal,
   rankValue,
+  displayCurrency,
 }: {
   trips: T[];
   grandTotal: number;
   rankValue: (t: T) => number;
+  // Trips are ranked by rankValue(), which is already converted to this
+  // currency — the amount shown must be the same converted value, otherwise
+  // the ranking order looks arbitrary whenever currencies are mixed.
+  displayCurrency: string;
 }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
@@ -191,6 +196,7 @@ function RankedTripList<T extends RankableTrip>({
     <View style={[styles.card, cardShadow]}>
       {trips.map((trip, i) => {
         const pct = grandTotal > 0 ? rankValue(trip) / grandTotal : 0;
+        const showOriginal = trip.currency !== displayCurrency;
         return (
           <View key={trip.id} style={[styles.allTripRow, i > 0 && styles.rankRowBorder]}>
             {i < 3 ? (
@@ -222,15 +228,22 @@ function RankedTripList<T extends RankableTrip>({
                 <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as any, backgroundColor: colors.coral }]} />
               </View>
             </View>
-            <Text
-              style={styles.allTripAmount}
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              minimumFontScale={0.7}
-            >
-              {getCurrencySymbol(trip.currency)}{formatAmount(trip.totalSpent, trip.currency)}
-              <Text style={styles.currencyTag}> {trip.currency}</Text>
-            </Text>
+            <View style={styles.allTripAmountCol}>
+              <Text
+                style={styles.allTripAmount}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.7}
+              >
+                {getCurrencySymbol(displayCurrency)}{formatAmount(rankValue(trip), displayCurrency)}
+                <Text style={styles.currencyTag}> {displayCurrency}</Text>
+              </Text>
+              {showOriginal && (
+                <Text style={styles.allTripAmountOriginal} numberOfLines={1}>
+                  {getCurrencySymbol(trip.currency)}{formatAmount(trip.totalSpent, trip.currency)} {trip.currency}
+                </Text>
+              )}
+            </View>
           </View>
         );
       })}
@@ -682,7 +695,7 @@ function GroupOverview({ trips, expenses }: { trips: GroupSummary[]; expenses: G
       <OverviewGrid tiles={tiles} />
 
       <Text style={styles.allListTitle}>{t('insights.rankedBySpend')}</Text>
-      <RankedTripList trips={ranked} grandTotal={grandTotal} rankValue={(tr) => tr.totalDisp} />
+      <RankedTripList trips={ranked} grandTotal={grandTotal} rankValue={(tr) => tr.totalDisp} displayCurrency={displayCurrency} />
     </>
   );
 }
@@ -810,7 +823,7 @@ function PersonalOverview({ trips, expenses }: { trips: PersonalTripSummary[]; e
       <OverviewGrid tiles={tiles} />
 
       <Text style={styles.allListTitle}>{t('insights.rankedBySpend')}</Text>
-      <RankedTripList trips={ranked} grandTotal={grandTotal} rankValue={(tr) => tr.totalDisp} />
+      <RankedTripList trips={ranked} grandTotal={grandTotal} rankValue={(tr) => tr.totalDisp} displayCurrency={displayCurrency} />
     </>
   );
 }
@@ -1753,10 +1766,21 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textSecondary,
     fontWeight: '400',
   },
+  allTripAmountCol: {
+    alignItems: 'flex-end',
+    gap: 2,
+    flexShrink: 0,
+  },
   allTripAmount: {
     fontSize: fontSizes.body,
     fontWeight: '700',
     color: c.textPrimary,
+    flexShrink: 0,
+  },
+  allTripAmountOriginal: {
+    fontSize: 10,
+    fontWeight: '500',
+    color: c.textSecondary,
     flexShrink: 0,
   },
 });
