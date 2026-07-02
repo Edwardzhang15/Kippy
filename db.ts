@@ -963,6 +963,26 @@ export async function getAllTripSummaries(): Promise<GroupSummary[]> {
   );
 }
 
+export type GroupExpenseInsightRow = {
+  group_id: number;
+  group_name: string;
+  amount: number;
+  currency: string;
+  category: string;
+  custom_category: string | null;
+  note: string | null;
+  date: string;
+};
+
+export async function getAllGroupExpensesForInsights(): Promise<GroupExpenseInsightRow[]> {
+  return db.getAllAsync<GroupExpenseInsightRow>(
+    `SELECT e.group_id, g.name AS group_name, e.amount, e.currency, e.category,
+            e.custom_category, e.note, e.date
+     FROM expenses e
+     JOIN groups g ON e.group_id = g.id`,
+  );
+}
+
 // ─── Personal Expenses ────────────────────────────────────────────────────────
 
 export type PersonalExpense = {
@@ -1357,6 +1377,45 @@ export async function getPersonalTripExpenses(tripId: number): Promise<PersonalT
   return db.getAllAsync<PersonalTripExpense>(
     'SELECT * FROM personal_trip_expenses WHERE personal_trip_id = ? ORDER BY date DESC, id DESC',
     tripId,
+  );
+}
+
+export type PersonalTripSummary = PersonalTrip & { totalSpent: number };
+
+export async function getAllPersonalTripSummaries(): Promise<PersonalTripSummary[]> {
+  const trips = await db.getAllAsync<PersonalTrip>(
+    'SELECT * FROM personal_trips ORDER BY is_archived ASC, id DESC',
+  );
+  return Promise.all(
+    trips.map(async (trip) => {
+      const expRows = await db.getAllAsync<{ amount: number; currency: string }>(
+        'SELECT amount, currency FROM personal_trip_expenses WHERE personal_trip_id = ?',
+        trip.id,
+      );
+      const rates = getCachedRates();
+      const totalSpent = round2(expRows.reduce((sum, e) =>
+        sum + (rates ? convertAmount(e.amount, e.currency, trip.currency, rates) : e.amount), 0));
+      return { ...trip, totalSpent };
+    }),
+  );
+}
+
+export type PersonalExpenseInsightRow = {
+  personal_trip_id: number;
+  trip_name: string;
+  amount: number;
+  currency: string;
+  category: string;
+  note: string | null;
+  date: string;
+};
+
+export async function getAllPersonalTripExpensesForInsights(): Promise<PersonalExpenseInsightRow[]> {
+  return db.getAllAsync<PersonalExpenseInsightRow>(
+    `SELECT pte.personal_trip_id, pt.name AS trip_name, pte.amount, pte.currency,
+            pte.category, pte.note, pte.date
+     FROM personal_trip_expenses pte
+     JOIN personal_trips pt ON pte.personal_trip_id = pt.id`,
   );
 }
 

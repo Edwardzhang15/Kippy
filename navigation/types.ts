@@ -4,14 +4,6 @@ export type HomeStackParamList = {
   AddExpense:  { groupId: number; expenseId?: number };
   CreateGroup: undefined;
   CreateSubgroup: { groupId: number };
-  SettleUp: {
-    groupId: number;
-    memberId: number;
-    memberName: string;
-    balance: number;
-    avatarIndex: number;
-    currency: string;
-  };
   MemberExpenses: {
     groupId: number;
     memberId: number;
@@ -22,7 +14,6 @@ export type HomeStackParamList = {
   };
   EditTrip:    { groupId: number };
   Itinerary:   { groupId: number; totalDays: number };
-  PackingList: { groupId: number };
   BudgetPlan:  { groupId: number };
   Explore:     { groupId: number; destination: string };
 };

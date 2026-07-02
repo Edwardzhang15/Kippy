@@ -51,8 +51,6 @@
     "shareErrorMsg": "카드를 캡처하는 중 오류가 발생했어요.",
     "itinerary": "일정표",
     "itinerarySub": "날짜별 일정",
-    "packingList": "짐 목록",
-    "packingListSub": "챙겨야 할 것들",
     "budgetPlan": "예산 계획",
     "budgetPlanSub": "지출을 계획하고 관리해요",
     "explore": "Kip's 추천",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "새 그룹",
-    "groupName": "그룹 이름",
+    "groupName": "여행 이름",
     "groupNamePlaceholder": "예: 도쿄 여행, 룸메이트들…",
     "destination": "여행지",
     "destinationPlaceholder": "예: 일본, 프랑스, 캐나다…",
@@ -203,7 +201,18 @@
     "whoPaidMost": "가장 많이 결제한 사람",
     "whoOwesMost": "가장 많이 받아야 할 사람",
     "settled": "정산 완료",
-    "owed": "${{amount}} 미정산"
+    "owed": "{{symbol}}{{amount}} {{currency}} 미정산",
+    "modeGroup": "그룹 여행",
+    "modePersonal": "개인 여행",
+    "allGroupTrips": "모든 그룹 여행",
+    "allPersonalTrips": "모든 개인 여행",
+    "mostExpensiveTrip": "가장 비용이 많이 든 여행",
+    "mostExpensiveCategory": "가장 비용이 많이 든 카테고리",
+    "biggestGroup": "가장 인원이 많은 그룹",
+    "averagePerTrip": "여행당 평균 지출",
+    "bestBudgetDiscipline": "예산 관리 최우수",
+    "pctUsed": "{{pct}}% 사용",
+    "expenseTimeline": "지출 타임라인"
   },
   "itinerary": {
     "title": "일정표",

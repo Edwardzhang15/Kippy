@@ -55,7 +55,9 @@ function CardHeader({
         style={StyleSheet.absoluteFill}
       />
       <View style={styles.headerText}>
-        <Text style={styles.cardTitle} numberOfLines={2}>{group.name}</Text>
+        <Text style={styles.cardTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+          {group.name}
+        </Text>
         {group.destination ? (
           <View style={styles.headerRow}>
             <Ionicons name="location-outline" size={10} color="rgba(255,255,255,0.75)" />
@@ -138,20 +140,27 @@ function SummaryPage({
                 <View style={[styles.avatar, { backgroundColor: scAvatarColor(i) }]}>
                   <Text style={styles.avatarText}>{scInitials(m.name)}</Text>
                 </View>
-                <Text style={styles.rowLabel} numberOfLines={1}>{m.name}</Text>
-                <Text style={[styles.rowValue, { color }]}>{label}</Text>
+                <Text style={styles.rowLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  {m.name}
+                </Text>
+                <Text style={[styles.rowValue, { color }]} numberOfLines={1}>{label}</Text>
               </View>
             );
           })}
 
           {extraMem > 0 && (
-            <Text style={styles.overflow}>+{extraMem} more</Text>
+            <Text style={styles.overflow} numberOfLines={1}>+{extraMem} more</Text>
           )}
 
           {allSettled && (
             <View style={[styles.row, { marginTop: 2 }]}>
               <Ionicons name="checkmark-circle" size={14} color={SC.sage} />
-              <Text style={[styles.rowLabel, { color: SC.sage, fontWeight: '600' }]}>
+              <Text
+                style={[styles.rowLabel, { color: SC.sage, fontWeight: '600' }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 {t('shareCard.allSettledUp')}
               </Text>
             </View>
@@ -166,16 +175,16 @@ function SummaryPage({
                   <View style={[styles.iconChip, { backgroundColor: '#F0F0F0' }]}>
                     <Ionicons name="arrow-forward" size={14} color={SC.labelGray} />
                   </View>
-                  <Text style={styles.rowLabel} numberOfLines={1}>
+                  <Text style={styles.rowLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
                     {tx.fromName} → {tx.toName}
                   </Text>
-                  <Text style={[styles.rowValue, { color: SC.coral }]}>
+                  <Text style={[styles.rowValue, { color: SC.coral }]} numberOfLines={1}>
                     {sym}{formatAmount(tx.amount, group.currency)}
                   </Text>
                 </View>
               ))}
               {extraSettl > 0 && (
-                <Text style={styles.overflow}>+{extraSettl} more</Text>
+                <Text style={styles.overflow} numberOfLines={1}>+{extraSettl} more</Text>
               )}
             </>
           )}
@@ -235,8 +244,10 @@ function ExpensePage({
                 <View style={styles.expBody}>
                   {/* Title + amount on the same line */}
                   <View style={styles.expTitleRow}>
-                    <Text style={styles.rowLabel} numberOfLines={1}>{title}</Text>
-                    <Text style={styles.expAmount}>
+                    <Text style={styles.rowLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8}>
+                      {title}
+                    </Text>
+                    <Text style={styles.expAmount} numberOfLines={1}>
                       {getCurrencySymbol(exp.currency)}{formatAmount(exp.amount, exp.currency)}
                     </Text>
                   </View>

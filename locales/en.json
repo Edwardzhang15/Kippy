@@ -51,8 +51,6 @@
     "shareErrorMsg": "Something went wrong capturing the card.",
     "itinerary": "Itinerary",
     "itinerarySub": "Day-by-day schedule",
-    "packingList": "Packing List",
-    "packingListSub": "What to bring",
     "budgetPlan": "Budget Plan",
     "budgetPlanSub": "Plan & track spending",
     "explore": "Kip's Favs",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "New Group",
-    "groupName": "Group Name",
+    "groupName": "Trip Name",
     "groupNamePlaceholder": "e.g. Tokyo Trip, Roommates…",
     "destination": "Destination",
     "destinationPlaceholder": "e.g. Japan, France, Canada…",
@@ -203,7 +201,18 @@
     "whoPaidMost": "Who Paid the Most",
     "whoOwesMost": "Who Owes the Most",
     "settled": "Settled",
-    "owed": "${{amount}} owed"
+    "owed": "{{symbol}}{{amount}} {{currency}} owed",
+    "modeGroup": "Group Trips",
+    "modePersonal": "Personal Trips",
+    "allGroupTrips": "All Group Trips",
+    "allPersonalTrips": "All Personal Trips",
+    "mostExpensiveTrip": "Most Expensive Trip",
+    "mostExpensiveCategory": "Most Expensive Category",
+    "biggestGroup": "Biggest Group",
+    "averagePerTrip": "Average per Trip",
+    "bestBudgetDiscipline": "Best Budget Discipline",
+    "pctUsed": "{{pct}}% used",
+    "expenseTimeline": "Expense Timeline"
   },
   "itinerary": {
     "title": "Itinerary",
@@ -549,7 +558,7 @@
     "saving": "Saving…",
     "markAsSettled": "Mark as Settled",
     "payingIn": "Paying in",
-    "equivalent": "â‰ˆ {{sym}}{{amount}} {{currency}}",
+    "equivalent": "≈ {{sym}}{{amount}} {{currency}}",
     "settledDetail": "{{baseSym}}{{baseAmt}} {{baseCur}} · paid as {{paidSym}}{{paidAmt}} {{paidCur}}"
   },
   "createSubgroup": {
@@ -584,4 +593,3 @@
     "errorMsg": "Could not save changes. Please try again."
   }
 }
-

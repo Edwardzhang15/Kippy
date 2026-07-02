@@ -51,8 +51,6 @@
     "shareErrorMsg": "Une erreur s'est produite lors de la capture de la carte.",
     "itinerary": "Itinéraire",
     "itinerarySub": "Programme jour par jour",
-    "packingList": "Liste de bagages",
-    "packingListSub": "Ce qu'il faut emporter",
     "budgetPlan": "Plan de budget",
     "budgetPlanSub": "Planifie et suis tes dépenses",
     "explore": "Coups de cœur de Kip",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "Nouveau groupe",
-    "groupName": "Nom du groupe",
+    "groupName": "Nom du voyage",
     "groupNamePlaceholder": "ex. Voyage à Tokyo, Colocs…",
     "destination": "Destination",
     "destinationPlaceholder": "ex. Japon, France, Canada…",
@@ -203,7 +201,18 @@
     "whoPaidMost": "Qui a le plus payé",
     "whoOwesMost": "Qui doit le plus",
     "settled": "Soldé",
-    "owed": "${{amount}} dû"
+    "owed": "{{symbol}}{{amount}} {{currency}} dû",
+    "modeGroup": "Voyages de groupe",
+    "modePersonal": "Voyages perso",
+    "allGroupTrips": "Tous les voyages de groupe",
+    "allPersonalTrips": "Tous les voyages perso",
+    "mostExpensiveTrip": "Voyage le plus cher",
+    "mostExpensiveCategory": "Catégorie la plus chère",
+    "biggestGroup": "Groupe le plus grand",
+    "averagePerTrip": "Moyenne par voyage",
+    "bestBudgetDiscipline": "Meilleure gestion du budget",
+    "pctUsed": "{{pct}} % utilisé",
+    "expenseTimeline": "Chronologie des dépenses"
   },
   "itinerary": {
     "title": "Itinéraire",

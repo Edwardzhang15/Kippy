@@ -51,8 +51,6 @@
     "shareErrorMsg": "カードのキャプチャ中にエラーが発生しました。",
     "itinerary": "旅程",
     "itinerarySub": "日程スケジュール",
-    "packingList": "持ち物リスト",
-    "packingListSub": "持っていくもの",
     "budgetPlan": "予算プラン",
     "budgetPlanSub": "支出を計画・管理",
     "explore": "Kipのお気に入り",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "新しいグループ",
-    "groupName": "グループ名",
+    "groupName": "旅行名",
     "groupNamePlaceholder": "例：東京旅行、ルームメイト�",
     "destination": "目的地",
     "destinationPlaceholder": "例：日本、フランス、カナダ�",
@@ -200,10 +198,21 @@
     "whoPaidMost": "誰が最も多く支払ったか",
     "whoOwesMost": "誰が最も多く負債しているか",
     "settled": "精算済み",
-    "owed": "${{amount}} の負債",
+    "owed": "{{symbol}}{{amount}} {{currency}} の負債",
     "tripCount_one": "{{count}} 件の旅行",
     "expenseCount_one": "{{count}} 件の費用",
-    "memberCount_one": "{{count}} 人"
+    "memberCount_one": "{{count}} 人",
+    "modeGroup": "グループ旅行",
+    "modePersonal": "個人旅行",
+    "allGroupTrips": "すべてのグループ旅行",
+    "allPersonalTrips": "すべての個人旅行",
+    "mostExpensiveTrip": "最も費用がかかった旅行",
+    "mostExpensiveCategory": "最も費用がかかったカテゴリ",
+    "biggestGroup": "最大人数のグループ",
+    "averagePerTrip": "旅行あたりの平均費用",
+    "bestBudgetDiscipline": "予算管理が最も上手な旅行",
+    "pctUsed": "{{pct}}% 使用",
+    "expenseTimeline": "支出タイムライン"
   },
   "itinerary": {
     "title": "旅程",
@@ -549,7 +558,7 @@
     "saving": "保存中�",
     "markAsSettled": "精算済みにする",
     "payingIn": "支払い通貨",
-    "equivalent": "â‰ˆ {{sym}}{{amount}} {{currency}}",
+    "equivalent": "≈ {{sym}}{{amount}} {{currency}}",
     "settledDetail": "{{baseSym}}{{baseAmt}} {{baseCur}} � 支払い {{paidSym}}{{paidAmt}} {{paidCur}}"
   },
   "createSubgroup": {

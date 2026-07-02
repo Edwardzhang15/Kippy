@@ -70,16 +70,15 @@ function PlaceCard({ place, colors }: { place: PlaceResult; colors: ColorPalette
       )}
       <View style={styles.cardBody}>
         <Text style={styles.cardName} numberOfLines={2}>{place.name}</Text>
-        {place.rating !== null && (
-          <View style={styles.ratingRow}>
-            <Ionicons name="star" size={11} color="#F4B400" />
-            <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
-          </View>
-        )}
-        <PriceLevel level={place.priceLevel} colors={colors} />
-        {place.address && (
-          <Text style={styles.address} numberOfLines={1}>{place.address}</Text>
-        )}
+        <View style={styles.metaBlock}>
+          {place.rating !== null && (
+            <View style={styles.ratingRow}>
+              <Ionicons name="star" size={11} color="#F4B400" />
+              <Text style={styles.ratingText}>{place.rating.toFixed(1)}</Text>
+            </View>
+          )}
+          <PriceLevel level={place.priceLevel} colors={colors} />
+        </View>
       </View>
     </Pressable>
   );
@@ -110,16 +109,21 @@ const makeCardStyles = (c: ColorPalette) => StyleSheet.create({
     justifyContent: 'center',
   },
   cardBody: { padding: 10 },
+  // Fixed height (2 lines' worth) so a short name and a wrapped name still
+  // produce identical card heights across a horizontally-scrolling row.
   cardName: {
+    height: 32,
     fontSize: fontSizes.caption,
     fontWeight: '700',
     color: c.textPrimary,
     lineHeight: 16,
     marginBottom: 3,
   },
+  // Reserves space for rating + price dots even when a place has neither,
+  // for the same reason.
+  metaBlock: { minHeight: 26 },
   ratingRow: { flexDirection: 'row', alignItems: 'center', gap: 3 },
   ratingText: { fontSize: fontSizes.caption, color: c.textSecondary, fontWeight: '600' },
-  address:    { fontSize: 10, color: c.textSecondary, marginTop: 4, lineHeight: 13 },
 });
 
 // ─── Per-category empty state ─────────────────────────────────────────────────
@@ -234,21 +238,30 @@ export default function ExploreScreen({ navigation }: NativeStackScreenProps<Hom
   const { colors, isDark }        = useTheme();
   const styles                    = makeStyles(colors);
 
-  const [results, setResults]       = useState<Partial<Record<PlacesCategory, CategoryResult>>>({});
-  const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState<string | null>(null);
-  const [stops, setStops]           = useState<TripStop[]>([]);
-  const [activeStop, setActiveStop] = useState<TripStop | null>(null);
-  const isMounted                   = useRef(true);
+  const [results, setResults]           = useState<Partial<Record<PlacesCategory, CategoryResult>>>({});
+  const [loading, setLoading]           = useState(true);
+  const [error, setError]               = useState<string | null>(null);
+  const [stops, setStops]               = useState<TripStop[]>([]);
+  const [activeStopId, setActiveStopId] = useState<number | null>(null);
+  const isMounted                       = useRef(true);
 
+  // Derived from `stops` + the selected id every render, rather than stored as
+  // its own object — so the active stop can never drift out of sync with (or
+  // be left dangling by) the stops list itself.
+  const activeStop     = activeStopId !== null ? stops.find((s) => s.id === activeStopId) ?? null : null;
   const activeDest     = activeStop ? activeStop.stop_name : destination;
   const gradientColors = (isDark ? ['#FF7A6A', '#FF9E90'] : [colors.coral, '#FF9488']) as [string, string];
 
   useEffect(() => {
-    getTripStops(groupId).then((s) => {
-      setStops(s);
-      if (s.length > 0) setActiveStop(s[0]);
-    });
+    let active = true;
+    getTripStops(groupId)
+      .then((s) => {
+        if (!active) return;
+        setStops(s);
+        if (s.length > 0) setActiveStopId(s[0].id);
+      })
+      .catch(() => { /* stop tabs simply won't show if this fails */ });
+    return () => { active = false; };
   }, [groupId]);
 
   useEffect(() => {
@@ -356,12 +369,12 @@ export default function ExploreScreen({ navigation }: NativeStackScreenProps<Hom
             contentContainerStyle={styles.stopTabsContent}
           >
             {stops.map((stop) => {
-              const isActive = activeStop?.id === stop.id;
+              const isActive = activeStopId === stop.id;
               return (
                 <Pressable
                   key={stop.id}
                   style={[styles.stopTab, isActive && styles.stopTabActive]}
-                  onPress={() => { if (!isActive) { setActiveStop(stop); setResults({}); } }}
+                  onPress={() => { if (!isActive) setActiveStopId(stop.id); }}
                 >
                   <Text style={[styles.stopTabText, isActive && styles.stopTabTextActive]}>
                     {stop.stop_name}
@@ -389,6 +402,7 @@ export default function ExploreScreen({ navigation }: NativeStackScreenProps<Hom
           </View>
         ) : (
           <ScrollView
+            style={styles.resultsScroll}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}
           >
@@ -459,14 +473,15 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     height: 110,
   },
   stopTabsRow: {
+    flexGrow: 0,
     backgroundColor: c.card,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: c.border,
-    maxHeight: 48,
   },
   stopTabsContent: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 10,
     gap: 8,
     flexDirection: 'row',
     alignItems: 'center',
@@ -482,9 +497,12 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   stopTabActive:     { backgroundColor: '#FFF0EE', borderColor: c.coral },
   stopTabText:       { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary },
   stopTabTextActive: { color: c.coral },
+  resultsScroll: {
+    flex: 1,
+  },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingTop: 28,
+    paddingTop: 10,
     paddingBottom: 48,
   },
   center: {

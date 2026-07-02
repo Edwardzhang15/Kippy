@@ -57,6 +57,9 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   currText:        { fontSize: fontSizes.caption, fontWeight: '600', color: c.textSecondary },
   currTextActive:  { color: c.coral },
   hint:            { fontSize: fontSizes.caption, color: c.textSecondary, marginTop: 6 },
+  budgetInputWrap: { flexDirection: 'row', alignItems: 'center', backgroundColor: c.card, borderRadius: radii.button, paddingHorizontal: 16 },
+  budgetSym:       { fontSize: fontSizes.body, fontWeight: '600', color: c.textSecondary, marginRight: 6 },
+  budgetInput:     { flex: 1, paddingVertical: 13, fontSize: fontSizes.body, color: c.textPrimary },
 
   // Category budget section
   catToggle:       { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 28, marginBottom: 4, paddingVertical: 4 },
@@ -219,16 +222,19 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
         </View>
 
         <Text style={styles.label}>{t('personalTrip.totalBudget')}</Text>
-        <TextInput
-          style={styles.input}
-          value={budgetText}
-          onChangeText={setBudgetText}
-          placeholder={t('personalTrip.budgetPlaceholder')}
-          placeholderTextColor={colors.textSecondary}
-          keyboardType="decimal-pad"
-          inputAccessoryViewID={DONE_BAR_ID}
-          returnKeyType="done"
-        />
+        <View style={styles.budgetInputWrap}>
+          <Text style={styles.budgetSym}>{sym}</Text>
+          <TextInput
+            style={styles.budgetInput}
+            value={budgetText}
+            onChangeText={setBudgetText}
+            placeholder={t('personalTrip.budgetPlaceholder')}
+            placeholderTextColor={colors.textSecondary}
+            keyboardType="decimal-pad"
+            inputAccessoryViewID={DONE_BAR_ID}
+            returnKeyType="done"
+          />
+        </View>
 
         {/* Category budgets — only shown when creating */}
         {!isEditing && (

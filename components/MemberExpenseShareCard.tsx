@@ -84,8 +84,8 @@ function Footer() {
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function SectionLabel({ text }: { text: string }) {
-  return <Text style={styles.sectionLabel}>{text}</Text>;
+function SectionLabel({ text, color }: { text: string; color?: string }) {
+  return <Text style={[styles.sectionLabel, color ? { color } : null]}>{text}</Text>;
 }
 
 function SectionDivider() {
@@ -187,22 +187,26 @@ function SummaryPage({
           <SectionDivider />
           <SectionLabel text={t('memberExpenses.expensesLabel')} />
 
-          {/* Included in count */}
+          {/* Included in count — coral: charged to this member */}
           <View style={styles.row}>
-            <View style={[styles.iconChip, { backgroundColor: '#F5F5F5' }]}>
-              <Ionicons name="people-outline" size={14} color={SC.labelGray} />
+            <View style={[styles.iconChip, { backgroundColor: '#FFF0EE' }]}>
+              <Ionicons name="people-outline" size={14} color={SC.coral} />
             </View>
-            <Text style={styles.rowLabel}>{t('memberExpenses.includedIn')}</Text>
-            <Text style={styles.rowValue}>{includedIn.length}</Text>
+            <Text style={[styles.rowLabel, styles.rowLabelBold, { color: SC.coral }]}>
+              {t('memberExpenses.includedIn')}
+            </Text>
+            <Text style={[styles.rowValue, { color: SC.coral }]}>{includedIn.length}</Text>
           </View>
 
-          {/* Paid for count */}
+          {/* Paid for count — sage: money this member put out */}
           <View style={styles.row}>
-            <View style={[styles.iconChip, { backgroundColor: '#F5F5F5' }]}>
-              <Ionicons name="cash-outline" size={14} color={SC.labelGray} />
+            <View style={[styles.iconChip, { backgroundColor: '#EEF4EF' }]}>
+              <Ionicons name="cash-outline" size={14} color={SC.sage} />
             </View>
-            <Text style={styles.rowLabel}>{t('memberExpenses.paidFor')}</Text>
-            <Text style={styles.rowValue}>{paidFor.length}</Text>
+            <Text style={[styles.rowLabel, styles.rowLabelBold, { color: SC.sage }]}>
+              {t('memberExpenses.paidFor')}
+            </Text>
+            <Text style={[styles.rowValue, { color: SC.sage }]}>{paidFor.length}</Text>
           </View>
 
         </View>
@@ -236,6 +240,11 @@ function ExpensePage({
   pageRef?: (r: View | null) => void;
 }) {
   const { t } = useTranslation();
+  // Coral = money charged to this member ("included in"); sage = money this
+  // member put out ("paid for"). Same semantic pairing as balance colors
+  // elsewhere in the app (coral = owes, sage = owed), so it reads at a glance.
+  const sectionColor = section === 'includedIn' ? SC.coral : SC.sage;
+  const sectionTint   = section === 'includedIn' ? 'rgba(255,107,91,0.07)' : 'rgba(127,166,140,0.09)';
   const sectionText = section === 'includedIn'
     ? t('memberExpenses.includedIn')
     : t('memberExpenses.paidFor');
@@ -256,7 +265,7 @@ function ExpensePage({
 
       <View style={styles.body}>
         <View style={styles.content}>
-          <SectionLabel text={sectionText.toUpperCase()} />
+          <SectionLabel text={sectionText.toUpperCase()} color={sectionColor} />
           {expenses.map(exp => {
             const cat = CATEGORY_MAP[exp.category] ?? FALLBACK_CATEGORY;
             const title =
@@ -268,20 +277,20 @@ function ExpensePage({
               date: formatExpenseDate(exp.date),
             });
             return (
-              <View key={exp.id} style={styles.expRow}>
+              <View key={exp.id} style={[styles.expRow, { backgroundColor: sectionTint }]}>
                 <View style={[styles.iconChip, { backgroundColor: (cat as any).bg ?? '#F5F5F5' }]}>
                   <Ionicons name={cat.icon} size={15} color={cat.color} />
                 </View>
                 <View style={styles.expBody}>
                   <View style={styles.expTitleRow}>
                     <Text style={styles.rowLabel} numberOfLines={1}>{title}</Text>
-                    <Text style={styles.expAmount}>
+                    <Text style={[styles.expAmount, { color: sectionColor }]}>
                       {getCurrencySymbol(exp.currency)}{formatAmount(exp.amount, exp.currency)}
                     </Text>
                   </View>
                   <Text style={styles.rowSecondary} numberOfLines={1}>{paidBy}</Text>
                   {showShare && exp.share_amount != null && (
-                    <Text style={[styles.rowSecondary, { color: SC.coral }]}>
+                    <Text style={[styles.rowSecondary, styles.rowSecondaryBold, { color: SC.coral }]}>
                       {t('memberExpenses.yourShare', {
                         symbol: getCurrencySymbol(exp.currency),
                         amount: formatAmount(exp.share_amount, exp.currency),
@@ -510,6 +519,9 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: SC.dark,
   },
+  rowLabelBold: {
+    fontWeight: '800',
+  },
   rowValue: {
     fontSize: 12,
     fontWeight: '700',
@@ -530,7 +542,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: 10,
-    paddingVertical: 5,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
+    marginHorizontal: -8,
+    marginVertical: 1,
+    borderRadius: 10,
   },
   expBody: {
     flex: 1,
@@ -553,6 +569,9 @@ const styles = StyleSheet.create({
     color: SC.rowSecondary,
     fontWeight: '400',
     lineHeight: 14,
+  },
+  rowSecondaryBold: {
+    fontWeight: '700',
   },
 
   // ── Footer ──

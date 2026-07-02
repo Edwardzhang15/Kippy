@@ -21,6 +21,7 @@ import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, formatAmount } from '../utils';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import MemberExpenseShareCard from '../components/MemberExpenseShareCard';
+import SettleUpModal from '../components/SettleUpModal';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'MemberExpenses'>;
 type NavProp = NativeStackNavigationProp<HomeStackParamList, 'MemberExpenses'>;
@@ -82,6 +83,35 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.sectionTitle,
     fontWeight: '800',
     color: c.textPrimary,
+  },
+  heroDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: c.border,
+  },
+  balanceSection: {
+    alignItems: 'center',
+    gap: 8,
+  },
+  statusChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: c.background,
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  statusChipText: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  balanceAmount: {
+    fontSize: fontSizes.screenTitle,
+    fontWeight: '800',
+    letterSpacing: -0.5,
   },
   settleBtn: {
     flexDirection: 'row',
@@ -311,8 +341,12 @@ export default function MemberExpensesScreen({ route }: Props) {
   const { groupId, memberId, memberName, avatarIndex, balance, groupCurrency } = route.params;
   const [data, setData] = useState<MemberExpensesData | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showSettleModal, setShowSettleModal] = useState(false);
   const [sharingSummary, setSharingSummary] = useState(false);
   const [sharingAll, setSharingAll] = useState(false);
+  // Local so the balance reflects a just-completed settlement immediately,
+  // without waiting on the caller's own refetch.
+  const [currentBalance, setCurrentBalance] = useState(balance);
 
   const memberCardRef = useRef<View>(null);
   const pageRefs = useRef<Array<View | null>>([]);
@@ -351,16 +385,8 @@ export default function MemberExpensesScreen({ route }: Props) {
     setSharingAll(false);
   };
 
-  const goToSettle = () => {
-    navigation.navigate('SettleUp', {
-      groupId,
-      memberId,
-      memberName,
-      balance,
-      avatarIndex,
-      currency: groupCurrency,
-    });
-  };
+  const isOwed = currentBalance > 0;
+  const isZero = currentBalance === 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -395,13 +421,40 @@ export default function MemberExpensesScreen({ route }: Props) {
               </Text>
             </View>
           </View>
-          <Pressable
-            style={({ pressed }) => [styles.settleBtn, pressed && { opacity: 0.85 }]}
-            onPress={goToSettle}
-          >
-            <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
-            <Text style={styles.settleBtnText}>{t('memberExpenses.settleUp')}</Text>
-          </Pressable>
+
+          <View style={styles.heroDivider} />
+
+          <View style={styles.balanceSection}>
+            <View style={styles.statusChip}>
+              {isZero ? (
+                <>
+                  <Ionicons name="checkmark-circle" size={14} color={colors.sage} />
+                  <Text style={[styles.statusChipText, { color: colors.sage }]}>
+                    {t('settleUp.alreadySettled')}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.statusChipText}>
+                  {isOwed ? t('settleUp.getsBack') : t('settleUp.owes')}
+                </Text>
+              )}
+            </View>
+            {!isZero && (
+              <Text style={[styles.balanceAmount, { color: isOwed ? colors.sage : colors.coral }]}>
+                {isOwed ? '+' : '-'}{getCurrencySymbol(groupCurrency)}{formatAmount(Math.abs(currentBalance), groupCurrency)}
+              </Text>
+            )}
+          </View>
+
+          {!isZero && (
+            <Pressable
+              style={({ pressed }) => [styles.settleBtn, pressed && { opacity: 0.85 }]}
+              onPress={() => setShowSettleModal(true)}
+            >
+              <Ionicons name="swap-horizontal-outline" size={18} color="#fff" />
+              <Text style={styles.settleBtnText}>{t('memberExpenses.settleUp')}</Text>
+            </Pressable>
+          )}
         </View>
 
         <View style={styles.sectionHeader}>
@@ -471,7 +524,7 @@ export default function MemberExpensesScreen({ route }: Props) {
                 destinationPhotoUrl={data.destinationPhotoUrl}
                 memberName={memberName}
                 avatarIndex={avatarIndex}
-                balance={balance}
+                balance={currentBalance}
                 groupCurrency={groupCurrency}
                 includedIn={data.includedIn}
                 paidFor={data.paidFor}
@@ -505,6 +558,18 @@ export default function MemberExpensesScreen({ route }: Props) {
           </View>
         </SafeAreaView>
       </Modal>
+
+      <SettleUpModal
+        visible={showSettleModal}
+        onClose={() => setShowSettleModal(false)}
+        onSettled={() => setCurrentBalance(0)}
+        groupId={groupId}
+        memberId={memberId}
+        memberName={memberName}
+        balance={currentBalance}
+        avatarIndex={avatarIndex}
+        currency={groupCurrency}
+      />
     </SafeAreaView>
   );
 }

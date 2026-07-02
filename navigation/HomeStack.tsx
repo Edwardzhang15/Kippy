@@ -4,11 +4,9 @@ import HomeScreen from '../screens/HomeScreen';
 import GroupDetailScreen from '../screens/GroupDetailScreen';
 import AddExpenseScreen from '../screens/AddExpenseScreen';
 import CreateGroupScreen from '../screens/CreateGroupScreen';
-import SettleUpScreen from '../screens/SettleUpScreen';
 import CreateSubgroupScreen from '../screens/CreateSubgroupScreen';
 import EditTripScreen from '../screens/EditTripScreen';
 import ItineraryScreen from '../screens/ItineraryScreen';
-import PackingListScreen from '../screens/PackingListScreen';
 import BudgetPlanScreen from '../screens/BudgetPlanScreen';
 import MemberExpensesScreen from '../screens/MemberExpensesScreen';
 import ExploreScreen from '../screens/ExploreScreen';
@@ -30,11 +28,6 @@ export default function HomeStack() {
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen
-        name="SettleUp"
-        component={SettleUpScreen}
-        options={{ presentation: 'modal' }}
-      />
-      <Stack.Screen
         name="CreateSubgroup"
         component={CreateSubgroupScreen}
         options={{ presentation: 'modal' }}
@@ -45,7 +38,6 @@ export default function HomeStack() {
         options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="Itinerary" component={ItineraryScreen} />
-      <Stack.Screen name="PackingList" component={PackingListScreen} />
       <Stack.Screen name="BudgetPlan" component={BudgetPlanScreen} />
       <Stack.Screen name="MemberExpenses" component={MemberExpensesScreen} />
       <Stack.Screen name="Explore" component={ExploreScreen} />

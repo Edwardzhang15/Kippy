@@ -12,7 +12,10 @@ export type TripSummaryCardProps = {
 };
 
 const BODY_H  = SC.CARD_H - SC.HEADER_H + SC.OVERLAP;
-const MAX_MEM = 5;
+// Kept lower than the balance-breakdown card's member cap (5) because this
+// card also carries the big total-cost block above the member list, and a
+// fixed-height card has no room to spare for that extra content.
+const MAX_MEM = 4;
 
 function getTripDates(group: GroupDetails) {
   if (group.expenses.length === 0) return null;
@@ -68,7 +71,9 @@ const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) 
           resizeMode="contain"
         />
         <View style={styles.headerText}>
-          <Text style={styles.cardTitle} numberOfLines={2}>{group.name}</Text>
+          <Text style={styles.cardTitle} numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8}>
+            {group.name}
+          </Text>
           {group.destination ? (
             <View style={styles.headerRow}>
               <Ionicons name="location-outline" size={10} color="rgba(255,255,255,0.75)" />
@@ -87,13 +92,13 @@ const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) 
         <View style={styles.content}>
           {/* Total */}
           <Text style={styles.totalLabel}>{t('shareCard.totalTripCost').toUpperCase()}</Text>
-          <Text style={styles.totalAmount}>
+          <Text style={styles.totalAmount} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.65}>
             {sym}{formatAmount(group.totalSpent, group.currency)}
             {'  '}<Text style={styles.totalCurrency}>{group.currency}</Text>
           </Text>
 
           {tripDates && (
-            <Text style={styles.dates}>
+            <Text style={styles.dates} numberOfLines={1}>
               {tripDates.start === tripDates.end
                 ? tripDates.start
                 : `${tripDates.start} – ${tripDates.end}`}
@@ -107,14 +112,19 @@ const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) 
           {allSettled ? (
             <View style={styles.row}>
               <Ionicons name="checkmark-circle" size={16} color={SC.sage} />
-              <Text style={[styles.rowLabel, { color: SC.sage }]}>
+              <Text
+                style={[styles.rowLabel, { color: SC.sage }]}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
                 {t('shareCard.allSettledUp')}
               </Text>
             </View>
           ) : (
             <View style={styles.row}>
               <Ionicons name="alert-circle-outline" size={16} color={SC.coral} />
-              <Text style={styles.rowLabel} numberOfLines={1}>
+              <Text style={styles.rowLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
                 {t('shareCard.remaining', {
                   amount: formatAmount(totalOutstanding, group.currency),
                 })}
@@ -138,13 +148,15 @@ const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) 
                 <View style={[styles.avatar, { backgroundColor: scAvatarColor(i) }]}>
                   <Text style={styles.avatarText}>{scInitials(m.name)}</Text>
                 </View>
-                <Text style={styles.rowLabel} numberOfLines={1}>{m.name}</Text>
-                <Text style={[styles.rowValue, { color }]}>{val}</Text>
+                <Text style={styles.rowLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
+                  {m.name}
+                </Text>
+                <Text style={[styles.rowValue, { color }]} numberOfLines={1}>{val}</Text>
               </View>
             );
           })}
           {extraMem > 0 && (
-            <Text style={styles.overflow}>+{extraMem} more</Text>
+            <Text style={styles.overflow} numberOfLines={1}>+{extraMem} more</Text>
           )}
         </View>
 

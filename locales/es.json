@@ -51,8 +51,6 @@
     "shareErrorMsg": "Algo salió mal al capturar la tarjeta.",
     "itinerary": "Itinerario",
     "itinerarySub": "Agenda día a día",
-    "packingList": "Lista de Equipaje",
-    "packingListSub": "Qué llevar",
     "budgetPlan": "Plan de Presupuesto",
     "budgetPlanSub": "Planifica y controla tus gastos",
     "explore": "Favs de Kip",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "Nuevo Grupo",
-    "groupName": "Nombre del Grupo",
+    "groupName": "Nombre del Viaje",
     "groupNamePlaceholder": "ej. Viaje a Tokio, Compañeros de piso…",
     "destination": "Destino",
     "destinationPlaceholder": "ej. Japón, Francia, Canadá…",
@@ -203,7 +201,18 @@
     "whoPaidMost": "Quién Pagó Más",
     "whoOwesMost": "Quién Debe Más",
     "settled": "Saldado",
-    "owed": "${{amount}} adeudado"
+    "owed": "{{symbol}}{{amount}} {{currency}} adeudado",
+    "modeGroup": "Viajes en Grupo",
+    "modePersonal": "Viajes Personales",
+    "allGroupTrips": "Todos los Viajes en Grupo",
+    "allPersonalTrips": "Todos los Viajes Personales",
+    "mostExpensiveTrip": "Viaje Más Caro",
+    "mostExpensiveCategory": "Categoría Más Cara",
+    "biggestGroup": "Grupo Más Grande",
+    "averagePerTrip": "Promedio por Viaje",
+    "bestBudgetDiscipline": "Mejor Control de Presupuesto",
+    "pctUsed": "{{pct}}% usado",
+    "expenseTimeline": "Cronología de Gastos"
   },
   "itinerary": {
     "title": "Itinerario",

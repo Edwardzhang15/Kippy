@@ -51,8 +51,6 @@
     "shareErrorMsg": "Beim Erfassen der Karte ist ein Fehler aufgetreten.",
     "itinerary": "Reiseplan",
     "itinerarySub": "Tag-für-Tag-Programm",
-    "packingList": "Packliste",
-    "packingListSub": "Was du mitnehmen solltest",
     "budgetPlan": "Budgetplan",
     "budgetPlanSub": "Ausgaben planen und verwalten",
     "explore": "Kip’s Tipps",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "Neue Gruppe",
-    "groupName": "Gruppenname",
+    "groupName": "Reisename",
     "groupNamePlaceholder": "z. B. Tokio-Trip, WG-Reise…",
     "destination": "Reiseziel",
     "destinationPlaceholder": "z. B. Japan, Frankreich, Kanada…",
@@ -203,7 +201,18 @@
     "whoPaidMost": "Wer hat am meisten bezahlt",
     "whoOwesMost": "Wer schuldet am meisten",
     "settled": "Ausgeglichen",
-    "owed": "${{amount}} offen"
+    "owed": "{{symbol}}{{amount}} {{currency}} offen",
+    "modeGroup": "Gruppenreisen",
+    "modePersonal": "Persönliche Reisen",
+    "allGroupTrips": "Alle Gruppenreisen",
+    "allPersonalTrips": "Alle persönlichen Reisen",
+    "mostExpensiveTrip": "Teuerste Reise",
+    "mostExpensiveCategory": "Teuerste Kategorie",
+    "biggestGroup": "Größte Gruppe",
+    "averagePerTrip": "Durchschnitt pro Reise",
+    "bestBudgetDiscipline": "Beste Budgetdisziplin",
+    "pctUsed": "{{pct}} % genutzt",
+    "expenseTimeline": "Ausgaben-Zeitleiste"
   },
   "itinerary": {
     "title": "Reiseplan",

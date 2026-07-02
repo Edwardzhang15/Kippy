@@ -51,8 +51,6 @@
     "shareErrorMsg": "截取卡片时出现了问题。",
     "itinerary": "行程安排",
     "itinerarySub": "每日日程",
-    "packingList": "打包清单",
-    "packingListSub": "需要携带的物品",
     "budgetPlan": "预算计划",
     "budgetPlanSub": "规划并追踪支出",
     "explore": "Kip最爱",
@@ -79,7 +77,7 @@
   },
   "createGroup": {
     "title": "新建群组",
-    "groupName": "群组名称",
+    "groupName": "行程名称",
     "groupNamePlaceholder": "例如：东京之旅、室友�",
     "destination": "目的地",
     "destinationPlaceholder": "例如：日本、法国、加拿大�",
@@ -200,10 +198,21 @@
     "whoPaidMost": "谁付款最多",
     "whoOwesMost": "谁欠款最多",
     "settled": "已结清",
-    "owed": "欠款 ${{amount}}",
+    "owed": "欠款 {{symbol}}{{amount}} {{currency}}",
     "tripCount_one": "{{count}} 个行程",
     "expenseCount_one": "{{count}} 笔费用",
-    "memberCount_one": "{{count}} 人"
+    "memberCount_one": "{{count}} 人",
+    "modeGroup": "群组行程",
+    "modePersonal": "个人行程",
+    "allGroupTrips": "所有群组行程",
+    "allPersonalTrips": "所有个人行程",
+    "mostExpensiveTrip": "花费最多的行程",
+    "mostExpensiveCategory": "花费最多的类别",
+    "biggestGroup": "人数最多的群组",
+    "averagePerTrip": "每次行程平均花费",
+    "bestBudgetDiscipline": "预算控制最佳",
+    "pctUsed": "已使用 {{pct}}%",
+    "expenseTimeline": "支出时间线"
   },
   "itinerary": {
     "title": "行程安排",
@@ -549,7 +558,7 @@
     "saving": "保存中�",
     "markAsSettled": "标记为已结清",
     "payingIn": "支付货币",
-    "equivalent": "â‰ˆ {{sym}}{{amount}} {{currency}}",
+    "equivalent": "≈ {{sym}}{{amount}} {{currency}}",
     "settledDetail": "{{baseSym}}{{baseAmt}} {{baseCur}} � 实付 {{paidSym}}{{paidAmt}} {{paidCur}}"
   },
   "createSubgroup": {

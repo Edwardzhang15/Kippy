@@ -53,14 +53,12 @@ function MemberBalanceCard({
   member,
   index,
   groupCurrency,
-  onPressBreakdown,
-  onPressSettle,
+  onPress,
 }: {
   member: MemberWithBalance;
   index: number;
   groupCurrency: string;
-  onPressBreakdown: () => void;
-  onPressSettle: () => void;
+  onPress: () => void;
 }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
@@ -87,23 +85,20 @@ function MemberBalanceCard({
 
   return (
     <Animated.View style={[{ flex: 1 }, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
-      <View style={[styles.memberCard, cardShadow]}>
-        <Pressable
-          style={({ pressed }) => [styles.memberCardUpper, pressed && { opacity: 0.7 }]}
-          onPress={onPressBreakdown}
-        >
+      <Pressable
+        style={({ pressed }) => [styles.memberCard, cardShadow, pressed && { opacity: 0.7 }]}
+        onPress={onPress}
+      >
+        <View style={styles.memberCardUpper}>
           <View style={[styles.memberAvatar, { backgroundColor: getAvatarColor(index) }]}>
             <Text style={styles.memberAvatarText}>{getInitials(member.name)}</Text>
           </View>
           <Text style={styles.memberName} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.75}>
             {member.name}
           </Text>
-        </Pressable>
+        </View>
         <View style={styles.memberCardDivider} />
-        <Pressable
-          style={({ pressed }) => [styles.memberCardLower, pressed && { opacity: 0.7 }]}
-          onPress={onPressSettle}
-        >
+        <View style={styles.memberCardLower}>
           <Text
             style={[styles.memberBalance, { color: isPositive ? colors.sage : colors.coral }]}
             numberOfLines={1}
@@ -113,8 +108,8 @@ function MemberBalanceCard({
             {getCurrencySymbol(groupCurrency)}{formatAmount(Math.abs(member.balance), groupCurrency)}
           </Text>
           <Ionicons name="chevron-forward" size={11} color={colors.tabInactive} />
-        </Pressable>
-      </View>
+        </View>
+      </Pressable>
     </Animated.View>
   );
 }
@@ -450,7 +445,14 @@ export default function GroupDetailScreen({ route }: Props) {
             onPress={() => setShowBalanceModal(true)}
           >
             <Ionicons name="people-outline" size={16} color={colors.coral} />
-            <Text style={styles.shareBreakdownBtnText}>{t('groupDetail.shareBalanceBreakdown')}</Text>
+            <Text
+              style={styles.shareBreakdownBtnText}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+            >
+              {t('groupDetail.shareBalanceBreakdown')}
+            </Text>
           </Pressable>
           {!!group.is_archived && (
             <Pressable
@@ -458,7 +460,14 @@ export default function GroupDetailScreen({ route }: Props) {
               onPress={() => setShowShareModal(true)}
             >
               <Ionicons name="share-outline" size={16} color="#fff" />
-              <Text style={styles.shareBtnText}>{t('groupDetail.shareTripSummary')}</Text>
+              <Text
+                style={styles.shareBtnText}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.85}
+              >
+                {t('groupDetail.shareTripSummary')}
+              </Text>
             </Pressable>
           )}
         </View>
@@ -564,20 +573,6 @@ export default function GroupDetailScreen({ route }: Props) {
             </Pressable>
 
             <Pressable
-              style={[styles.itineraryBtn, styles.packingBtn, cardShadow]}
-              onPress={() => navigation.navigate('PackingList', { groupId: group.id })}
-            >
-              <View style={styles.packingIconBg}>
-                <Ionicons name="bag-handle-outline" size={20} color={colors.sage} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.itineraryBtnTitle}>{t('groupDetail.packingList')}</Text>
-                <Text style={styles.itineraryBtnSub}>{t('groupDetail.packingListSub')}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={16} color={colors.tabInactive} />
-            </Pressable>
-
-            <Pressable
               style={[styles.itineraryBtn, styles.budgetBtn, cardShadow]}
               onPress={() => navigation.navigate('BudgetPlan', { groupId: group.id })}
             >
@@ -601,7 +596,7 @@ export default function GroupDetailScreen({ route }: Props) {
               member={m}
               index={i}
               groupCurrency={group.currency}
-              onPressBreakdown={() =>
+              onPress={() =>
                 navigation.navigate('MemberExpenses', {
                   groupId: group.id,
                   memberId: m.id,
@@ -609,16 +604,6 @@ export default function GroupDetailScreen({ route }: Props) {
                   avatarIndex: i,
                   balance: m.balance,
                   groupCurrency: group.currency,
-                })
-              }
-              onPressSettle={() =>
-                navigation.navigate('SettleUp', {
-                  groupId: group.id,
-                  memberId: m.id,
-                  memberName: m.name,
-                  balance: m.balance,
-                  avatarIndex: i,
-                  currency: group.currency,
                 })
               }
             />
@@ -1299,7 +1284,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textPrimary,
   },
 
-  // Itinerary / Packing List / Budget buttons
+  // Itinerary / Budget buttons
   itineraryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -1309,9 +1294,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     padding: 16,
     marginBottom: 20,
   },
-  packingBtn: {
-    marginBottom: 12,
-  },
   budgetBtn: {
     marginBottom: 20,
   },
@@ -1320,15 +1302,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     height: 40,
     borderRadius: 12,
     backgroundColor: '#FFF0EE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  packingIconBg: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    backgroundColor: '#EFF7F2',
     alignItems: 'center',
     justifyContent: 'center',
     flexShrink: 0,
@@ -1418,10 +1391,12 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     backgroundColor: c.card,
     borderRadius: radii.button,
     paddingVertical: 12,
+    paddingHorizontal: 10,
     borderWidth: 1.5,
     borderColor: c.coral,
   },
   shareBreakdownBtnText: {
+    flexShrink: 1,
     fontSize: fontSizes.caption,
     fontWeight: '700',
     color: c.coral,
@@ -1433,10 +1408,11 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: 6,
     backgroundColor: c.coral,
     borderRadius: radii.button,
     paddingVertical: 12,
+    paddingHorizontal: 10,
     shadowColor: c.coral,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -1444,7 +1420,8 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     elevation: 5,
   },
   shareBtnText: {
-    fontSize: fontSizes.body,
+    flexShrink: 1,
+    fontSize: fontSizes.caption,
     fontWeight: '700',
     color: '#fff',
     letterSpacing: 0.3,
