@@ -21,6 +21,7 @@ const LANGUAGES = [
   { code: 'es',    label: 'Español',  emoji: '🇪🇸' },
   { code: 'fr',    label: 'Français', emoji: '🇫🇷' },
   { code: 'ko',    label: '한국어',   emoji: '🇰🇷' },
+  { code: 'de',    label: 'Deutsch',  emoji: '🇩🇪' },
 ];
 
 type Props = {
@@ -62,7 +63,7 @@ export default function LanguagePickerScreen({ onComplete }: Props) {
             </View>
             <Text style={styles.title}>Choose your language</Text>
             <Text style={styles.subtitle}>
-              {'Select a language · 选择语言 · 言語を選択\nElige tu idioma · Choisir la langue · 언어 선택'}
+              {'Select a language · 选择语言 · 言語を選択\nElige tu idioma · Choisir la langue · 언어 선택 · Sprache wählen'}
             </Text>
           </View>
 

@@ -24,6 +24,7 @@ const LANGUAGES = [
   { code: 'es',    label: 'Español' },
   { code: 'fr',    label: 'Français' },
   { code: 'ko',    label: '한국어' },
+  { code: 'de',    label: 'Deutsch' },
 ];
 
 const THEME_OPTIONS: { mode: ThemeMode; labelKey: string }[] = [

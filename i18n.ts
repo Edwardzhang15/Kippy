@@ -9,6 +9,7 @@ import ja from './locales/ja.json';
 import es from './locales/es.json';
 import fr from './locales/fr.json';
 import ko from './locales/ko.json';
+import de from './locales/de.json';
 
 const LANG_KEY = '@kippy_language';
 
@@ -19,6 +20,7 @@ function deviceLang(): string {
   if (tag.startsWith('es')) return 'es';
   if (tag.startsWith('fr')) return 'fr';
   if (tag.startsWith('ko')) return 'ko';
+  if (tag.startsWith('de')) return 'de';
   return 'en';
 }
 
@@ -35,6 +37,7 @@ i18next.use(initReactI18next).init({
     es:      { translation: es },
     fr:      { translation: fr },
     ko:      { translation: ko },
+    de:      { translation: de },
   },
   interpolation: { escapeValue: false },
 });
