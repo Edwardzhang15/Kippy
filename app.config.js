@@ -1,8 +1,6 @@
-// Using app.config.js (instead of app.json) so we can inject secrets from
-// environment variables at config-evaluation time. The Expo CLI automatically
-// loads variables from .env into process.env before this file runs — see
-// https://docs.expo.dev/guides/environment-variables/ — so no extra dotenv
-// setup is needed here. .env itself is gitignored and never committed.
+// API keys are read directly via EXPO_PUBLIC_-prefixed vars in .env, which
+// Metro inlines at build time (see placesApi.ts). No config-time injection
+// is needed here. .env is gitignored and never committed.
 module.exports = {
   expo: {
     name: 'Kippy',
@@ -50,8 +48,5 @@ module.exports = {
         },
       ],
     ],
-    extra: {
-      googlePlacesApiKey: process.env.GOOGLE_PLACES_API_KEY,
-    },
   },
 };

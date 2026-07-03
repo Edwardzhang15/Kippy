@@ -1,11 +1,9 @@
-import Constants from 'expo-constants';
-
-// Injected at build/config time from the GOOGLE_PLACES_API_KEY env var, see
-// app.config.js. Never hardcode the key here: .env holds the real value
-// locally and is gitignored.
-const API_KEY: string = Constants.expoConfig?.extra?.googlePlacesApiKey ?? '';
+// EXPO_PUBLIC_-prefixed vars are inlined by Metro at build time from .env.
+// Never hardcode the key here: .env holds the real value locally and is
+// gitignored.
+const API_KEY: string = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? '';
 if (!API_KEY) {
-  console.warn('[placesApi] GOOGLE_PLACES_API_KEY is not set, Kip\'s Favs will not return results. Add it to your .env file.');
+  console.warn('[placesApi] EXPO_PUBLIC_GOOGLE_PLACES_API_KEY is not set, Kip\'s Favs will not return results. Add it to your .env file.');
 }
 
 const ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';

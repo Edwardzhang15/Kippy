@@ -24,7 +24,7 @@ type Props = NativeStackScreenProps<HomeStackParamList, 'CreateGroup'>;
 const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 const STOP_CITY_EXAMPLES = ['Tokyo', 'Kyoto', 'Osaka', 'Rome', 'Paris', 'Barcelona'];
 
-const UNSPLASH_KEY = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
+const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 
 async function fetchDestinationPhoto(query: string): Promise<string | null> {
   try {

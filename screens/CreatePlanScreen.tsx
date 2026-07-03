@@ -23,7 +23,7 @@ import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 type Props = NativeStackScreenProps<PlanStackParamList, 'CreatePlan'>;
 
 const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
-const UNSPLASH_KEY = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
+const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 const STOP_CITY_EXAMPLES = ['Tokyo', 'Kyoto', 'Osaka', 'Rome', 'Paris', 'Barcelona'];
 
 async function fetchDestinationPhoto(query: string): Promise<string | null> {

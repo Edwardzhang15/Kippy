@@ -41,7 +41,7 @@ type TripWithSpent = PersonalTrip & { spent: number };
 const SAGE  = '#7FA68C';
 const CORAL = '#FF6B5B';
 const FALLBACK_PHOTO = require('../assets/Kip_map.png');
-const UNSPLASH_KEY   = '_dJ9KWj8_6gx-it3O-USLvSCHVRLH39n2okh6S3Onlo';
+const UNSPLASH_KEY   = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 const STRIP_WORDS    = new Set(['trip', 'vacation', 'holiday', 'tour', 'my', 'the', 'a', 'an', 'visit', 'travel', 'journey', 'to', 'in', 'for', 'our', 'grand']);
 
 function lerpHex(a: string, b: string, t: number): string {
