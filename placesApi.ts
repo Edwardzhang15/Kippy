@@ -1,4 +1,13 @@
-const API_KEY  = 'AIzaSyAVj_u4Xa3VjsvNJNn3d7CmGn544FmABKE';
+import Constants from 'expo-constants';
+
+// Injected at build/config time from the GOOGLE_PLACES_API_KEY env var, see
+// app.config.js. Never hardcode the key here: .env holds the real value
+// locally and is gitignored.
+const API_KEY: string = Constants.expoConfig?.extra?.googlePlacesApiKey ?? '';
+if (!API_KEY) {
+  console.warn('[placesApi] GOOGLE_PLACES_API_KEY is not set, Kip\'s Favs will not return results. Add it to your .env file.');
+}
+
 const ENDPOINT = 'https://places.googleapis.com/v1/places:searchText';
 const FIELD_MASK = 'places.id,places.displayName,places.rating,places.priceLevel,places.formattedAddress,places.photos';
 
