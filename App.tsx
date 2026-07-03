@@ -39,11 +39,20 @@ function AppCore() {
   const { shouldShow: showOnboarding, onboardingReady } = useOnboarding();
   const [dbReady, setDbReady]           = useState(false);
   const [minTimeReady, setMinTimeReady] = useState(false);
-  const [overlayVisible, setOverlayVisible] = useState(true);
-  const [showLangPicker, setShowLangPicker] = useState(false);
+  const [showLangPicker, setShowLangPicker]   = useState(false);
   const [langPickerReady, setLangPickerReady] = useState(false);
+  const [langPickerDone, setLangPickerDone]   = useState(false);
 
-  const appReady = dbReady && minTimeReady && onboardingReady && langPickerReady;
+  // Language Selection only depends on a single fast AsyncStorage read — it
+  // must never be gated behind db init or the network rate fetch below, or a
+  // first-time user on a slow connection would stare at the loading splash
+  // before ever seeing it.
+  const needsLangPicker = showLangPicker && !langPickerDone;
+  // Everything after Language Selection (onboarding tour, then main app)
+  // still needs the db, rates, onboarding-flag check, and the splash's
+  // minimum display time.
+  const restReady = dbReady && minTimeReady && onboardingReady;
+  const showLoadingOverlay = !langPickerReady || (!needsLangPicker && !restReady);
 
   useEffect(() => {
     Promise.all([
@@ -63,16 +72,12 @@ function AppCore() {
     return () => clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    if (appReady) setOverlayVisible(false);
-  }, [appReady]);
-
   return (
     <View style={[styles.root, { backgroundColor: colors.background }]}>
       <KeyboardDoneBar />
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {dbReady && (
+      {restReady && !needsLangPicker && (
         <NavigationContainer>
           <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -123,24 +128,24 @@ function AppCore() {
         </NavigationContainer>
       )}
 
-      {!overlayVisible && showLangPicker && (
+      {langPickerReady && needsLangPicker && (
         <View style={StyleSheet.absoluteFill}>
           <LanguagePickerScreen
             onComplete={async () => {
               await AsyncStorage.setItem('@kippy/lang_selected', 'true');
-              setShowLangPicker(false);
+              setLangPickerDone(true);
             }}
           />
         </View>
       )}
 
-      {!overlayVisible && !showLangPicker && showOnboarding && (
+      {restReady && !needsLangPicker && showOnboarding && (
         <View style={StyleSheet.absoluteFill}>
           <OnboardingScreen />
         </View>
       )}
 
-      {overlayVisible && (
+      {showLoadingOverlay && (
         <View style={StyleSheet.absoluteFill}>
           <LoadingScreen />
         </View>

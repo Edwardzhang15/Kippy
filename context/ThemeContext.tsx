@@ -1,9 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useColorScheme } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { lightColors, darkColors, ColorPalette } from '../theme';
 
-export type ThemeMode = 'light' | 'dark' | 'system';
+export type ThemeMode = 'light' | 'dark';
 
 interface ThemeContextValue {
   colors: ColorPalette;
@@ -16,18 +15,19 @@ const THEME_KEY = '@kippy/theme_mode';
 
 const ThemeContext = createContext<ThemeContextValue>({
   colors: lightColors,
-  themeMode: 'system',
+  themeMode: 'light',
   setThemeMode: () => {},
   isDark: false,
 });
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const systemScheme = useColorScheme();
-  const [themeMode, setThemeModeState] = useState<ThemeMode>('system');
+  const [themeMode, setThemeModeState] = useState<ThemeMode>('light');
 
   useEffect(() => {
     AsyncStorage.getItem(THEME_KEY).then((saved) => {
-      if (saved === 'light' || saved === 'dark' || saved === 'system') {
+      // Ignores a stale 'system' value from before that mode was removed —
+      // falls through to the 'light' default instead.
+      if (saved === 'light' || saved === 'dark') {
         setThemeModeState(saved);
       }
     });
@@ -38,9 +38,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     await AsyncStorage.setItem(THEME_KEY, mode);
   };
 
-  const isDark =
-    themeMode === 'dark' ||
-    (themeMode === 'system' && systemScheme === 'dark');
+  const isDark = themeMode === 'dark';
 
   const colors = isDark ? darkColors : lightColors;
 

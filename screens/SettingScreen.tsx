@@ -30,7 +30,6 @@ const LANGUAGES = [
 const THEME_OPTIONS: { mode: ThemeMode; labelKey: string }[] = [
   { mode: 'light',  labelKey: 'settings.themeLight' },
   { mode: 'dark',   labelKey: 'settings.themeDark' },
-  { mode: 'system', labelKey: 'settings.themeSystem' },
 ];
 
 const makeStyles = (c: ColorPalette) => StyleSheet.create({
