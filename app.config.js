@@ -15,7 +15,13 @@ module.exports = {
       backgroundColor: '#F7F7F5',
     },
     ios: {
-      supportsTablet: true,
+      bundleIdentifier: 'com.edwardzhang.kippy',
+      buildNumber: '1',
+      supportsTablet: false,
+      infoPlist: {
+        NSCameraUsageDescription: 'Kippy uses your camera to take photos of receipts for your expenses.',
+        NSPhotoLibraryUsageDescription: 'Kippy accesses your photo library to attach receipt photos to your expenses.',
+      },
     },
     android: {
       adaptiveIcon: {
@@ -48,5 +54,10 @@ module.exports = {
         },
       ],
     ],
+    extra: {
+      eas: {
+        projectId: 'daa5a2f4-3445-43f1-8f82-af186296eb8c',
+      },
+    },
   },
 };
