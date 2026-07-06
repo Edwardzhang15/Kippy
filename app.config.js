@@ -16,11 +16,11 @@ module.exports = {
     },
     ios: {
       bundleIdentifier: 'com.edwardzhang.kippy',
-      buildNumber: '1',
       supportsTablet: false,
       infoPlist: {
         NSCameraUsageDescription: 'Kippy uses your camera to take photos of receipts for your expenses.',
         NSPhotoLibraryUsageDescription: 'Kippy accesses your photo library to attach receipt photos to your expenses.',
+        ITSAppUsesNonExemptEncryption: false,
       },
     },
     android: {
