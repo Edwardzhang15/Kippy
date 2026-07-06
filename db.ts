@@ -86,7 +86,6 @@ export type ItineraryItem = {
   note: string | null;
   location_name: string | null;
   is_anchor: number;
-  google_maps_url: string | null;
   activity_type: string | null;
 };
 
@@ -585,9 +584,9 @@ export async function getItineraryItems(groupId: number, dayNumber: number): Pro
 
 export async function addItineraryItem(item: Omit<ItineraryItem, 'id'>): Promise<number> {
   const result = await db.runAsync(
-    'INSERT INTO itinerary_items (group_id, day_number, title, start_time, duration_minutes, note, location_name, is_anchor, google_maps_url, activity_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO itinerary_items (group_id, day_number, title, start_time, duration_minutes, note, location_name, is_anchor, activity_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
     item.group_id, item.day_number, item.title, item.start_time, item.duration_minutes,
-    item.note ?? null, item.location_name ?? null, item.is_anchor, item.google_maps_url ?? null,
+    item.note ?? null, item.location_name ?? null, item.is_anchor,
     item.activity_type ?? null,
   );
   return result.lastInsertRowId;
@@ -602,7 +601,6 @@ export async function updateItineraryItem(id: number, updates: Partial<Omit<Itin
   if ('note' in updates)             { fields.push('note = ?');             values.push(updates.note ?? null); }
   if ('location_name' in updates)    { fields.push('location_name = ?');    values.push(updates.location_name ?? null); }
   if ('is_anchor' in updates)        { fields.push('is_anchor = ?');        values.push(updates.is_anchor!); }
-  if ('google_maps_url' in updates)  { fields.push('google_maps_url = ?');  values.push(updates.google_maps_url ?? null); }
   if ('activity_type' in updates)    { fields.push('activity_type = ?');    values.push(updates.activity_type ?? null); }
   if (fields.length === 0) return;
   await db.runAsync(`UPDATE itinerary_items SET ${fields.join(', ')} WHERE id = ?`, ...values, id);

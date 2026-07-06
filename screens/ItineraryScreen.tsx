@@ -3,7 +3,6 @@ import {
   Animated,
   Alert,
   KeyboardAvoidingView,
-  Linking,
   Modal,
   Platform,
   Pressable,
@@ -47,7 +46,9 @@ const END_HOUR    = 23;
 const START_MIN   = START_HOUR * 60;
 const END_MIN     = END_HOUR * 60;
 const LABEL_W     = 52;
-const RESIZE_H    = 22;
+const RESIZE_H    = 28;
+const MIN_DURATION_MINS = 15;
+const PIXELS_PER_MIN    = HOUR_HEIGHT / 60;
 const HOURS       = Array.from({ length: END_HOUR - START_HOUR + 1 }, (_, i) => START_HOUR + i);
 
 const DURATION_PRESETS = [
@@ -60,23 +61,19 @@ const DURATION_PRESETS = [
 
 type FormState = {
   title: string;
-  location: string;
   startMins: number;
   duration: number;
   note: string;
   isAnchor: boolean;
-  autoMapFromTitle: boolean;
   activityType: string | null;
 };
 
 const DEFAULT_FORM: FormState = {
   title: '',
-  location: '',
   startMins: 540,
   duration: 60,
   note: '',
   isAnchor: true,
-  autoMapFromTitle: false,
   activityType: null,
 };
 
@@ -106,11 +103,6 @@ function fmtHour(h: number): string {
   if (h === 0 || h === 24) return '12 AM';
   if (h === 12) return '12 PM';
   return h < 12 ? `${h} AM` : `${h - 12} PM`;
-}
-
-function buildMapsUrl(query: string): string | null {
-  const q = query.trim();
-  return q ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(q)}` : null;
 }
 
 // ─── Overlap layout ───────────────────────────────────────────────────────────
@@ -215,7 +207,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     backgroundColor: 'rgba(0,0,0,0.20)',
     alignItems: 'center', justifyContent: 'center',
   },
-  mapPinBtn: { position: 'absolute', top: 5, right: 4 },
   eventTitleRow: { flexDirection: 'row', alignItems: 'flex-start', paddingRight: 4 },
   eventTitle: { fontSize: 12, fontWeight: '700', color: '#fff', lineHeight: 16, flex: 1 },
   eventLocation: { flexDirection: 'row', alignItems: 'center', gap: 2, marginTop: 2 },
@@ -258,6 +249,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     borderWidth: 1, borderColor: c.border,
   },
   noteInput: { minHeight: 88, textAlignVertical: 'top', paddingTop: 14 },
+  endTimeError: { fontSize: fontSizes.caption, color: c.coral, marginTop: 6, marginLeft: 4 },
 
   // Activity type picker
   typePickerContent: { gap: 8, paddingRight: 4 },
@@ -271,17 +263,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   typeChipLabel: {
     fontSize: 10, fontWeight: '600', color: c.textSecondary, textAlign: 'center', lineHeight: 13,
   },
-
-  // Maps
-  mapsConfirmRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 8, paddingHorizontal: 4 },
-  mapsConfirmText: { fontSize: fontSizes.caption, color: c.sage, fontWeight: '500' },
-  autoMapRow: {
-    flexDirection: 'row', alignItems: 'center', marginTop: 12, gap: 12,
-    backgroundColor: c.card, borderRadius: radii.button,
-    borderWidth: 1, borderColor: c.border, padding: 14,
-  },
-  autoMapLabel: { fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary, marginBottom: 2 },
-  autoMapSub: { fontSize: fontSizes.caption, color: c.textSecondary },
 
   // Duration
   durationRow: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
@@ -392,13 +373,14 @@ type EventBlockProps = {
   isActive: boolean;
   onPress: () => void;
   onDragStart:  (id: number) => void;
+  onDragEnd:    () => void;
   onMoveEnd:    (id: number, startMins: number) => void;
   onResizeEnd:  (id: number, duration: number) => void;
 };
 
 function EventBlock({
   item, eventsWidth, isActive,
-  onPress, onDragStart, onMoveEnd, onResizeEnd,
+  onPress, onDragStart, onDragEnd, onMoveEnd, onResizeEnd,
 }: EventBlockProps) {
   const { colors } = useTheme();
   const styles     = makeStyles(colors);
@@ -412,16 +394,49 @@ function EventBlock({
   const endMins    = item.start_time + item.duration_minutes;
 
   // RN Animated values — no Reanimated worklets, runs on JS thread via .runOnJS(true)
-  const dragY     = useRef(new Animated.Value(0)).current;
-  const resizeDH  = useRef(new Animated.Value(0)).current;
-  // baseHAnim mirrors the computed baseH so heightAnim stays correct after re-renders
-  const baseHAnim = useRef(new Animated.Value(baseH)).current;
+  //
+  // Position and height are each driven by a SINGLE composed Animated node
+  // (baseAnim + liveOffset), never by a plain render-time number alongside a
+  // separately-timed Animated value. That split is what caused the old bug:
+  // `top: baseTop` (a plain number) is applied to the native view the instant
+  // `item.start_time` changes, but a `dragY.setValue(0)` reset in a useEffect
+  // only runs *after* that commit — so for one frame the move was
+  // double-counted (new baseTop + still-held old offset), producing a visible
+  // overshoot/snap. Folding baseTop into an Animated value too means both
+  // halves update together, in the same effect pass, so the sum never
+  // glitches mid-transition.
+  const dragY      = useRef(new Animated.Value(0)).current;
+  const resizeDH   = useRef(new Animated.Value(0)).current;
+  const baseTopAnim = useRef(new Animated.Value(baseTop)).current;
+  const baseHAnim   = useRef(new Animated.Value(baseH)).current;
+  useEffect(() => { baseTopAnim.setValue(baseTop); }, [baseTop]);
   useEffect(() => { baseHAnim.setValue(baseH); }, [baseH]);
-  // heightAnim = baseH + resizeDH; node created once, tracks both values dynamically
+  // topAnim = baseTop + dragY; heightAnim = baseH + resizeDH — nodes created
+  // once, each tracks both its inputs dynamically.
+  const topAnim    = useRef(Animated.add(baseTopAnim, dragY)).current;
   const heightAnim = useRef(Animated.add(baseHAnim, resizeDH)).current;
 
   const origStart    = useRef(item.start_time);
   const origDuration = useRef(item.duration_minutes);
+  // Live duration during an active resize — a ref, not state, so onUpdate
+  // never triggers a re-render (that's what keeps the drag jitter-free).
+  const liveDuration = useRef(item.duration_minutes);
+
+  // On success, onEnd holds dragY/resizeDH at the snapped offset instead of
+  // resetting to 0 immediately — resetting before the parent's state update
+  // commits would flash the block back to its pre-drag position for a frame.
+  // These effects reset the animated value back to 0 once the parent's item
+  // prop reflects the new value; because baseTopAnim/baseHAnim update via
+  // their own effects in that same pass, the composed sum stays constant.
+  useEffect(() => { dragY.setValue(0); }, [item.start_time]);
+  useEffect(() => { resizeDH.setValue(0); }, [item.duration_minutes]);
+
+  // Gesture onUpdate fires on every native touch-move frame; runOnJS(true)
+  // routes each call through the JS thread, so throttle to ~60fps to avoid
+  // saturating it and producing visible jitter.
+  const lastDragUpdate   = useRef(0);
+  const lastResizeUpdate = useRef(0);
+  const UPDATE_INTERVAL_MS = 16;
 
   const tapGesture = Gesture.Tap()
     .runOnJS(true)
@@ -435,10 +450,14 @@ function EventBlock({
     .minDistance(8)
     .onStart(() => {
       origStart.current = item.start_time;
+      lastDragUpdate.current = 0;
       dragY.setValue(0);
       onDragStart(item.id);
     })
     .onUpdate((e) => {
+      const now = Date.now();
+      if (now - lastDragUpdate.current < UPDATE_INTERVAL_MS) return;
+      lastDragUpdate.current = now;
       const maxDelta = minsToY(END_MIN - item.duration_minutes) - minsToY(item.start_time);
       const minDelta = minsToY(START_MIN) - minsToY(item.start_time);
       dragY.setValue(Math.max(minDelta, Math.min(e.translationY, maxDelta)));
@@ -447,44 +466,69 @@ function EventBlock({
       const deltaMins = (e.translationY / HOUR_HEIGHT) * 60;
       const snapped   = snap15(origStart.current + deltaMins);
       const clamped   = Math.max(START_MIN, Math.min(snapped, END_MIN - item.duration_minutes));
-      dragY.setValue(0);
+      dragY.setValue(minsToY(clamped) - minsToY(origStart.current));
       onMoveEnd(item.id, clamped);
     })
-    .onFinalize(() => { dragY.setValue(0); });
+    .onFinalize((_e, success) => {
+      if (!success) dragY.setValue(0);
+      onDragEnd();
+    });
 
-  const combinedBodyGesture = Gesture.Race(bodyGesture, tapGesture);
-
-  // Nested GestureDetector gives this gesture priority over the body drag
-  // for any touch within the resize handle's bounds.
+  // Nested GestureDetector gives this gesture first crack at any touch within
+  // the resize handle's bounds; requireExternalGestureToFail below makes that
+  // priority explicit instead of relying only on view-hierarchy default order,
+  // so the body drag can never hijack a touch that started on the handle.
   const resizeGesture = Gesture.Pan()
     .runOnJS(true)
     .minDistance(4)
-    .activeOffsetY([-4, 4])
     .onStart(() => {
       origDuration.current = item.duration_minutes;
+      liveDuration.current = item.duration_minutes;
+      lastResizeUpdate.current = 0;
       resizeDH.setValue(0);
       onDragStart(item.id);
     })
     .onUpdate((e) => {
-      resizeDH.setValue(Math.max(44 - baseH, e.translationY));
+      const now = Date.now();
+      if (now - lastResizeUpdate.current < UPDATE_INTERVAL_MS) return;
+      lastResizeUpdate.current = now;
+
+      // duration = original + relative movement, hard-clamped to [15min, END_MIN]
+      // — computed in minutes first so the floor/ceiling are exact, not an
+      // approximation of a pixel floor.
+      const maxDuration = Math.max(MIN_DURATION_MINS, END_MIN - item.start_time);
+      const rawDuration = origDuration.current + e.translationY / PIXELS_PER_MIN;
+      const newDuration = Math.min(maxDuration, Math.max(MIN_DURATION_MINS, rawDuration));
+      liveDuration.current = newDuration;
+
+      const newHeight = Math.max(44, newDuration * PIXELS_PER_MIN);
+      resizeDH.setValue(newHeight - baseH);
     })
-    .onEnd((e) => {
-      const deltaMins = (e.translationY / HOUR_HEIGHT) * 60;
-      const snapped   = snap15(origDuration.current + deltaMins);
-      const clamped   = Math.max(15, snapped);
-      resizeDH.setValue(0);
-      onResizeEnd(item.id, clamped);
+    .onEnd(() => {
+      const maxDuration = Math.max(MIN_DURATION_MINS, END_MIN - item.start_time);
+      const snapped     = Math.min(maxDuration, Math.max(MIN_DURATION_MINS, snap15(liveDuration.current)));
+      const finalHeight = Math.max(44, snapped * PIXELS_PER_MIN);
+      resizeDH.setValue(finalHeight - baseH);
+      onResizeEnd(item.id, snapped);
     })
-    .onFinalize(() => { resizeDH.setValue(0); });
+    .onFinalize((_e, success) => {
+      if (!success) resizeDH.setValue(0);
+      onDragEnd();
+    });
+
+  // Explicit, not just implicit-via-nesting: the body drag must never win a
+  // touch that the resize handle is (still) trying to recognize.
+  bodyGesture.requireExternalGestureToFail(resizeGesture);
+
+  const combinedBodyGesture = Gesture.Race(bodyGesture, tapGesture);
 
   return (
     <GestureDetector gesture={combinedBodyGesture}>
-      {/* Outer Animated.View: translateY during drag */}
+      {/* Outer Animated.View: top tracks position during drag */}
       <Animated.View
         style={[
           styles.eventBlockOuter,
-          { top: baseTop, left, width },
-          { transform: [{ translateY: dragY }] },
+          { top: topAnim, left, width },
           isActive && styles.eventBlockOuterActive,
         ]}
       >
@@ -502,15 +546,6 @@ function EventBlock({
             <View style={styles.typeIconBadge}>
               <Ionicons name={typeDef.icon as any} size={9} color="#fff" />
             </View>
-          )}
-          {item.google_maps_url && (
-            <Pressable
-              style={styles.mapPinBtn}
-              onPress={() => Linking.openURL(item.google_maps_url!)}
-              hitSlop={8}
-            >
-              <Ionicons name="map" size={10} color="rgba(255,255,255,0.95)" />
-            </Pressable>
           )}
           <View style={styles.eventTitleRow}>
             <Text style={styles.eventTitle} numberOfLines={baseH < 56 ? 1 : 2}>
@@ -573,9 +608,24 @@ export default function ItineraryScreen() {
     });
   }, [groupId]);
 
+  // Every full-list refresh (initial load, day/group switch, post-save,
+  // post-delete, and the drag/resize failure fallback) goes through this one
+  // helper. Each call is tagged with a request id — if the day or group has
+  // since changed (or a newer refresh was already issued) by the time a
+  // response comes back, it's dropped instead of clobbering more current
+  // state with stale data. This matters most for the drag/resize fallback:
+  // it fires only on a failed DB write, so it can resolve well after the
+  // user has already switched to a different day.
+  const itemsRequestIdRef = useRef(0);
+  const refreshItems = useCallback(async (gid: number, day: number) => {
+    const requestId = ++itemsRequestIdRef.current;
+    const fetched = await getItineraryItems(gid, day);
+    if (itemsRequestIdRef.current === requestId) setItems(fetched);
+  }, []);
+
   useEffect(() => {
-    getItineraryItems(groupId, selectedDay).then(setItems);
-  }, [groupId, selectedDay]);
+    refreshItems(groupId, selectedDay);
+  }, [groupId, selectedDay, refreshItems]);
 
   // ── Drag/resize handlers ─────────────────────────────────────────────────
 
@@ -583,21 +633,28 @@ export default function ItineraryScreen() {
     setActiveDragId(id);
   }, []);
 
+  // Always clears activeDragId, including when a gesture is cancelled/interrupted
+  // (e.g. by the OS) and onMoveEnd/onResizeEnd never fire — otherwise the
+  // ScrollView would stay disabled indefinitely.
+  const handleDragEnd = useCallback(() => {
+    setActiveDragId(null);
+  }, []);
+
   const handleMoveEnd = useCallback((id: number, startMins: number) => {
     setActiveDragId(null);
     setItems(prev => prev.map(i => i.id === id ? { ...i, start_time: startMins } : i));
     updateItineraryItem(id, { start_time: startMins }).catch(() => {
-      getItineraryItems(groupId, selectedDay).then(setItems);
+      refreshItems(groupId, selectedDay);
     });
-  }, [groupId, selectedDay]);
+  }, [groupId, selectedDay, refreshItems]);
 
   const handleResizeEnd = useCallback((id: number, duration: number) => {
     setActiveDragId(null);
     setItems(prev => prev.map(i => i.id === id ? { ...i, duration_minutes: duration } : i));
     updateItineraryItem(id, { duration_minutes: duration }).catch(() => {
-      getItineraryItems(groupId, selectedDay).then(setItems);
+      refreshItems(groupId, selectedDay);
     });
-  }, [groupId, selectedDay]);
+  }, [groupId, selectedDay, refreshItems]);
 
   // ── Share ────────────────────────────────────────────────────────────────
 
@@ -626,12 +683,10 @@ export default function ItineraryScreen() {
     setEditingItem(item);
     setForm({
       title: item.title,
-      location: item.location_name ?? '',
       startMins: item.start_time,
       duration: item.duration_minutes,
       note: item.note ?? '',
       isAnchor: item.is_anchor === 1,
-      autoMapFromTitle: !item.location_name && !!item.google_maps_url,
       activityType: item.activity_type ?? null,
     });
     setShowModal(true);
@@ -643,17 +698,13 @@ export default function ItineraryScreen() {
     if (!form.title.trim()) return;
     setSaving(true);
     try {
-      const mapsQuery     = form.location.trim() || (form.autoMapFromTitle ? form.title.trim() : '');
-      const googleMapsUrl = buildMapsUrl(mapsQuery);
       if (editingItem) {
         await updateItineraryItem(editingItem.id, {
           title: form.title.trim(),
-          location_name: form.location.trim() || null,
           start_time: form.startMins,
           duration_minutes: form.duration,
           note: form.note.trim() || null,
           is_anchor: form.isAnchor ? 1 : 0,
-          google_maps_url: googleMapsUrl,
           activity_type: form.activityType,
         });
       } else {
@@ -661,17 +712,15 @@ export default function ItineraryScreen() {
           group_id: groupId,
           day_number: selectedDay,
           title: form.title.trim(),
-          location_name: form.location.trim() || null,
+          location_name: null,
           start_time: form.startMins,
           duration_minutes: form.duration,
           note: form.note.trim() || null,
           is_anchor: form.isAnchor ? 1 : 0,
-          google_maps_url: googleMapsUrl,
           activity_type: form.activityType,
         });
       }
-      const updated = await getItineraryItems(groupId, selectedDay);
-      setItems(updated);
+      await refreshItems(groupId, selectedDay);
       closeModal();
     } catch {
       Alert.alert(t('itinerary.saveError'), t('itinerary.saveErrorMsg'));
@@ -689,8 +738,7 @@ export default function ItineraryScreen() {
         style: 'destructive',
         onPress: async () => {
           await deleteItineraryItem(editingItem.id);
-          const updated = await getItineraryItems(groupId, selectedDay);
-          setItems(updated);
+          await refreshItems(groupId, selectedDay);
           closeModal();
         },
       },
@@ -707,9 +755,19 @@ export default function ItineraryScreen() {
   const anchorCount    = items.filter(i => i.is_anchor === 1 && (!editingItem || i.id !== editingItem.id)).length;
   const totalTimelineH = HOURS.length * HOUR_HEIGHT;
   const laid           = layoutItems(items);
-  const locationQuery  = form.location.trim();
-  const showMapsConfirm = locationQuery.length > 0;
-  const showAutoToggle  = !locationQuery && form.title.trim().length > 0;
+
+  // End time is always derived from start + duration, never stored separately
+  // — that's what keeps all three fields in sync. Editing the end-time picker
+  // just writes a new `duration` (endMins - startMins) instead; editing start
+  // or duration re-derives endMins for display. rawEndMins can fall outside
+  // [0, 1439) minutes (e.g. a negative/invalid duration from mid-edit, or an
+  // end that rolls past midnight) — displayEndMins wraps that into a sane
+  // range purely for feeding the TimePicker's hour/minute math; the validity
+  // check below uses the unwrapped duration so an end-before-start edit is
+  // still correctly flagged rather than silently wrapping to "valid".
+  const rawEndMins     = form.startMins + form.duration;
+  const displayEndMins = ((rawEndMins % 1440) + 1440) % 1440;
+  const endTimeInvalid = form.duration <= 0;
 
   // ── Render ───────────────────────────────────────────────────────────────
 
@@ -789,6 +847,7 @@ export default function ItineraryScreen() {
                 isActive={activeDragId === item.id}
                 onPress={() => openEditModal(item)}
                 onDragStart={handleDragStart}
+                onDragEnd={handleDragEnd}
                 onMoveEnd={handleMoveEnd}
                 onResizeEnd={handleResizeEnd}
               />
@@ -867,41 +926,17 @@ export default function ItineraryScreen() {
                 })}
               </ScrollView>
 
-              <Text style={styles.fieldLabel}>{t('itinerary.fieldLocation')}</Text>
-              <TextInput
-                style={styles.textInput}
-                placeholder={t('itinerary.locationPlaceholder')}
-                placeholderTextColor={colors.textSecondary}
-                inputAccessoryViewID={DONE_BAR_ID}
-                value={form.location}
-                onChangeText={v => setForm(f => ({
-                  ...f, location: v,
-                  autoMapFromTitle: f.autoMapFromTitle && !v.trim(),
-                }))}
-                returnKeyType="done"
-              />
-              {showMapsConfirm ? (
-                <View style={styles.mapsConfirmRow}>
-                  <Ionicons name="map-outline" size={13} color={colors.sage} />
-                  <Text style={styles.mapsConfirmText}>{t('itinerary.mapsConfirmText')}</Text>
-                </View>
-              ) : showAutoToggle ? (
-                <View style={styles.autoMapRow}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.autoMapLabel}>{t('itinerary.autoMapLabel')}</Text>
-                    <Text style={styles.autoMapSub}>{t('itinerary.autoMapSub', { title: form.title.trim() })}</Text>
-                  </View>
-                  <Switch
-                    value={form.autoMapFromTitle}
-                    onValueChange={v => setForm(f => ({ ...f, autoMapFromTitle: v }))}
-                    trackColor={{ false: colors.border, true: colors.coral }}
-                    thumbColor={colors.card}
-                  />
-                </View>
-              ) : null}
-
               <Text style={styles.fieldLabel}>{t('itinerary.fieldStartTime')}</Text>
               <TimePicker value={form.startMins} onChange={v => setForm(f => ({ ...f, startMins: v }))} />
+
+              <Text style={styles.fieldLabel}>{t('itinerary.fieldEndTime')}</Text>
+              <TimePicker
+                value={displayEndMins}
+                onChange={v => setForm(f => ({ ...f, duration: v - f.startMins }))}
+              />
+              {endTimeInvalid && (
+                <Text style={styles.endTimeError}>{t('itinerary.endTimeError')}</Text>
+              )}
 
               <Text style={styles.fieldLabel}>{t('itinerary.fieldDuration')}</Text>
               <View style={styles.durationRow}>
@@ -955,9 +990,9 @@ export default function ItineraryScreen() {
 
             <View style={styles.formFooter}>
               <Pressable
-                style={[styles.saveBtn, (!form.title.trim() || saving) && styles.saveBtnDisabled]}
+                style={[styles.saveBtn, (!form.title.trim() || endTimeInvalid || saving) && styles.saveBtnDisabled]}
                 onPress={handleSave}
-                disabled={!form.title.trim() || saving}
+                disabled={!form.title.trim() || endTimeInvalid || saving}
               >
                 <Text style={styles.saveBtnText}>
                   {saving ? t('itinerary.saving') : editingItem ? t('itinerary.saveChanges') : t('itinerary.addToDay')}
