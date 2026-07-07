@@ -5,6 +5,7 @@ import CreatePersonalTripScreen from '../screens/CreatePersonalTripScreen';
 import PersonalTripDetailScreen from '../screens/PersonalTripDetailScreen';
 import AddPersonalTripExpenseScreen from '../screens/AddPersonalTripExpenseScreen';
 import ManageCategoryBudgetsScreen from '../screens/ManageCategoryBudgetsScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 
 const Stack = createNativeStackNavigator<PersonalStackParamList>();
 
@@ -16,6 +17,7 @@ export default function PersonalStack() {
       <Stack.Screen name="PersonalTripDetail"     component={PersonalTripDetailScreen} />
       <Stack.Screen name="AddPersonalTripExpense" component={AddPersonalTripExpenseScreen} options={{ presentation: 'modal' }} />
       <Stack.Screen name="ManageCategoryBudgets"  component={ManageCategoryBudgetsScreen} />
+      <Stack.Screen name="Paywall"                component={PaywallScreen} options={{ presentation: 'modal' }} />
     </Stack.Navigator>
   );
 }

@@ -587,5 +587,23 @@
     "saveChanges": "保存更改",
     "errorTitle": "错误",
     "errorMsg": "无法保存更改，请重试。"
+  },
+  "paywall": {
+    "headline": "解锁 Kippy",
+    "subheading": "你已经体验过 Kippy 了——准备好开启完整的冒险了吗？",
+    "featureUnlimitedGroupTrips": "无限次团体行程",
+    "featureUnlimitedPersonalTrips": "无限次个人行程",
+    "featurePlanningTools": "全部规划工具",
+    "featureKipsFavs": "Kip最爱",
+    "featureShareableCards": "可分享卡片",
+    "unlockButton": "以 {{price}} 解锁",
+    "restoreButton": "恢复购买",
+    "restoring": "正在恢复…",
+    "maybeLater": "以后再说",
+    "errorTitle": "出了点问题",
+    "errorNetwork": "请检查网络连接后重试。",
+    "errorGeneric": "无法完成购买，请重试。",
+    "restoreNoneTitle": "没有可恢复的购买",
+    "restoreNoneMessage": "未找到与此 Apple ID 关联的历史购买记录。"
   }
 }

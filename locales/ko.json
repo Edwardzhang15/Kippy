@@ -587,5 +587,23 @@
     "saveChanges": "변경사항 저장",
     "errorTitle": "오류",
     "errorMsg": "변경사항을 저장할 수 없어요. 다시 시도해봐요."
+  },
+  "paywall": {
+    "headline": "Kippy 잠금 해제",
+    "subheading": "Kippy를 경험해보셨죠 — 이제 완전한 모험을 시작해볼까요?",
+    "featureUnlimitedGroupTrips": "무제한 그룹 여행",
+    "featureUnlimitedPersonalTrips": "무제한 개인 여행",
+    "featurePlanningTools": "모든 계획 도구",
+    "featureKipsFavs": "Kip's 추천",
+    "featureShareableCards": "공유 가능한 카드",
+    "unlockButton": "{{price}}에 잠금 해제",
+    "restoreButton": "구매 복원",
+    "restoring": "복원 중…",
+    "maybeLater": "다음에 할게요",
+    "errorTitle": "문제가 발생했어요",
+    "errorNetwork": "연결 상태를 확인하고 다시 시도해주세요.",
+    "errorGeneric": "구매를 완료할 수 없었어요. 다시 시도해주세요.",
+    "restoreNoneTitle": "복원할 구매 내역이 없어요",
+    "restoreNoneMessage": "이 Apple ID로 이전에 구매한 내역을 찾을 수 없었어요."
   }
 }

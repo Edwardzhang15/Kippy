@@ -2,7 +2,7 @@
 // Never hardcode the key here: .env holds the real value locally and is
 // gitignored.
 const API_KEY: string = process.env.EXPO_PUBLIC_GOOGLE_PLACES_API_KEY ?? '';
-if (!API_KEY) {
+if (!API_KEY && __DEV__) {
   console.warn('[placesApi] EXPO_PUBLIC_GOOGLE_PLACES_API_KEY is not set, Kip\'s Favs will not return results. Add it to your .env file.');
 }
 
@@ -97,16 +97,16 @@ export async function fetchPlacesRaw(destination: string, category: PlacesCatego
     const data = await response.json() as any;
     if (!response.ok) {
       const msg = data?.error?.message ?? `HTTP ${response.status}`;
-      console.warn(`[placesApi] ${response.status} for "${query}":`, JSON.stringify(data));
+      if (__DEV__) console.warn(`[placesApi] ${response.status} for "${query}":`, JSON.stringify(data));
       return { kind: 'error', status: response.status, message: msg };
     }
     if (!Array.isArray(data.places)) {
-      console.log(`[placesApi] empty for "${query}". Full response:`, JSON.stringify(data));
+      if (__DEV__) console.log(`[placesApi] empty for "${query}". Full response:`, JSON.stringify(data));
       return { kind: 'ok', places: [] };
     }
     return { kind: 'ok', places: parsePlaces(data.places) };
   } catch (err) {
-    console.warn(`[placesApi] network error for "${query}":`, err);
+    if (__DEV__) console.warn(`[placesApi] network error for "${query}":`, err);
     return { kind: 'error', status: 0, message: String(err) };
   }
 }

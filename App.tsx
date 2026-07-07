@@ -61,7 +61,7 @@ function AppCore() {
       applyPersistedLanguage(),
     ])
       .then(() => setDbReady(true))
-      .catch((e) => console.error('Init failed:', e));
+      .catch((e) => { if (__DEV__) console.error('Init failed:', e); });
 
     AsyncStorage.getItem('@kippy/lang_selected').then(v => {
       setShowLangPicker(!v);

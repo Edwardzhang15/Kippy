@@ -587,5 +587,23 @@
     "saveChanges": "Guardar Cambios",
     "errorTitle": "Error",
     "errorMsg": "No se pudieron guardar los cambios. Inténtalo de nuevo."
+  },
+  "paywall": {
+    "headline": "Desbloquea Kippy",
+    "subheading": "Ya probaste Kippy — ¿listo para la aventura completa?",
+    "featureUnlimitedGroupTrips": "Viajes en grupo ilimitados",
+    "featureUnlimitedPersonalTrips": "Viajes personales ilimitados",
+    "featurePlanningTools": "Todas las herramientas de planificación",
+    "featureKipsFavs": "Favs de Kip",
+    "featureShareableCards": "Tarjetas para compartir",
+    "unlockButton": "Desbloquear por {{price}}",
+    "restoreButton": "Restaurar Compra",
+    "restoring": "Restaurando…",
+    "maybeLater": "Quizás Después",
+    "errorTitle": "Algo Salió Mal",
+    "errorNetwork": "Por favor revisa tu conexión e inténtalo de nuevo.",
+    "errorGeneric": "No pudimos completar tu compra. Por favor inténtalo de nuevo.",
+    "restoreNoneTitle": "Nada que Restaurar",
+    "restoreNoneMessage": "No encontramos una compra previa para este ID de Apple."
   }
 }

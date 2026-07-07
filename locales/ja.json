@@ -587,5 +587,23 @@
     "saveChanges": "変更を保存",
     "errorTitle": "エラー",
     "errorMsg": "変更を保存できませんでした。もう一度お試しください。"
+  },
+  "paywall": {
+    "headline": "Kippyをアンロック",
+    "subheading": "Kippyを体験してみましたね — 本格的な冒険の準備はできましたか？",
+    "featureUnlimitedGroupTrips": "グループ旅行が無制限",
+    "featureUnlimitedPersonalTrips": "個人旅行が無制限",
+    "featurePlanningTools": "すべての計画ツール",
+    "featureKipsFavs": "Kipのお気に入り",
+    "featureShareableCards": "シェアできるカード",
+    "unlockButton": "{{price}}でアンロック",
+    "restoreButton": "購入を復元",
+    "restoring": "復元中…",
+    "maybeLater": "また今度",
+    "errorTitle": "問題が発生しました",
+    "errorNetwork": "接続を確認してもう一度お試しください。",
+    "errorGeneric": "購入を完了できませんでした。もう一度お試しください。",
+    "restoreNoneTitle": "復元する購入がありません",
+    "restoreNoneMessage": "このApple IDでの過去の購入が見つかりませんでした。"
   }
 }

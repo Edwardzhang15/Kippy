@@ -16,6 +16,7 @@ export type HomeStackParamList = {
   Itinerary:   { groupId: number; totalDays: number };
   BudgetPlan:  { groupId: number };
   Explore:     { groupId: number; destination: string };
+  Paywall:     undefined;
 };
 
 export type InsightsStackParamList = {
@@ -29,4 +30,5 @@ export type PersonalStackParamList = {
   PersonalTripDetail:     { tripId: number };
   AddPersonalTripExpense: { tripId: number; expenseId?: number };
   ManageCategoryBudgets:  { tripId: number };
+  Paywall:                undefined;
 };

@@ -587,5 +587,23 @@
     "saveChanges": "Save Changes",
     "errorTitle": "Error",
     "errorMsg": "Could not save changes. Please try again."
+  },
+  "paywall": {
+    "headline": "Unlock Kippy",
+    "subheading": "You've experienced Kippy — ready for the full adventure?",
+    "featureUnlimitedGroupTrips": "Unlimited group trips",
+    "featureUnlimitedPersonalTrips": "Unlimited personal trips",
+    "featurePlanningTools": "All planning tools",
+    "featureKipsFavs": "Kip's Favs",
+    "featureShareableCards": "Shareable cards",
+    "unlockButton": "Unlock for {{price}}",
+    "restoreButton": "Restore Purchase",
+    "restoring": "Restoring…",
+    "maybeLater": "Maybe Later",
+    "errorTitle": "Something Went Wrong",
+    "errorNetwork": "Please check your connection and try again.",
+    "errorGeneric": "We couldn't complete your purchase. Please try again.",
+    "restoreNoneTitle": "Nothing to Restore",
+    "restoreNoneMessage": "We couldn't find a previous purchase for this Apple ID."
   }
 }

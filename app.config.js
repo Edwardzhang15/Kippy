@@ -36,6 +36,7 @@ module.exports = {
     plugins: [
       '@react-native-community/datetimepicker',
       'expo-sqlite',
+      'expo-iap',
       [
         'expo-splash-screen',
         {

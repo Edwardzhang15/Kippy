@@ -587,5 +587,23 @@
     "saveChanges": "Enregistrer les modifications",
     "errorTitle": "Erreur",
     "errorMsg": "Impossible d'enregistrer les modifications. Réessaie."
+  },
+  "paywall": {
+    "headline": "Débloquer Kippy",
+    "subheading": "Tu as découvert Kippy — prêt pour l'aventure complète ?",
+    "featureUnlimitedGroupTrips": "Voyages de groupe illimités",
+    "featureUnlimitedPersonalTrips": "Voyages personnels illimités",
+    "featurePlanningTools": "Tous les outils de planification",
+    "featureKipsFavs": "Coups de cœur de Kip",
+    "featureShareableCards": "Cartes partageables",
+    "unlockButton": "Débloquer pour {{price}}",
+    "restoreButton": "Restaurer l'achat",
+    "restoring": "Restauration…",
+    "maybeLater": "Plus tard",
+    "errorTitle": "Une erreur est survenue",
+    "errorNetwork": "Vérifie ta connexion et réessaie.",
+    "errorGeneric": "Nous n'avons pas pu finaliser ton achat. Réessaie.",
+    "restoreNoneTitle": "Rien à restaurer",
+    "restoreNoneMessage": "Nous n'avons trouvé aucun achat précédent pour cet identifiant Apple."
   }
 }

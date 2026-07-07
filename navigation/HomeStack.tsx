@@ -10,6 +10,7 @@ import ItineraryScreen from '../screens/ItineraryScreen';
 import BudgetPlanScreen from '../screens/BudgetPlanScreen';
 import MemberExpensesScreen from '../screens/MemberExpensesScreen';
 import ExploreScreen from '../screens/ExploreScreen';
+import PaywallScreen from '../screens/PaywallScreen';
 const Stack = createNativeStackNavigator<HomeStackParamList>();
 
 export default function HomeStack() {
@@ -41,6 +42,11 @@ export default function HomeStack() {
       <Stack.Screen name="BudgetPlan" component={BudgetPlanScreen} />
       <Stack.Screen name="MemberExpenses" component={MemberExpensesScreen} />
       <Stack.Screen name="Explore" component={ExploreScreen} />
+      <Stack.Screen
+        name="Paywall"
+        component={PaywallScreen}
+        options={{ presentation: 'modal' }}
+      />
     </Stack.Navigator>
   );
 }

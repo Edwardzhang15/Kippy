@@ -587,5 +587,23 @@
     "saveChanges": "Änderungen speichern",
     "errorTitle": "Fehler",
     "errorMsg": "Änderungen konnten nicht gespeichert werden. Bitte erneut versuchen."
+  },
+  "paywall": {
+    "headline": "Kippy freischalten",
+    "subheading": "Du hast Kippy schon ausprobiert — bereit für das ganze Abenteuer?",
+    "featureUnlimitedGroupTrips": "Unbegrenzte Gruppenreisen",
+    "featureUnlimitedPersonalTrips": "Unbegrenzte persönliche Reisen",
+    "featurePlanningTools": "Alle Planungstools",
+    "featureKipsFavs": "Kip's Tipps",
+    "featureShareableCards": "Teilbare Karten",
+    "unlockButton": "Freischalten für {{price}}",
+    "restoreButton": "Kauf wiederherstellen",
+    "restoring": "Wird wiederhergestellt…",
+    "maybeLater": "Vielleicht später",
+    "errorTitle": "Etwas ist schiefgelaufen",
+    "errorNetwork": "Bitte überprüfe deine Verbindung und versuche es erneut.",
+    "errorGeneric": "Dein Kauf konnte nicht abgeschlossen werden. Bitte erneut versuchen.",
+    "restoreNoneTitle": "Nichts zum Wiederherstellen",
+    "restoreNoneMessage": "Wir konnten keinen früheren Kauf für diese Apple-ID finden."
   }
 }

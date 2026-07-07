@@ -20,7 +20,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getGroupSummaries, archiveGroup, deleteGroup, GroupSummary } from '../db';
+import { getGroupSummaries, archiveGroup, deleteGroup, canCreateGroupTrip, GroupSummary } from '../db';
 import { getAvatarColor, getInitials } from '../utils';
 import { HomeStackParamList } from '../navigation/types';
 import AnimatedFAB from '../components/AnimatedFAB';
@@ -515,6 +515,7 @@ export default function HomeScreen() {
   const [loading, setLoading]     = useState(true);
   const [tab, setTab]             = useState<'active' | 'archived'>('active');
   const [focusTick, setFocusTick] = useState(0);
+  const [creationLocked, setCreationLocked] = useState(false);
 
   // Multi-select state
   const [selectMode, setSelectMode]   = useState(false);
@@ -531,8 +532,17 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setFocusTick((n) => n + 1);
+      canCreateGroupTrip().then(can => setCreationLocked(!can));
     }, []),
   );
+
+  const handleCreatePress = async () => {
+    if (await canCreateGroupTrip()) {
+      navigation.navigate('CreateGroup');
+    } else {
+      navigation.navigate('Paywall');
+    }
+  };
 
   // Reset select mode when tab changes
   useEffect(() => {
@@ -740,7 +750,7 @@ export default function HomeScreen() {
       )}
 
       {tab === 'active' && !selectMode && (
-        <AnimatedFAB onPress={() => navigation.navigate('CreateGroup')} />
+        <AnimatedFAB onPress={handleCreatePress} locked={creationLocked} />
       )}
     </SafeAreaView>
   );

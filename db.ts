@@ -157,6 +157,13 @@ export type PersonalTripBudget = {
   planned_amount: number;
 };
 
+export type Purchase = {
+  id: number;
+  product_id: string;
+  purchase_date: string;
+  is_active: number;
+};
+
 // ─── Connection ───────────────────────────────────────────────────────────────
 
 let db: SQLite.SQLiteDatabase;
@@ -463,6 +470,18 @@ export async function initDatabase(): Promise<void> {
   try {
     await db.execAsync('ALTER TABLE personal_trips ADD COLUMN destination_photo_url TEXT;');
   } catch { /* column already exists */ }
+
+  // Migration v26: purchases table for the full-access unlock
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS purchases (
+        id            INTEGER PRIMARY KEY AUTOINCREMENT,
+        product_id    TEXT    NOT NULL,
+        purchase_date TEXT    NOT NULL,
+        is_active     INTEGER NOT NULL DEFAULT 1
+      );
+    `);
+  } catch { /* table already exists */ }
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
@@ -1465,6 +1484,61 @@ export async function setPersonalTripBudget(
       tripId, category, amount,
     );
   }
+}
+
+// ─── Purchases ──────────────────────────────────────────────────────────────
+
+export const FULL_ACCESS_PRODUCT_ID = 'com.edwardzhang.kippy.fullaccess';
+export const FREE_TRIP_LIMIT = 1;
+
+// Idempotent — safe to call for both a fresh purchase and a restored one, so
+// the same purchase-success handler can call this in both cases without
+// creating duplicate rows for a product the user already owns.
+export async function recordPurchase(productId: string): Promise<void> {
+  const existing = await db.getFirstAsync<{ id: number }>(
+    'SELECT id FROM purchases WHERE product_id = ? AND is_active = 1',
+    productId,
+  );
+  if (existing) return;
+  const today = new Date().toISOString().slice(0, 10);
+  await db.runAsync(
+    'INSERT INTO purchases (product_id, purchase_date, is_active) VALUES (?, ?, 1)',
+    productId, today,
+  );
+}
+
+export async function isPremium(): Promise<boolean> {
+  const row = await db.getFirstAsync<{ cnt: number }>(
+    'SELECT COUNT(*) AS cnt FROM purchases WHERE is_active = 1',
+  );
+  return (row?.cnt ?? 0) > 0;
+}
+
+export async function getActiveGroupTripCount(): Promise<number> {
+  const row = await db.getFirstAsync<{ cnt: number }>(
+    'SELECT COUNT(*) AS cnt FROM groups WHERE is_archived = 0 AND is_planning = 0',
+  );
+  return row?.cnt ?? 0;
+}
+
+export async function getActivePersonalTripCount(): Promise<number> {
+  const row = await db.getFirstAsync<{ cnt: number }>(
+    'SELECT COUNT(*) AS cnt FROM personal_trips WHERE is_archived = 0',
+  );
+  return row?.cnt ?? 0;
+}
+
+// Existing trips beyond the free limit (e.g. from testing before this feature
+// shipped) are never retroactively locked — these only gate the creation of
+// a NEW trip once the user is already at or past the limit.
+export async function canCreateGroupTrip(): Promise<boolean> {
+  if (await isPremium()) return true;
+  return (await getActiveGroupTripCount()) < FREE_TRIP_LIMIT;
+}
+
+export async function canCreatePersonalTrip(): Promise<boolean> {
+  if (await isPremium()) return true;
+  return (await getActivePersonalTripCount()) < FREE_TRIP_LIMIT;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

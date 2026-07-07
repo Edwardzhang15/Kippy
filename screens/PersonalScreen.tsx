@@ -25,6 +25,7 @@ import {
   getPersonalTripCategoryBudgetsWithSpent,
   deletePersonalTrip,
   archivePersonalTrip,
+  canCreatePersonalTrip,
   type PersonalTrip,
   type CategoryBudgetWithSpent,
 } from '../db';
@@ -152,6 +153,11 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   createBtnText:  { fontSize: fontSizes.body, fontWeight: '700', color: '#fff' },
 
   fab:     { position: 'absolute', bottom: 28, right: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: c.coral, alignItems: 'center', justifyContent: 'center' },
+  fabLockBadge: {
+    position: 'absolute', top: -2, right: -2, width: 20, height: 20, borderRadius: 10,
+    backgroundColor: c.textPrimary, borderWidth: 2, borderColor: c.background,
+    alignItems: 'center', justifyContent: 'center',
+  },
 
   // ── Bulk action bar ─────────────────────────────────────────────────────
   bulkBar:         { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: c.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingHorizontal: 20, paddingVertical: 14, paddingBottom: Platform.OS === 'ios' ? 28 : 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
@@ -171,6 +177,7 @@ export default function PersonalScreen({ navigation }: Props) {
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudgetWithSpent[]>([]);
   const [loading, setLoading]             = useState(true);
   const [tripTab, setTripTab]             = useState<'active' | 'past'>('active');
+  const [creationLocked, setCreationLocked] = useState(false);
 
   // Inferred photo cache (trip name → Unsplash URL or null = use fallback)
   const photoCacheRef = useRef<Map<number, string | null>>(new Map());
@@ -238,9 +245,18 @@ export default function PersonalScreen({ navigation }: Props) {
       }
     }
     load();
+    canCreatePersonalTrip().then(can => setCreationLocked(!can));
     setSelectMode(false);
     setSelectedIds(new Set());
   }, []));
+
+  const handleCreatePress = async () => {
+    if (await canCreatePersonalTrip()) {
+      navigation.navigate('CreatePersonalTrip', {});
+    } else {
+      navigation.navigate('Paywall');
+    }
+  };
 
   async function reloadTrips() {
     const [raw, rawArchived] = await Promise.all([
@@ -649,8 +665,13 @@ export default function PersonalScreen({ navigation }: Props) {
 
       {/* FAB — hidden in select mode */}
       {!selectMode && (
-        <Pressable style={styles.fab} onPress={() => navigation.navigate('CreatePersonalTrip', {})}>
+        <Pressable style={styles.fab} onPress={handleCreatePress}>
           <Ionicons name="add" size={28} color="#fff" />
+          {creationLocked && (
+            <View style={styles.fabLockBadge}>
+              <Ionicons name="lock-closed" size={11} color="#fff" />
+            </View>
+          )}
         </Pressable>
       )}
     </SafeAreaView>
