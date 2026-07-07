@@ -170,6 +170,25 @@ let db: SQLite.SQLiteDatabase;
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
+// One-time backfill for installs that already had trips before the lifetime
+// counters existed: if the counter is still at its freshly-seeded 0 but rows
+// already exist in the source table, seed it from the current row count so
+// pre-existing test data doesn't get treated as "0 trips ever created" (which
+// would just re-open the free slot for a user who already used it).
+// No-ops once the counter has moved past 0, so this is safe to run on every
+// startup.
+async function backfillLifetimeCounter(key: string, table: 'groups' | 'personal_trips'): Promise<void> {
+  const stat = await db.getFirstAsync<{ value: number }>(
+    'SELECT value FROM app_stats WHERE key = ?', key,
+  );
+  if ((stat?.value ?? 0) !== 0) return;
+  const row = await db.getFirstAsync<{ cnt: number }>(`SELECT COUNT(*) AS cnt FROM ${table}`);
+  const existing = row?.cnt ?? 0;
+  if (existing > 0) {
+    await db.runAsync('UPDATE app_stats SET value = ? WHERE key = ?', existing, key);
+  }
+}
+
 export async function initDatabase(): Promise<void> {
   db = await SQLite.openDatabaseAsync('expense_splitter.db');
 
@@ -482,6 +501,28 @@ export async function initDatabase(): Promise<void> {
       );
     `);
   } catch { /* table already exists */ }
+
+  // Migration v27: app_stats key-value store for lifetime counters
+  try {
+    await db.execAsync(`
+      CREATE TABLE IF NOT EXISTS app_stats (
+        id    INTEGER PRIMARY KEY AUTOINCREMENT,
+        key   TEXT    NOT NULL UNIQUE,
+        value INTEGER NOT NULL DEFAULT 0
+      );
+    `);
+  } catch { /* table already exists */ }
+
+  await db.runAsync(
+    'INSERT OR IGNORE INTO app_stats (key, value) VALUES (?, 0)',
+    LIFETIME_GROUP_TRIPS_KEY,
+  );
+  await db.runAsync(
+    'INSERT OR IGNORE INTO app_stats (key, value) VALUES (?, 0)',
+    LIFETIME_PERSONAL_TRIPS_KEY,
+  );
+  await backfillLifetimeCounter(LIFETIME_GROUP_TRIPS_KEY, 'groups');
+  await backfillLifetimeCounter(LIFETIME_PERSONAL_TRIPS_KEY, 'personal_trips');
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
@@ -712,6 +753,7 @@ export async function createGroup(
     'INSERT INTO groups (name, currency, destination, destination_photo_url) VALUES (?, ?, ?, ?)',
     name, currency, destination ?? null, destinationPhotoUrl ?? null,
   );
+  await incrementStat(LIFETIME_GROUP_TRIPS_KEY);
   return result.lastInsertRowId;
 }
 
@@ -1312,6 +1354,7 @@ export async function createPersonalTrip(
     'INSERT INTO personal_trips (name, currency, budget_amount, created_date, destination, destination_photo_url) VALUES (?, ?, ?, ?, ?, ?)',
     name, currency, budgetAmount ?? null, today, destination ?? null, destinationPhotoUrl ?? null,
   );
+  await incrementStat(LIFETIME_PERSONAL_TRIPS_KEY);
   return r.lastInsertRowId;
 }
 
@@ -1490,6 +1533,8 @@ export async function setPersonalTripBudget(
 
 export const FULL_ACCESS_PRODUCT_ID = 'com.edwardzhang.kippy.fullaccess';
 export const FREE_TRIP_LIMIT = 1;
+export const LIFETIME_GROUP_TRIPS_KEY = 'lifetime_group_trips_created';
+export const LIFETIME_PERSONAL_TRIPS_KEY = 'lifetime_personal_trips_created';
 
 // Idempotent — safe to call for both a fresh purchase and a restored one, so
 // the same purchase-success handler can call this in both cases without
@@ -1514,31 +1559,34 @@ export async function isPremium(): Promise<boolean> {
   return (row?.cnt ?? 0) > 0;
 }
 
-export async function getActiveGroupTripCount(): Promise<number> {
-  const row = await db.getFirstAsync<{ cnt: number }>(
-    'SELECT COUNT(*) AS cnt FROM groups WHERE is_archived = 0 AND is_planning = 0',
+export async function getStatValue(key: string): Promise<number> {
+  const row = await db.getFirstAsync<{ value: number }>(
+    'SELECT value FROM app_stats WHERE key = ?',
+    key,
   );
-  return row?.cnt ?? 0;
+  return row?.value ?? 0;
 }
 
-export async function getActivePersonalTripCount(): Promise<number> {
-  const row = await db.getFirstAsync<{ cnt: number }>(
-    'SELECT COUNT(*) AS cnt FROM personal_trips WHERE is_archived = 0',
+export async function incrementStat(key: string): Promise<void> {
+  await db.runAsync(
+    `INSERT INTO app_stats (key, value) VALUES (?, 1)
+     ON CONFLICT(key) DO UPDATE SET value = value + 1`,
+    key,
   );
-  return row?.cnt ?? 0;
 }
 
-// Existing trips beyond the free limit (e.g. from testing before this feature
-// shipped) are never retroactively locked — these only gate the creation of
-// a NEW trip once the user is already at or past the limit.
+// Gates on LIFETIME trip creation counts, not current active-trip counts —
+// deleting a free trip and creating a new one must not reset the free quota.
+// Existing trips from before this counter existed are handled by the
+// initDatabase() backfill, not here.
 export async function canCreateGroupTrip(): Promise<boolean> {
   if (await isPremium()) return true;
-  return (await getActiveGroupTripCount()) < FREE_TRIP_LIMIT;
+  return (await getStatValue(LIFETIME_GROUP_TRIPS_KEY)) < FREE_TRIP_LIMIT;
 }
 
 export async function canCreatePersonalTrip(): Promise<boolean> {
   if (await isPremium()) return true;
-  return (await getActivePersonalTripCount()) < FREE_TRIP_LIMIT;
+  return (await getStatValue(LIFETIME_PERSONAL_TRIPS_KEY)) < FREE_TRIP_LIMIT;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

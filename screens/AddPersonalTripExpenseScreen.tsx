@@ -47,7 +47,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   amountRow:      { alignItems: 'center', marginTop: 12, marginBottom: 4 },
   amountDisplay:  { flexDirection: 'row', alignItems: 'baseline', gap: 2 },
   currSym:        { fontSize: 28, fontWeight: '700', color: c.textPrimary },
-  amountText:     { fontSize: 48, fontWeight: '700', color: c.textPrimary, minWidth: 80, textAlign: 'center' },
+  amountText:     { fontSize: 48, fontWeight: '700', color: c.textPrimary, textAlign: 'left' },
   hiddenInput:    { position: 'absolute', width: 1, height: 1, opacity: 0 },
 
   // Fixed-width 4-column category grid

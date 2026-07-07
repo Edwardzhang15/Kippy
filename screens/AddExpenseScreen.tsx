@@ -641,7 +641,6 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     justifyContent: 'center',
     marginTop: 24,
     marginBottom: 8,
-    gap: 4,
   },
   amountPrompt: {
     flexDirection: 'column',
@@ -660,13 +659,14 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontWeight: '700',
     color: c.textPrimary,
     marginBottom: 8,
+    marginRight: 2,
   },
   amountInput: {
     fontSize: 64,
     fontWeight: '700',
     color: c.textPrimary,
-    minWidth: 140,
-    textAlign: 'center',
+    minWidth: 24,
+    textAlign: 'left',
   },
   sectionLabel: {
     fontSize: fontSizes.caption,
