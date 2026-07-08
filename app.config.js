@@ -7,7 +7,7 @@ module.exports = {
     slug: 'kippy',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/Kippy_logo_light.png',
+    icon: './assets/App_Logo.png',
     userInterfaceStyle: 'light',
     splash: {
       image: './assets/Kippy_logo_light.png',
@@ -25,7 +25,7 @@ module.exports = {
     },
     android: {
       adaptiveIcon: {
-        foregroundImage: './assets/Kippy_logo_light.png',
+        foregroundImage: './assets/App_Logo.png',
         backgroundColor: '#F7F7F5',
       },
       predictiveBackGestureEnabled: false,
