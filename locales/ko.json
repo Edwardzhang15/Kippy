@@ -8,7 +8,7 @@
     "groupNotFound": "그룹을 찾을 수 없어요.",
     "done": "완료",
     "remove": "제거",
-    "ratesUnavailable": "환율을 불러올 수 없어요 — 다중 통화 합계가 부정확할 수 있어요."
+    "ratesUnavailable": "환율을 불러올 수 없어요 - 다중 통화 합계가 부정확할 수 있어요."
   },
   "tabs": {
     "home": "그룹 여행",
@@ -61,7 +61,7 @@
     "subgroups": "서브그룹",
     "subgroupNew": "새로 만들기",
     "subgroupClickMe": "눌러봐요!",
-    "subgroupEmpty": "일부 지출에만 참여하는 사람이 있을 수 있어요 — 술을 마시는 사람들의 '술자리 팀'이나 1일차 이후 합류한 '늦게 온 팀'처럼요. 서브그룹을 만들면 지출을 나눌 때 해당 인원만 쉽게 포함할 수 있어요.",
+    "subgroupEmpty": "일부 지출에만 참여하는 사람이 있을 수 있어요 - 술을 마시는 사람들의 '술자리 팀'이나 1일차 이후 합류한 '늦게 온 팀'처럼요. 서브그룹을 만들면 지출을 나눌 때 해당 인원만 쉽게 포함할 수 있어요.",
     "deleteSubgroup": "서브그룹 삭제",
     "removeSubgroupMsg": "“{{name}}”을 제거할까요?",
     "subgroupCount_one": "{{count}}명",
@@ -144,21 +144,21 @@
     "next": "다음",
     "getStarted": "시작하기",
     "step1Title": "Kippy에 오신 걸 환영해요!",
-    "step1Body": "안녕하세요, 저는 Kip이에요! 지출 분담, 예산 관리, 잊지 못할 여행 계획까지 — 모두 한 곳에서 도와드릴 여행 동반자예요.",
+    "step1Body": "저는 Kip, 여행의 모든 순간을 함께할 동반자예요!",
     "step2Title": "그룹 여행",
-    "step2Body": "친구들과 그룹 여행을 만들어봐요. 지출을 추가하고, 자동으로 나누고, 누가 얼마를 내야 하는지 확인하고, 한 번의 탭으로 정산해요. 다중 통화도 지원돼요!",
+    "step2Body": "그룹 여행 비용을 한 번의 탭으로 나눠요.",
     "step3Title": "더 스마트하게 나누기",
-    "step3Body": "Kippy는 자동으로 가장 간단한 정산 방법을 계산해요 — 모두가 서로 송금하는 대신, 모든 잔액을 정리하는 데 필요한 최소한의 거래만 알려드려요.",
+    "step3Body": "Kippy가 가장 간단한 정산 방법을 찾아드려요.",
     "step4Title": "모든 세부사항 계획하기",
-    "step4Body": "날짜별 일정표를 만들고, 여행 스타일과 목적지에 맞는 스마트 짐 목록을 생성하고, 출발 전에 예산 계획을 세워봐요.",
+    "step4Body": "일정, 짐 목록, 예산까지 출발 전에 미리 계획해요.",
     "step5Title": "Kip's 추천",
-    "step5Body": "여행지의 최고 맛집, 명소, 저렴한 식당, 포토스팟을 발견해봐요 — 앱에서 바로 실제 추천을 받을 수 있어요.",
+    "step5Body": "여행지의 인기 명소를 앱에서 바로 발견해요.",
     "step6Title": "개인 여행",
-    "step6Body": "혼자 여행하거나 소규모 여행을 계획 중인가요? 개인 여행을 사용해서 예산을 설정하고, 개인 지출을 기록하고, 실시간 예산 링으로 소비 현황을 확인해봐요.",
+    "step6Body": "나 홀로 여행도 실시간 예산 링으로 관리해요.",
     "step7Title": "모든 것 공유하기",
-    "step7Body": "그룹과 전체 지출 내역, 여행 요약 카드, 짐 목록, 일정표, 예산 계획을 공유해봐요 — 인스타그램이나 메시지에 바로 쓸 수 있는 깔끔한 이미지로 만들어드려요.",
+    "step7Body": "여행 요약을 깔끔한 이미지로 공유해요.",
     "step8Title": "이제 준비됐어요!",
-    "step8Body": "Kip이 여행 내내 함께할게요. 출발해봐요! 🌍",
+    "step8Body": "Kip이 여행 내내 함께할게요. 출발해요! 🌍",
     "viewTour": "앱 둘러보기",
     "bubble": "도움이 필요하면 여기서 찾아봐요!"
   },
@@ -235,7 +235,7 @@
     "fieldDuration": "소요 시간",
     "anchorLabel": "메인 활동",
     "anchorSub": "하루의 구조를 잡는 핵심 활동",
-    "anchorTip": "대부분의 사람들은 하루에 계획된 활동을 1—2개 하고, 나머지는 자유롭게 탐험해요.",
+    "anchorTip": "대부분의 사람들은 하루에 계획된 활동을 1-2개 하고, 나머지는 자유롭게 탐험해요.",
     "fieldNote": "메모",
     "notePlaceholder": "세부사항, 예약 정보, 팁…",
     "saving": "저장 중…",
@@ -441,23 +441,23 @@
   "featureIntro": {
     "continue": "시작해봐요!",
     "itinerary": {
-      "phrase_0": "모험이 기다리고 있어요 — 함께 계획해봐요!",
+      "phrase_0": "모험이 기다리고 있어요 - 함께 계획해봐요!",
       "phrase_1": "훌륭한 여행은 멋진 일정표에서 시작돼요!",
-      "phrase_2": "Kip이 일정을 도와드릴게요 — 채워볼까요!",
+      "phrase_2": "Kip이 일정을 도와드릴게요 - 채워볼까요!",
       "phrase_3": "반전: 최고의 여행은 계획에서 나와요!",
-      "phrase_4": "하루하루 step by step — 이 여행을 만들어봐요!"
+      "phrase_4": "하루하루 step by step - 이 여행을 만들어봐요!"
     },
     "packing": {
-      "phrase_0": "선크림 잊지 마세요 — 그리고 Kip도요!",
+      "phrase_0": "선크림 잊지 마세요 - 그리고 Kip도요!",
       "phrase_1": "스마트하게 챙기면 추억이 더 많이 들어요!",
-      "phrase_2": "하나의 가방으로 — 함께 채워봐요!",
+      "phrase_2": "하나의 가방으로 - 함께 채워봐요!",
       "phrase_3": "Kip's 짐 목록: 기억력보다 더 믿을 수 있어요!",
       "phrase_4": "가볍게 짐 싸고, 신나게 여행해요!"
     },
     "budget": {
       "phrase_0": "아낀 돈으로 아이스크림 하나 더!",
       "phrase_1": "예산을 지키면 더 즐길 수 있어요!",
-      "phrase_2": "Kip이 계산할게요 — 직접 하지 않아도 돼요!",
+      "phrase_2": "Kip이 계산할게요 - 직접 하지 않아도 돼요!",
       "phrase_3": "지갑의 최고 여행 파트너!",
       "phrase_4": "현명하게 쓰고, 한계 없이 즐겨요!"
     }
@@ -484,7 +484,7 @@
     "tabTitle": "개인",
     "tabSub": "나의 개인 여행 및 지출",
     "emptyTitle": "아직 개인 여행이 없어요",
-    "emptyBody": "혼자 하는 여행, 주말 여행, 또는 일상 지출까지 — 한 곳에서 모두 기록해봐요.",
+    "emptyBody": "혼자 하는 여행, 주말 여행, 또는 일상 지출까지 - 한 곳에서 모두 기록해봐요.",
     "createFirst": "개인 여행 만들기",
     "newTitle": "새 개인 여행",
     "editTitle": "여행 수정",
@@ -502,7 +502,7 @@
     "spent": "지출",
     "budget": "예산",
     "expenses": "지출 내역",
-    "noExpenses": "아직 지출이 없어요 — + 버튼을 눌러 추가해봐요.",
+    "noExpenses": "아직 지출이 없어요 - + 버튼을 눌러 추가해봐요.",
     "newExpense": "새 지출",
     "editExpense": "지출 수정",
     "saveExpense": "지출 저장",
@@ -519,16 +519,16 @@
     "categoryTotal": "카테고리 합계",
     "budgetOverflowWarning": "총 예산을 {{sym}}{{amount}} 초과해요",
     "saveBudgets": "예산 저장",
-    "kipUnder": "예산보다 훨씬 적게 쓰고 있어요 — 잘하고 있어요! 계속 탐험해봐요!",
+    "kipUnder": "예산보다 훨씬 적게 쓰고 있어요 - 잘하고 있어요! 계속 탐험해봐요!",
     "kipApproaching": "예산에 가까워지고 있어요. 마지막 지출을 조금 아껴봐요!",
-    "kipOver": "이번 여행에서 예산을 초과했어요. 괜찮아요 — 그래도 즐겨봐요!",
+    "kipOver": "이번 여행에서 예산을 초과했어요. 괜찮아요 - 그래도 즐겨봐요!",
     "kipNoBudget": "이 여행에 예산이 설정되지 않았어요. 목표 대비 지출을 추적하려면 예산을 추가해봐요!",
     "currentTrip": "현재 여행",
     "yourTrips": "내 여행",
     "viewDetails": "자세히 보기",
     "manageBudgets": "관리",
     "catBudgetEmpty": "아직 카테고리별 예산이 없어요",
-    "catBudgetCreationHint": "카테고리별 지출 한도를 설정해봐요 — 나중에 추가해도 돼요.",
+    "catBudgetCreationHint": "카테고리별 지출 한도를 설정해봐요 - 나중에 추가해도 돼요.",
     "menuEdit": "여행 수정",
     "menuConclude": "여행 종료",
     "menuDelete": "여행 삭제",
@@ -590,7 +590,7 @@
   },
   "paywall": {
     "headline": "Kippy 잠금 해제",
-    "subheading": "Kippy를 경험해보셨죠 — 이제 완전한 모험을 시작해볼까요?",
+    "subheading": "Kippy를 경험해보셨죠 - 이제 완전한 모험을 시작해볼까요?",
     "featureUnlimitedGroupTrips": "무제한 그룹 여행",
     "featureUnlimitedPersonalTrips": "무제한 개인 여행",
     "featurePlanningTools": "모든 계획 도구",
@@ -605,5 +605,9 @@
     "errorGeneric": "구매를 완료할 수 없었어요. 다시 시도해주세요.",
     "restoreNoneTitle": "복원할 구매 내역이 없어요",
     "restoreNoneMessage": "이 Apple ID로 이전에 구매한 내역을 찾을 수 없었어요."
+  },
+  "welcome": {
+    "tagline": "여행 계획도, 정산도, 더 가볍게.",
+    "getStarted": "시작하기"
   }
 }

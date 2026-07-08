@@ -273,7 +273,7 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
                             style={styles.catInput}
                             value={catBudgets[cat.id] ?? ''}
                             onChangeText={v => setCatBudgets(prev => ({ ...prev, [cat.id]: v }))}
-                            placeholder="—"
+                            placeholder="-"
                             placeholderTextColor={colors.textSecondary}
                             keyboardType="decimal-pad"
                             inputAccessoryViewID={DONE_BAR_ID}

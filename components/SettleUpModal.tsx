@@ -181,7 +181,7 @@ export default function SettleUpModal({
                   <Text style={styles.equivalentText}>
                     {rates
                       ? t('settleUp.equivalent', { sym: payInSym, amount: payInAmtStr, currency: payInCurrency })
-                      : `≈ ${payInSym}— ${payInCurrency}`}
+                      : `≈ ${payInSym}- ${payInCurrency}`}
                   </Text>
                 )}
               </View>

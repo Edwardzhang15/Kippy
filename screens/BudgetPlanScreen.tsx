@@ -72,7 +72,7 @@ function BudgetRow({
   const planned = parseFloat(draft) || 0;
   const pct = planned > 0 ? Math.min(actual / planned, 1) : 0;
   const isOver = actual > planned && planned > 0;
-  const pctLabel = planned > 0 ? `${Math.round(pct * 100)}%` : '—';
+  const pctLabel = planned > 0 ? `${Math.round(pct * 100)}%` : '-';
 
   return (
     <View style={styles.rowCard}>

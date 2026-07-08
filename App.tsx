@@ -16,6 +16,7 @@ import LoadingScreen from './components/LoadingScreen';
 import KeyboardDoneBar from './components/KeyboardDoneBar';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LanguagePickerScreen from './screens/LanguagePickerScreen';
+import WelcomeScreen from './screens/WelcomeScreen';
 import HomeStack from './navigation/HomeStack';
 import InsightsScreen from './screens/InsightsScreen';
 import SettingScreen from './screens/SettingScreen';
@@ -39,20 +40,30 @@ function AppCore() {
   const { shouldShow: showOnboarding, onboardingReady } = useOnboarding();
   const [dbReady, setDbReady]           = useState(false);
   const [minTimeReady, setMinTimeReady] = useState(false);
+  const [showWelcome, setShowWelcome]         = useState(false);
+  const [welcomeReady, setWelcomeReady]       = useState(false);
+  const [welcomeDone, setWelcomeDone]         = useState(false);
   const [showLangPicker, setShowLangPicker]   = useState(false);
   const [langPickerReady, setLangPickerReady] = useState(false);
   const [langPickerDone, setLangPickerDone]   = useState(false);
 
-  // Language Selection only depends on a single fast AsyncStorage read — it
-  // must never be gated behind db init or the network rate fetch below, or a
-  // first-time user on a slow connection would stare at the loading splash
-  // before ever seeing it.
+  // Welcome and Language Selection each only depend on a single fast
+  // AsyncStorage read — neither must ever be gated behind db init or the
+  // network rate fetch below, or a first-time user on a slow connection
+  // would stare at the loading splash before ever seeing them. Welcome is
+  // checked first and takes priority over everything else, including
+  // Language Selection, since it's the very first thing a new user sees.
+  const needsWelcome = showWelcome && !welcomeDone;
+  const pastWelcome  = welcomeReady && !needsWelcome;
   const needsLangPicker = showLangPicker && !langPickerDone;
   // Everything after Language Selection (onboarding tour, then main app)
   // still needs the db, rates, onboarding-flag check, and the splash's
   // minimum display time.
   const restReady = dbReady && minTimeReady && onboardingReady;
-  const showLoadingOverlay = !langPickerReady || (!needsLangPicker && !restReady);
+  const showLoadingOverlay =
+    !welcomeReady ||
+    (pastWelcome && !langPickerReady) ||
+    (pastWelcome && !needsLangPicker && !restReady);
 
   useEffect(() => {
     Promise.all([
@@ -62,6 +73,11 @@ function AppCore() {
     ])
       .then(() => setDbReady(true))
       .catch((e) => { if (__DEV__) console.error('Init failed:', e); });
+
+    AsyncStorage.getItem('@kippy/welcome_seen').then(v => {
+      setShowWelcome(!v);
+      setWelcomeReady(true);
+    });
 
     AsyncStorage.getItem('@kippy/lang_selected').then(v => {
       setShowLangPicker(!v);
@@ -77,7 +93,7 @@ function AppCore() {
       <KeyboardDoneBar />
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} />
 
-      {restReady && !needsLangPicker && (
+      {pastWelcome && restReady && !needsLangPicker && (
         <NavigationContainer>
           <Tab.Navigator
             screenOptions={({ route }) => ({
@@ -128,7 +144,7 @@ function AppCore() {
         </NavigationContainer>
       )}
 
-      {langPickerReady && needsLangPicker && (
+      {pastWelcome && langPickerReady && needsLangPicker && (
         <View style={StyleSheet.absoluteFill}>
           <LanguagePickerScreen
             onComplete={async () => {
@@ -139,7 +155,18 @@ function AppCore() {
         </View>
       )}
 
-      {restReady && !needsLangPicker && showOnboarding && (
+      {needsWelcome && (
+        <View style={StyleSheet.absoluteFill}>
+          <WelcomeScreen
+            onComplete={async () => {
+              await AsyncStorage.setItem('@kippy/welcome_seen', 'true');
+              setWelcomeDone(true);
+            }}
+          />
+        </View>
+      )}
+
+      {pastWelcome && restReady && !needsLangPicker && showOnboarding && (
         <View style={StyleSheet.absoluteFill}>
           <OnboardingScreen />
         </View>
