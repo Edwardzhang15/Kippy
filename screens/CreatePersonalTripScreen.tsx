@@ -18,14 +18,13 @@ import { createPersonalTrip, updatePersonalTrip, getPersonalTrip, setPersonalTri
 import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getCurrencySymbol, formatAmount } from '../utils';
+import { getCurrencySymbol, formatAmount, SUPPORTED_CURRENCIES } from '../utils';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<PersonalStackParamList, 'CreatePersonalTrip'>;
 
-const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY', 'CNY', 'SGD', 'HKD', 'NZD'];
 const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 
 async function fetchDestinationPhoto(query: string): Promise<string | null> {
@@ -210,7 +209,7 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
 
         <Text style={styles.label}>{t('personalTrip.currency')}</Text>
         <View style={styles.currencyRow}>
-          {CURRENCIES.map(c => (
+          {SUPPORTED_CURRENCIES.map(c => (
             <Pressable
               key={c}
               style={[styles.currChip, cardShadow, c === currency && styles.currChipActive]}

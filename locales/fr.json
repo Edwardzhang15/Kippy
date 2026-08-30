@@ -115,7 +115,7 @@
     "deleteTitle": "Supprimer la dépense",
     "deleteMsg": "Supprimer définitivement cette dépense ? Les soldes seront recalculés.",
     "currency": "Devise",
-    "tapToEnterAmount": "Appuie ici pour saisir le montant"
+    "amount": "Montant"
   },
   "memberExpenses": {
     "title": "Détail",

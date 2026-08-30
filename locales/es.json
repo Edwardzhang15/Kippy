@@ -115,7 +115,7 @@
     "deleteTitle": "Eliminar Gasto",
     "deleteMsg": "¿Eliminar permanentemente este gasto? Los balances se recalcularán.",
     "currency": "Moneda",
-    "tapToEnterAmount": "Toca aquí para ingresar el monto"
+    "amount": "Monto"
   },
   "memberExpenses": {
     "title": "Desglose",

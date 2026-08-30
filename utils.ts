@@ -17,6 +17,17 @@ export function formatExpenseDate(dateStr: string): string {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
+/**
+ * Every currency the app offers in a picker, in display order. Single source of
+ * truth: each currency chip row across the app reads this list, so adding a code
+ * here makes it selectable everywhere at once. Every code must also have an entry
+ * in CURRENCY_SYMBOLS below.
+ */
+export const SUPPORTED_CURRENCIES = [
+  'CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY', 'CHF', 'CNY',
+  'INR', 'MXN', 'BRL', 'SGD', 'KRW', 'NZD', 'HKD',
+];
+
 const CURRENCY_SYMBOLS: Record<string, string> = {
   USD: '$', CAD: '$', AUD: '$', NZD: '$', SGD: '$', HKD: '$',
   EUR: '€', GBP: '£', JPY: '¥', CNY: '¥', KRW: '₩',

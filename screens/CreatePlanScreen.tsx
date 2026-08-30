@@ -19,10 +19,10 @@ import { createPlanTrip, addTripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
+import { SUPPORTED_CURRENCIES } from '../utils';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'CreatePlan'>;
 
-const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 const STOP_CITY_EXAMPLES = ['Tokyo', 'Kyoto', 'Osaka', 'Rome', 'Paris', 'Barcelona'];
 
@@ -200,7 +200,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
 
           <SectionLabel title={t('createPlan.currency')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-            {CURRENCIES.map((c) => (
+            {SUPPORTED_CURRENCIES.map((c) => (
               <Pressable
                 key={c}
                 style={[styles.chip, currency === c && styles.chipSelected]}

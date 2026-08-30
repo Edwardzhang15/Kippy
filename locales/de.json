@@ -115,7 +115,7 @@
     "deleteTitle": "Ausgabe löschen",
     "deleteMsg": "Diese Ausgabe dauerhaft löschen? Die Salden werden neu berechnet.",
     "currency": "Währung",
-    "tapToEnterAmount": "Hier tippen, um den Betrag einzugeben"
+    "amount": "Betrag"
   },
   "memberExpenses": {
     "title": "Übersicht",

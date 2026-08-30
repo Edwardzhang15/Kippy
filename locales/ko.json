@@ -115,7 +115,7 @@
     "deleteTitle": "지출 삭제",
     "deleteMsg": "이 지출을 영구적으로 삭제할까요? 잔액이 다시 계산돼요.",
     "currency": "통화",
-    "tapToEnterAmount": "여기를 눌러 금액을 입력해요"
+    "amount": "금액"
   },
   "memberExpenses": {
     "title": "내역",

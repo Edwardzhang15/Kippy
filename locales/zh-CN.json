@@ -115,7 +115,7 @@
     "deleteTitle": "删除费用",
     "deleteMsg": "永久删除此费用？余额将重新计算。",
     "currency": "货币",
-    "tapToEnterAmount": "点击此处输入金额"
+    "amount": "金额"
   },
   "memberExpenses": {
     "title": "明细",

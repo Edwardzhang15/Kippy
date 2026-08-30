@@ -23,8 +23,8 @@ import {
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
+import { SUPPORTED_CURRENCIES } from '../utils';
 
-const CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 
 async function fetchDestinationPhoto(query: string): Promise<string | null> {
@@ -429,7 +429,7 @@ export default function EditTripScreen() {
 
           <SectionLabel title={t('editTrip.currency')} />
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
-            {CURRENCIES.map((cur) => (
+            {SUPPORTED_CURRENCIES.map((cur) => (
               <Pressable
                 key={cur}
                 style={[styles.chip, currency === cur && styles.chipSelected]}

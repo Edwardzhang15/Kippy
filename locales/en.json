@@ -115,7 +115,7 @@
     "deleteTitle": "Delete Expense",
     "deleteMsg": "Permanently delete this expense? Balances will be recalculated.",
     "currency": "Currency",
-    "tapToEnterAmount": "Tap here to enter amount"
+    "amount": "Amount"
   },
   "memberExpenses": {
     "title": "Breakdown",

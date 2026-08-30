@@ -15,10 +15,8 @@ import { useTranslation } from 'react-i18next';
 import { recordSettlement } from '../db';
 import { getCachedRates, convertAmount } from '../currencyRates';
 import { type ColorPalette, fontSizes, radii } from '../theme';
-import { getAvatarColor, getInitials, getCurrencySymbol, formatAmount } from '../utils';
+import { getAvatarColor, getInitials, getCurrencySymbol, formatAmount, SUPPORTED_CURRENCIES } from '../utils';
 import { useTheme } from '../context/ThemeContext';
-
-const SETTLE_CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 
 type Props = {
   visible: boolean;
@@ -164,7 +162,7 @@ export default function SettleUpModal({
                   style={styles.currencyScroll}
                   contentContainerStyle={styles.currencyScrollContent}
                 >
-                  {SETTLE_CURRENCIES.map((cur) => (
+                  {SUPPORTED_CURRENCIES.map((cur) => (
                     <Pressable
                       key={cur}
                       style={[styles.currencyChip, payInCurrency === cur && styles.currencyChipSelected]}

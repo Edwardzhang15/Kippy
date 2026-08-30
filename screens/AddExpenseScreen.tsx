@@ -30,12 +30,10 @@ import {
 import { CATEGORIES, Category } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getAvatarColor, getInitials, getCurrencySymbol } from '../utils';
+import { getAvatarColor, getInitials, getCurrencySymbol, SUPPORTED_CURRENCIES } from '../utils';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'AddExpense'>;
-
-const EXPENSE_CURRENCIES = ['CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY'];
 
 const GRID_COLS = 3;
 const GRID_GAP  = 8;
@@ -152,28 +150,24 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const [deleting, setDeleting]                         = useState(false);
   const [receiptUri, setReceiptUri]                     = useState<string | null>(null);
   const [showPhotoSheet, setShowPhotoSheet]             = useState(false);
-  const [showAmountPrompt, setShowAmountPrompt]         = useState(!isEditMode);
-  const promptOpacity                                    = useRef(new Animated.Value(1)).current;
-  const bounceAnim                                       = useRef(new Animated.Value(0)).current;
+  const amountInputRef                                   = useRef<TextInput>(null);
+  const hasAmount                                        = amount.length > 0;
+  const amountEngaged                                    = useRef(new Animated.Value(0)).current;
 
+  // The currency symbol stays quiet until a number sits beside it, so the resting
+  // state reads as one calm element instead of a watermark plus a hint.
   useEffect(() => {
-    if (!showAmountPrompt) return;
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(bounceAnim, { toValue: -7, duration: 420, useNativeDriver: true }),
-        Animated.timing(bounceAnim, { toValue: 0,  duration: 420, useNativeDriver: true }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [showAmountPrompt]);
+    Animated.timing(amountEngaged, {
+      toValue: hasAmount ? 1 : 0,
+      duration: 160,
+      useNativeDriver: true,
+    }).start();
+  }, [hasAmount]);
 
-  const dismissAmountPrompt = () => {
-    if (!showAmountPrompt) return;
-    Animated.timing(promptOpacity, { toValue: 0, duration: 180, useNativeDriver: true }).start(() =>
-      setShowAmountPrompt(false),
-    );
-  };
+  const symbolOpacity = amountEngaged.interpolate({
+    inputRange:  [0, 1],
+    outputRange: [0.35, 1],
+  });
 
   useEffect(() => {
     Promise.all([
@@ -379,30 +373,31 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
         >
-          <View style={styles.amountRow}>
-            <Text style={styles.currencySymbol}>{getCurrencySymbol(expenseCurrency || group.currency)}</Text>
-            <TextInput
-              style={styles.amountInput}
-              placeholder={expenseCurrency === 'JPY' ? '0' : '0.00'}
-              placeholderTextColor={colors.border}
-              keyboardType="decimal-pad"
-              returnKeyType="done"
-              inputAccessoryViewID={DONE_BAR_ID}
-              value={amount}
-              onChangeText={setAmount}
-              onFocus={dismissAmountPrompt}
-            />
-            <Text style={[styles.currencySymbol, { opacity: 0 }]} aria-hidden>{getCurrencySymbol(expenseCurrency || group.currency)}</Text>
-          </View>
-
-          {showAmountPrompt && (
-            <Animated.View style={[styles.amountPrompt, { opacity: promptOpacity }]}>
-              <Animated.View style={{ transform: [{ translateY: bounceAnim }] }}>
-                <Ionicons name="arrow-up-circle" size={22} color={colors.coral} />
-              </Animated.View>
-              <Text style={styles.amountPromptText}>{t('addExpense.tapToEnterAmount')}</Text>
-            </Animated.View>
-          )}
+          <Pressable
+            style={styles.amountRow}
+            onPress={() => amountInputRef.current?.focus()}
+            accessible={false}
+          >
+            <View style={styles.amountGroup}>
+              <Animated.Text style={[styles.currencySymbol, { opacity: symbolOpacity }]}>
+                {getCurrencySymbol(expenseCurrency || group.currency)}
+              </Animated.Text>
+              <TextInput
+                ref={amountInputRef}
+                style={styles.amountInput}
+                placeholder="0"
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="decimal-pad"
+                returnKeyType="done"
+                inputAccessoryViewID={DONE_BAR_ID}
+                value={amount}
+                onChangeText={setAmount}
+                autoFocus={!isEditMode}
+                selectionColor={colors.textPrimary}
+                accessibilityLabel={t('addExpense.amount')}
+              />
+            </View>
+          </Pressable>
 
           <SectionLabel title={t('addExpense.currency')} />
           <ScrollView
@@ -411,7 +406,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
             style={styles.currencyScroll}
             contentContainerStyle={styles.currencyScrollContent}
           >
-            {EXPENSE_CURRENCIES.map((c) => (
+            {SUPPORTED_CURRENCIES.map((c) => (
               <Pressable
                 key={c}
                 style={[styles.currencyChip, expenseCurrency === c && styles.currencyChipSelected]}
@@ -635,37 +630,32 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     paddingHorizontal: H_PAD,
     paddingBottom: 24,
   },
+  // Full-width tap target: the number itself is narrow, so the whole band focuses
+  // the input. That is what makes the removed "tap here" hint redundant.
   amountRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingTop: 28,
+    paddingBottom: 12,
+  },
+  amountGroup: {
     flexDirection: 'row',
     alignItems: 'flex-end',
-    justifyContent: 'center',
-    marginTop: 24,
-    marginBottom: 8,
-  },
-  amountPrompt: {
-    flexDirection: 'column',
-    alignItems: 'center',
-    alignSelf: 'stretch',
-    gap: 6,
-    marginBottom: 20,
-  },
-  amountPromptText: {
-    fontSize: fontSizes.caption,
-    fontWeight: '600',
-    color: c.coral,
   },
   currencySymbol: {
-    fontSize: 32,
-    fontWeight: '700',
+    fontSize: 30,
+    fontWeight: '600',
     color: c.textPrimary,
-    marginBottom: 8,
-    marginRight: 2,
+    marginBottom: 9,
+    marginRight: 4,
   },
   amountInput: {
-    fontSize: 64,
+    fontSize: 60,
     fontWeight: '700',
     color: c.textPrimary,
-    minWidth: 24,
+    letterSpacing: -1,
+    minWidth: 40,
+    paddingVertical: 0,
     textAlign: 'left',
   },
   sectionLabel: {

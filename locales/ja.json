@@ -115,7 +115,7 @@
     "deleteTitle": "費用を削除",
     "deleteMsg": "この費用を完全に削除しますか？残高が再計算されます。",
     "currency": "通貨",
-    "tapToEnterAmount": "ここをタップして金額を入力"
+    "amount": "金額"
   },
   "memberExpenses": {
     "title": "内訳",
