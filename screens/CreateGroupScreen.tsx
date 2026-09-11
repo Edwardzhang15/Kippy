@@ -91,6 +91,13 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textPrimary,
     paddingVertical: 14,
   },
+  fieldHint: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    lineHeight: 17,
+    marginTop: -4,
+    marginBottom: 10,
+  },
   chipScroll: {
     flexGrow: 0,
   },
@@ -186,7 +193,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
   const styles                        = makeStyles(colors);
   const [groupName, setGroupName]     = useState('');
   const [destination, setDestination] = useState('');
-  const [currency, setCurrency]       = useState('CAD');
+  const [currency, setCurrency]       = useState('USD');
   const [members, setMembers]         = useState(['', '']);
   const [saving, setSaving]           = useState(false);
   const [destError, setDestError]     = useState(false);
@@ -321,6 +328,7 @@ export default function CreateGroupScreen({ navigation }: Props) {
           </Pressable>
 
           <SectionLabel title={t('createGroup.currency')} />
+          <Text style={styles.fieldHint}>{t('createGroup.currencyHint')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {SUPPORTED_CURRENCIES.map((cur) => (
               <Pressable

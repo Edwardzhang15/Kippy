@@ -17,13 +17,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
 import {
-  getGroup, updateGroup,
+  getGroup, updateGroup, getGroupHasLedger, changeGroupHomeCurrency,
   getMembers, updateMemberName, getMemberHasExpenses, deleteMember, addMember,
 } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 import { SUPPORTED_CURRENCIES } from '../utils';
+import ExchangeRateField, { useExchangeRate } from '../components/ExchangeRateField';
 
 const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
 
@@ -84,6 +85,13 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.coral,
     marginTop: 6,
     fontStyle: 'italic',
+  },
+  fieldHint: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    lineHeight: 17,
+    marginTop: -4,
+    marginBottom: 10,
   },
   chipScroll: { flexGrow: 0 },
   chip: {
@@ -253,7 +261,9 @@ export default function EditTripScreen() {
 
   const [tripName, setTripName]       = useState('');
   const [destination, setDestination] = useState('');
-  const [currency, setCurrency]       = useState('CAD');
+  const [currency, setCurrency]       = useState('USD');
+  const [originalCurrency, setOriginalCurrency] = useState('');
+  const [hasLedger, setHasLedger]     = useState(false);
   const [startDate, setStartDate]     = useState<Date | null>(null);
   const [endDate, setEndDate]         = useState<Date | null>(null);
   const [budget, setBudget]           = useState('');
@@ -266,12 +276,19 @@ export default function EditTripScreen() {
   const [originalDestination, setOriginalDestination] = useState('');
   const [originalPhotoUrl, setOriginalPhotoUrl]       = useState<string | null>(null);
 
+  // Switching the home currency on a trip that already has expenses or
+  // settlements re-expresses them at one rate the user confirms here.
+  const needsConversion = hasLedger && !!originalCurrency && currency !== originalCurrency;
+  const fx = useExchangeRate(originalCurrency, needsConversion ? currency : originalCurrency);
+
   useEffect(() => {
-    Promise.all([getGroup(groupId), getMembers(groupId)]).then(([group, memberList]) => {
+    Promise.all([getGroup(groupId), getMembers(groupId), getGroupHasLedger(groupId)]).then(([group, memberList, ledger]) => {
       if (!group) { navigation.goBack(); return; }
       setTripName(group.name);
       setDestination(group.destination ?? '');
       setCurrency(group.currency);
+      setOriginalCurrency(group.currency);
+      setHasLedger(ledger);
       setOriginalDestination(group.destination ?? '');
       setOriginalPhotoUrl(group.destination_photo_url ?? null);
       setIsPlan(group.is_planning === 1);
@@ -286,6 +303,7 @@ export default function EditTripScreen() {
   const canSave =
     tripName.trim().length > 0 &&
     members.some((m) => m.name.trim().length > 0) &&
+    (!needsConversion || fx.rate !== null) &&
     !saving;
 
   const handleRemoveMember = async (index: number) => {
@@ -349,6 +367,10 @@ export default function EditTripScreen() {
         }
       }
 
+      if (needsConversion) {
+        if (fx.rate === null) throw new Error('Missing conversion rate');
+        await changeGroupHomeCurrency(groupId, currency, fx.rate);
+      }
       await updateGroup(groupId, updates);
       navigation.goBack();
     } catch {
@@ -428,6 +450,7 @@ export default function EditTripScreen() {
           )}
 
           <SectionLabel title={t('editTrip.currency')} />
+          <Text style={styles.fieldHint}>{t('editTrip.currencyHint')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipScroll}>
             {SUPPORTED_CURRENCIES.map((cur) => (
               <Pressable
@@ -441,6 +464,13 @@ export default function EditTripScreen() {
               </Pressable>
             ))}
           </ScrollView>
+          {needsConversion && (
+            <ExchangeRateField
+              key={currency}
+              fx={fx}
+              footnote={t('editTrip.convertNote', { from: originalCurrency, to: currency })}
+            />
+          )}
 
           <SectionLabel title={t('editTrip.members')} />
           <View style={[styles.membersCard, cardShadow]}>

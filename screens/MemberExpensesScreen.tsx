@@ -15,7 +15,7 @@ import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTranslation } from 'react-i18next';
 import { HomeStackParamList } from '../navigation/types';
-import { getMemberExpenses, MemberExpenseRow, MemberExpensesData } from '../db';
+import { getMemberExpenses, homeAmount, MemberExpenseRow, MemberExpensesData } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, formatAmount } from '../utils';
@@ -184,6 +184,15 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontWeight: '600',
     color: c.textPrimary,
   },
+  expenseCurrencyCode: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  expenseConverted: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+  },
   shareAmount: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
@@ -276,11 +285,13 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
 
 function ExpenseItem({
   expense,
+  homeCurrency,
   showShare,
   isLast,
   onPress,
 }: {
   expense: MemberExpenseRow;
+  homeCurrency: string;
   showShare: boolean;
   isLast: boolean;
   onPress: () => void;
@@ -288,6 +299,7 @@ function ExpenseItem({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
+  const isForeign = expense.currency !== homeCurrency;
   const cat = expense.category;
   const catDef = CATEGORY_MAP[cat];
   const { icon: iconName, color: iconColor, bg: iconBg } = catDef ?? FALLBACK_CATEGORY;
@@ -317,7 +329,17 @@ function ExpenseItem({
         <View style={styles.expenseRight}>
           <Text style={styles.expenseAmount}>
             {getCurrencySymbol(expense.currency)}{formatAmount(expense.amount, expense.currency)}
+            {isForeign && <Text style={styles.expenseCurrencyCode}> {expense.currency}</Text>}
           </Text>
+          {isForeign && (
+            <Text style={styles.expenseConverted}>
+              {t('exchangeRate.converted', {
+                sym: getCurrencySymbol(homeCurrency),
+                amount: formatAmount(homeAmount(expense, homeCurrency), homeCurrency),
+                currency: homeCurrency,
+              })}
+            </Text>
+          )}
           {showShare && expense.share_amount != null && (
             <Text style={styles.shareAmount}>
               {t('memberExpenses.yourShare', {
@@ -467,6 +489,7 @@ export default function MemberExpensesScreen({ route }: Props) {
               <ExpenseItem
                 key={e.id}
                 expense={e}
+                homeCurrency={groupCurrency}
                 showShare
                 isLast={i === data.includedIn.length - 1}
                 onPress={() => navigation.navigate('AddExpense', { groupId, expenseId: e.id })}
@@ -487,6 +510,7 @@ export default function MemberExpensesScreen({ route }: Props) {
               <ExpenseItem
                 key={e.id}
                 expense={e}
+                homeCurrency={groupCurrency}
                 showShare={false}
                 isLast={i === data.paidFor.length - 1}
                 onPress={() => navigation.navigate('AddExpense', { groupId, expenseId: e.id })}

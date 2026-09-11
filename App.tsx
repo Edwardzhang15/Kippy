@@ -6,7 +6,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { initDatabase } from './db';
+import { initDatabase, backfillLegacyExpenseRates } from './db';
 import { initRates } from './currencyRates';
 import { applyPersistedLanguage } from './i18n';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
@@ -71,6 +71,8 @@ function AppCore() {
       initRates(),
       applyPersistedLanguage(),
     ])
+      // Non-fatal: rows it can't fill yet keep working off the rate cache.
+      .then(() => backfillLegacyExpenseRates().catch(() => {}))
       .then(() => setDbReady(true))
       .catch((e) => { if (__DEV__) console.error('Init failed:', e); });
 

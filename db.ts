@@ -1,5 +1,5 @@
 import * as SQLite from 'expo-sqlite';
-import { getCachedRates, convertAmount } from './currencyRates';
+import { getCachedRates, getCachedRate, convertAmount } from './currencyRates';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,6 +42,11 @@ export type Expense = {
   date: string;
   note: string | null;
   receipt_photo_uri: string | null;
+  // Frozen at entry time: units of the trip's home currency per 1 unit of
+  // `currency`, and `amount` converted with it. NULL only on legacy rows that
+  // predate stored rates and haven't been backfilled yet.
+  exchange_rate: number | null;
+  converted_amount: number | null;
 };
 
 export type GroupDetails = Group & {
@@ -513,6 +518,22 @@ export async function initDatabase(): Promise<void> {
     `);
   } catch { /* table already exists */ }
 
+  // Migration v28: per-expense exchange rate to the trip's home currency, stored
+  // at entry so balances never shift when live rates move.
+  try {
+    await db.execAsync('ALTER TABLE expenses ADD COLUMN exchange_rate REAL;');
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE expenses ADD COLUMN converted_amount REAL;');
+  } catch { /* column already exists */ }
+  // Legacy rows already in the home currency need no rate lookup. Cross-currency
+  // legacy rows are frozen by backfillLegacyExpenseRates() once rates load.
+  await db.runAsync(
+    `UPDATE expenses SET exchange_rate = 1, converted_amount = amount
+     WHERE exchange_rate IS NULL
+       AND currency = (SELECT g.currency FROM groups g WHERE g.id = expenses.group_id)`,
+  );
+
   await db.runAsync(
     'INSERT OR IGNORE INTO app_stats (key, value) VALUES (?, 0)',
     LIFETIME_GROUP_TRIPS_KEY,
@@ -523,6 +544,25 @@ export async function initDatabase(): Promise<void> {
   );
   await backfillLifetimeCounter(LIFETIME_GROUP_TRIPS_KEY, 'groups');
   await backfillLifetimeCounter(LIFETIME_PERSONAL_TRIPS_KEY, 'personal_trips');
+}
+
+// Freezes a rate onto cross-currency expenses saved before rates were stored,
+// using the cached rate table. Rows stay NULL (and keep using the live cache)
+// until rates are available, so this retries on every startup until done.
+export async function backfillLegacyExpenseRates(): Promise<void> {
+  const rows = await db.getAllAsync<{ id: number; amount: number; currency: string; home: string }>(
+    `SELECT e.id, e.amount, e.currency, g.currency AS home
+     FROM expenses e JOIN groups g ON e.group_id = g.id
+     WHERE e.exchange_rate IS NULL`,
+  );
+  for (const r of rows) {
+    const rate = getCachedRate(r.currency, r.home);
+    if (rate === null) continue;
+    await db.runAsync(
+      'UPDATE expenses SET exchange_rate = ?, converted_amount = ? WHERE id = ?',
+      rate, round2(r.amount * rate), r.id,
+    );
+  }
 }
 
 // ─── Writes ───────────────────────────────────────────────────────────────────
@@ -633,6 +673,54 @@ export async function updateGroup(groupId: number, updates: GroupUpdates): Promi
   if ('budget_per_person' in updates)     { fields.push('budget_per_person = ?');     values.push(updates.budget_per_person ?? null); }
   if (fields.length === 0) return;
   await db.runAsync(`UPDATE groups SET ${fields.join(', ')} WHERE id = ?`, ...values, groupId);
+}
+
+export async function getGroupHasLedger(groupId: number): Promise<boolean> {
+  const row = await db.getFirstAsync<{ cnt: number }>(
+    `SELECT (
+      (SELECT COUNT(*) FROM expenses WHERE group_id = ?) +
+      (SELECT COUNT(*) FROM settlements WHERE group_id = ?)
+    ) AS cnt`,
+    groupId, groupId,
+  );
+  return (row?.cnt ?? 0) > 0;
+}
+
+/**
+ * Switch a trip's home currency, re-expressing everything already recorded in
+ * it. `factor` is units of the new home currency per 1 unit of the old one,
+ * chosen once by the user, so stored per-expense rates are rebased rather than
+ * re-fetched. Expenses logged in the new home currency snap to a rate of 1.
+ */
+export async function changeGroupHomeCurrency(
+  groupId: number,
+  newCurrency: string,
+  factor: number,
+): Promise<void> {
+  const group = await getGroup(groupId);
+  if (!group || group.currency === newCurrency) return;
+  const oldCurrency = group.currency;
+  const rows = await db.getAllAsync<{ id: number; amount: number; currency: string; exchange_rate: number | null }>(
+    'SELECT id, amount, currency, exchange_rate FROM expenses WHERE group_id = ?',
+    groupId,
+  );
+  await db.withTransactionAsync(async () => {
+    for (const r of rows) {
+      const rate = r.currency === newCurrency
+        ? 1
+        : rateToHome(r.currency, r.exchange_rate, oldCurrency) * factor;
+      await db.runAsync(
+        'UPDATE expenses SET exchange_rate = ?, converted_amount = ? WHERE id = ?',
+        rate, round2(r.amount * rate), r.id,
+      );
+    }
+    // Settlements are stored as home-currency balance values.
+    await db.runAsync(
+      'UPDATE settlements SET amount = ROUND(amount * ?, 2) WHERE group_id = ?',
+      factor, groupId,
+    );
+    await db.runAsync('UPDATE groups SET currency = ? WHERE id = ?', newCurrency, groupId);
+  });
 }
 
 export async function getItineraryItems(groupId: number, dayNumber: number): Promise<ItineraryItem[]> {
@@ -802,11 +890,13 @@ export async function addExpense(
   note?: string,
   customCategory?: string,
   receiptPhotoUri?: string,
+  exchangeRate = 1,
 ): Promise<number> {
   const result = await db.runAsync(
-    `INSERT INTO expenses (group_id, amount, currency, category, paid_by, date, note, custom_category, receipt_photo_uri)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    `INSERT INTO expenses (group_id, amount, currency, category, paid_by, date, note, custom_category, receipt_photo_uri, exchange_rate, converted_amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     groupId, amount, currency, category, paidBy, date, note ?? null, customCategory ?? null, receiptPhotoUri ?? null,
+    exchangeRate, round2(amount * exchangeRate),
   );
   const expenseId = result.lastInsertRowId;
 
@@ -851,16 +941,19 @@ export async function updateExpense(
     splitMemberIds: number[];
     customCategory?: string;
     receiptPhotoUri: string | null;
+    exchangeRate: number;
   },
 ): Promise<void> {
   const currencyClause = updates.currency ? ', currency = ?' : '';
   const currencyArg    = updates.currency ? [updates.currency] : [];
   await db.runAsync(
     `UPDATE expenses
-     SET amount = ?, category = ?, paid_by = ?, date = ?, custom_category = ?, receipt_photo_uri = ?${currencyClause}
+     SET amount = ?, category = ?, paid_by = ?, date = ?, custom_category = ?, receipt_photo_uri = ?,
+         exchange_rate = ?, converted_amount = ?${currencyClause}
      WHERE id = ?`,
     updates.amount, updates.category, updates.paidBy, updates.date,
     updates.customCategory ?? null, updates.receiptPhotoUri,
+    updates.exchangeRate, round2(updates.amount * updates.exchangeRate),
     ...currencyArg,
     expenseId,
   );
@@ -988,13 +1081,11 @@ export async function getGroupSummaries(archived = false): Promise<GroupSummary[
         'SELECT id, name FROM members WHERE group_id = ? ORDER BY id ASC',
         group.id,
       );
-      const expRows = await db.getAllAsync<{ amount: number; currency: string }>(
-        'SELECT amount, currency FROM expenses WHERE group_id = ?',
+      const expRows = await db.getAllAsync<HomeAmountRow>(
+        'SELECT amount, currency, exchange_rate, converted_amount FROM expenses WHERE group_id = ?',
         group.id,
       );
-      const rates = getCachedRates();
-      const totalSpent = round2(expRows.reduce((sum, e) =>
-        sum + (rates ? convertAmount(e.amount, e.currency, group.currency, rates) : e.amount), 0));
+      const totalSpent = round2(expRows.reduce((sum, e) => sum + homeAmount(e, group.currency), 0));
       return { ...group, totalSpent, members };
     }),
   );
@@ -1010,13 +1101,11 @@ export async function getAllTripSummaries(): Promise<GroupSummary[]> {
         'SELECT id, name FROM members WHERE group_id = ? ORDER BY id ASC',
         group.id,
       );
-      const expRows = await db.getAllAsync<{ amount: number; currency: string }>(
-        'SELECT amount, currency FROM expenses WHERE group_id = ?',
+      const expRows = await db.getAllAsync<HomeAmountRow>(
+        'SELECT amount, currency, exchange_rate, converted_amount FROM expenses WHERE group_id = ?',
         group.id,
       );
-      const rates = getCachedRates();
-      const totalSpent = round2(expRows.reduce((sum, e) =>
-        sum + (rates ? convertAmount(e.amount, e.currency, group.currency, rates) : e.amount), 0));
+      const totalSpent = round2(expRows.reduce((sum, e) => sum + homeAmount(e, group.currency), 0));
       return { ...group, totalSpent, members };
     }),
   );
@@ -1033,10 +1122,14 @@ export type GroupExpenseInsightRow = {
   date: string;
 };
 
+// Amounts come back in the trip's home currency (via the rate stored on each
+// expense) so cross-trip insights agree with each trip's own totals.
 export async function getAllGroupExpensesForInsights(): Promise<GroupExpenseInsightRow[]> {
   return db.getAllAsync<GroupExpenseInsightRow>(
-    `SELECT e.group_id, g.name AS group_name, e.amount, e.currency, e.category,
-            e.custom_category, e.note, e.date
+    `SELECT e.group_id, g.name AS group_name,
+            COALESCE(e.converted_amount, e.amount) AS amount,
+            CASE WHEN e.converted_amount IS NULL THEN e.currency ELSE g.currency END AS currency,
+            e.category, e.custom_category, e.note, e.date
      FROM expenses e
      JOIN groups g ON e.group_id = g.id`,
   );
@@ -1180,26 +1273,25 @@ export async function getGroupDetails(groupId: number): Promise<GroupDetails | n
     groupId,
   );
 
-  const rates = getCachedRates();
-  const gc    = group.currency;
+  const gc = group.currency;
 
-  // paid map: total paid by each member, converted to group currency
+  // paid map: total paid by each member, in the home currency at each expense's stored rate
   const paidMap = new Map<number, number>();
   for (const e of expenses) {
-    const amt = rates ? convertAmount(e.amount, e.currency, gc, rates) : e.amount;
-    paidMap.set(e.paid_by, (paidMap.get(e.paid_by) ?? 0) + amt);
+    paidMap.set(e.paid_by, (paidMap.get(e.paid_by) ?? 0) + homeAmount(e, gc));
   }
 
-  // owed map: total owed by each member via expense splits, converted to group currency
-  type SplitRow = { member_id: number; share_amount: number; currency: string };
+  // owed map: total owed by each member via expense splits. Shares are stored in
+  // the expense's own currency, so they convert at that same expense's rate.
+  type SplitRow = { member_id: number; share_amount: number; currency: string; exchange_rate: number | null };
   const splitRows = await db.getAllAsync<SplitRow>(
-    `SELECT es.member_id, es.share_amount, e.currency
+    `SELECT es.member_id, es.share_amount, e.currency, e.exchange_rate
      FROM expense_splits es JOIN expenses e ON es.expense_id = e.id WHERE e.group_id = ?`,
     groupId,
   );
   const owedMap = new Map<number, number>();
   for (const s of splitRows) {
-    const amt = rates ? convertAmount(s.share_amount, s.currency, gc, rates) : s.share_amount;
+    const amt = s.share_amount * rateToHome(s.currency, s.exchange_rate, gc);
     owedMap.set(s.member_id, (owedMap.get(s.member_id) ?? 0) + amt);
   }
 
@@ -1219,8 +1311,7 @@ export async function getGroupDetails(groupId: number): Promise<GroupDetails | n
 
   return {
     ...group,
-    totalSpent: round2(expenses.reduce((sum, e) =>
-      sum + (rates ? convertAmount(e.amount, e.currency, gc, rates) : e.amount), 0)),
+    totalSpent: round2(expenses.reduce((sum, e) => sum + homeAmount(e, gc), 0)),
     members: members.map((m) => ({ ...m, balance: balanceMap[m.id] ?? 0 })),
     expenses,
   };
@@ -1283,6 +1374,8 @@ export type MemberExpenseRow = {
   date: string;
   note: string | null;
   receipt_photo_uri: string | null;
+  exchange_rate: number | null;
+  converted_amount: number | null;
   share_amount: number | null;
 };
 
@@ -1331,11 +1424,8 @@ export async function getMemberExpenses(
     groupId, memberId,
   );
 
-  const rates = getCachedRates();
-  const totalCharged = round2(includedIn.reduce((sum, e) => {
-    const share = e.share_amount ?? 0;
-    return sum + (rates ? convertAmount(share, e.currency, gc, rates) : share);
-  }, 0));
+  const totalCharged = round2(includedIn.reduce((sum, e) =>
+    sum + (e.share_amount ?? 0) * rateToHome(e.currency, e.exchange_rate, gc), 0));
 
   return { member, groupName, destinationPhotoUrl, includedIn, paidFor, totalCharged, groupCurrency: gc };
 }
@@ -1590,6 +1680,22 @@ export async function canCreatePersonalTrip(): Promise<boolean> {
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
+
+type HomeAmountRow = Pick<Expense, 'amount' | 'currency' | 'exchange_rate' | 'converted_amount'>;
+
+// Units of the home currency per 1 unit of an expense's currency. Uses the rate
+// stored with the expense; only legacy rows without one fall back to the cache.
+function rateToHome(currency: string, exchangeRate: number | null, homeCurrency: string): number {
+  if (exchangeRate != null && exchangeRate > 0) return exchangeRate;
+  if (currency === homeCurrency) return 1;
+  return getCachedRate(currency, homeCurrency) ?? 1;
+}
+
+/** An expense's amount in its trip's home currency, at the rate stored when it was entered. */
+export function homeAmount(e: HomeAmountRow, homeCurrency: string): number {
+  if (e.converted_amount != null && e.exchange_rate != null) return e.converted_amount;
+  return round2(e.amount * rateToHome(e.currency, e.exchange_rate, homeCurrency));
+}
 
 function round2(n: number): number {
   return Math.round(n * 100) / 100;

@@ -18,6 +18,7 @@ import { useTheme } from '../context/ThemeContext';
 import {
   getAllTripSummaries,
   getGroupDetails,
+  homeAmount,
   deleteGroup,
   getAllGroupExpensesForInsights,
   getAllPersonalTripSummaries,
@@ -1078,15 +1079,17 @@ export default function InsightsScreen() {
   const memberCount   = tripDetails?.members.length ?? 0;
   const costPerPerson = memberCount > 0 ? tripTotal / memberCount : null;
 
-  const tripDetailsNorm: GroupDetails | null = tripDetails && rates ? {
+  // Each expense converts at the rate stored with it, so this matches the trip's balances.
+  const tripDetailsNorm: GroupDetails | null = tripDetails ? {
     ...tripDetails,
     expenses: tripDetails.expenses.map((e) => ({
       ...e,
-      amount: convertAmount(e.amount, e.currency, tripDetails.currency, rates),
+      amount: homeAmount(e, tripDetails.currency),
     })),
-  } : tripDetails;
+  } : null;
+  // Only legacy expenses without a stored rate depend on the live rate cache.
   const hasMixedExpCurrencies = tripDetails
-    ? tripDetails.expenses.some((e) => e.currency !== tripDetails.currency)
+    ? tripDetails.expenses.some((e) => e.exchange_rate == null && e.currency !== tripDetails.currency)
     : false;
 
   const personalSpent = personalDetail

@@ -60,7 +60,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
   const styles                            = makeStyles(colors);
   const [tripName, setTripName]           = useState('');
   const [destination, setDestination]     = useState('');
-  const [currency, setCurrency]           = useState('CAD');
+  const [currency, setCurrency]           = useState('USD');
   const [startDate, setStartDate]         = useState<Date | null>(null);
   const [endDate, setEndDate]             = useState<Date | null>(null);
   const [budget, setBudget]               = useState('');

@@ -31,6 +31,59 @@ export function convertAmount(
   return amount * (to / from);
 }
 
+/**
+ * Units of `to` per 1 unit of `from`, from the 24h rates cache. Only an estimate
+ * for when the network is down; never stored as though it were a fetched rate.
+ */
+export function getCachedRate(from: string, to: string): number | null {
+  if (from === to) return 1;
+  if (!_rates?.[from] || !_rates[to]) return null;
+  return _rates[to] / _rates[from];
+}
+
+async function fetchJson(url: string): Promise<any> {
+  const controller = new AbortController();
+  const tid = setTimeout(() => controller.abort(), TIMEOUT_MS);
+  try {
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(tid);
+  }
+}
+
+// Cross rate from a table quoted against a common base currency.
+function crossRate(table: Record<string, unknown> | undefined, from: string, to: string): number | null {
+  const f = table?.[from];
+  const t = table?.[to];
+  if (typeof f !== 'number' || typeof t !== 'number' || f <= 0 || t <= 0) return null;
+  return t / f;
+}
+
+/**
+ * Fetch the current rate as units of `to` per 1 unit of `from`. Tries
+ * Frankfurter (ECB reference rates) first, then open.er-api.com. Neither needs
+ * an API key. Throws when both fail, so the caller can ask for a manual rate.
+ * Callers store the result on the expense; it is never re-fetched afterwards.
+ *
+ * Both providers round quotes to a few decimals, which leaves a weak-currency
+ * quote like KRW->USD (0.00074) with two significant digits. Crossing through
+ * each provider's own base keeps full precision in either direction.
+ */
+export async function fetchExchangeRate(from: string, to: string): Promise<number> {
+  if (from === to) return 1;
+  try {
+    const data = await fetchJson(`https://api.frankfurter.dev/v1/latest?base=EUR&symbols=${from},${to}`);
+    const rate = crossRate({ ...data?.rates, EUR: 1 }, from, to);
+    if (rate !== null) return rate;
+  } catch { /* fall through to the backup provider */ }
+  const data = await fetchJson('https://open.er-api.com/v6/latest/USD');
+  const rate = data?.result === 'success' ? crossRate(data.rates, from, to) : null;
+  if (rate !== null) return rate;
+  throw new Error(`No rate for ${from}->${to}`);
+}
+
 async function fetchFresh(): Promise<void> {
   const controller = new AbortController();
   const tid = setTimeout(() => controller.abort(), TIMEOUT_MS);

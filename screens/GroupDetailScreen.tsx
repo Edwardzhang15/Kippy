@@ -27,6 +27,7 @@ import {
   archiveGroup,
   deleteSubgroup,
   simplifyDebts,
+  homeAmount,
   getTripStops,
   GroupDetails,
   MemberWithBalance,
@@ -48,6 +49,13 @@ import BalanceBreakdownShareCard from '../components/BalanceBreakdownShareCard';
 type Props = NativeStackScreenProps<HomeStackParamList, 'GroupDetail'>;
 type NavProp = NativeStackNavigationProp<HomeStackParamList, 'GroupDetail'>;
 
+// Balance cards keep one width however many members there are; the row scrolls
+// (and snaps card by card) instead of squeezing them.
+const MEMBER_CARD_WIDTH = 96;
+const MEMBER_CARD_GAP   = 10;
+const SCREEN_H_PAD      = 20;
+// Room inside the clipping scroll view for the card shadow.
+const MEMBER_SHADOW_PAD = 8;
 
 function MemberBalanceCard({
   member,
@@ -84,7 +92,7 @@ function MemberBalanceCard({
   }, []);
 
   return (
-    <Animated.View style={[{ flex: 1 }, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
+    <Animated.View style={[{ width: MEMBER_CARD_WIDTH }, { opacity: fadeAnim, transform: [{ translateY: translateAnim }] }]}>
       <Pressable
         style={({ pressed }) => [styles.memberCard, cardShadow, pressed && { opacity: 0.7 }]}
         onPress={onPress}
@@ -116,6 +124,7 @@ function MemberBalanceCard({
 
 function ExpenseRow({
   expense,
+  homeCurrency,
   index,
   memberCount,
   isLast,
@@ -124,6 +133,7 @@ function ExpenseRow({
   splitNames,
 }: {
   expense: Expense;
+  homeCurrency: string;
   index: number;
   memberCount: number;
   isLast: boolean;
@@ -141,6 +151,7 @@ function ExpenseRow({
     cat === 'other' && expense.custom_category?.trim()
       ? expense.custom_category.trim()
       : expense.note?.trim() || t(`categories.${cat}`, catDef?.label ?? cat);
+  const isForeign = expense.currency !== homeCurrency;
   const delay   = memberCount * 60 + 80 + index * 60;
   const fadeAnim      = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(12)).current;
@@ -186,7 +197,19 @@ function ExpenseRow({
           )}
         </View>
         <View style={styles.expenseRight}>
-          <Text style={styles.expenseAmount}>{getCurrencySymbol(expense.currency)}{formatAmount(expense.amount, expense.currency)}</Text>
+          <Text style={styles.expenseAmount}>
+            {getCurrencySymbol(expense.currency)}{formatAmount(expense.amount, expense.currency)}
+            {isForeign && <Text style={styles.expenseCurrencyCode}> {expense.currency}</Text>}
+          </Text>
+          {isForeign && (
+            <Text style={styles.expenseConverted}>
+              {t('exchangeRate.converted', {
+                sym: getCurrencySymbol(homeCurrency),
+                amount: formatAmount(homeAmount(expense, homeCurrency), homeCurrency),
+                currency: homeCurrency,
+              })}
+            </Text>
+          )}
           {expense.receipt_photo_uri ? (
             <Pressable
               onPress={onReceiptPress}
@@ -432,7 +455,7 @@ export default function GroupDetailScreen({ route }: Props) {
             currency: group.currency,
           })}
         </Text>
-        {getCachedRates() === null && group.expenses.some(e => e.currency !== group.currency) && (
+        {getCachedRates() === null && group.expenses.some(e => e.exchange_rate == null && e.currency !== group.currency) && (
           <View style={styles.ratesBanner}>
             <Ionicons name="warning-outline" size={13} color={colors.coral} />
             <Text style={styles.ratesBannerText}>{t('common.ratesUnavailable')}</Text>
@@ -589,7 +612,15 @@ export default function GroupDetailScreen({ route }: Props) {
         )}
 
         <Text style={styles.sectionTitle}>{t('groupDetail.balances')}</Text>
-        <View style={styles.memberRow}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.memberScroll}
+          contentContainerStyle={styles.memberRow}
+          snapToInterval={MEMBER_CARD_WIDTH + MEMBER_CARD_GAP}
+          snapToAlignment="start"
+          decelerationRate="fast"
+        >
           {group.members.map((m, i) => (
             <MemberBalanceCard
               key={m.id}
@@ -608,7 +639,7 @@ export default function GroupDetailScreen({ route }: Props) {
               }
             />
           ))}
-        </View>
+        </ScrollView>
 
         <View style={styles.subgroupsHeader}>
           <Text style={styles.sectionTitle}>{t('groupDetail.subgroups')}</Text>
@@ -711,6 +742,7 @@ export default function GroupDetailScreen({ route }: Props) {
               <ExpenseRow
                 key={expense.id}
                 expense={expense}
+                homeCurrency={group.currency}
                 index={i}
                 memberCount={group.members.length}
                 isLast={i === group.expenses.length - 1}
@@ -855,7 +887,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     backgroundColor: c.background,
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: SCREEN_H_PAD,
     paddingBottom: 100,
   },
 
@@ -972,11 +1004,18 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     color: c.textPrimary,
     marginBottom: 12,
   },
+  // Bleeds to the screen edges so cards scroll off-screen rather than being
+  // clipped at the content padding; the padding moves inside the scroll view.
+  memberScroll: {
+    flexGrow: 0,
+    marginHorizontal: -SCREEN_H_PAD,
+    marginTop: -MEMBER_SHADOW_PAD,
+    marginBottom: 28 - MEMBER_SHADOW_PAD,
+  },
   memberRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 10,
-    marginBottom: 28,
+    gap: MEMBER_CARD_GAP,
+    paddingHorizontal: SCREEN_H_PAD,
+    paddingVertical: MEMBER_SHADOW_PAD,
   },
   memberCard: {
     backgroundColor: c.card,
@@ -1081,6 +1120,15 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.body,
     fontWeight: '700',
     color: c.textPrimary,
+  },
+  expenseCurrencyCode: {
+    fontSize: fontSizes.caption,
+    fontWeight: '600',
+    color: c.textSecondary,
+  },
+  expenseConverted: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
   },
   receiptBadge: {
     backgroundColor: '#FFF0EE',

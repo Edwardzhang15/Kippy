@@ -32,6 +32,7 @@ import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, getCurrencySymbol, SUPPORTED_CURRENCIES } from '../utils';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
+import ExchangeRateField, { useExchangeRate } from '../components/ExchangeRateField';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'AddExpense'>;
 
@@ -146,6 +147,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const [date, setDate]                                 = useState(new Date());
   const [showPicker, setShowPicker]                     = useState(false);
   const [expenseCurrency, setExpenseCurrency]           = useState('');
+  const [savedRate, setSavedRate]                       = useState<{ currency: string; rate: number } | null>(null);
   const [saving, setSaving]                             = useState(false);
   const [deleting, setDeleting]                         = useState(false);
   const [receiptUri, setReceiptUri]                     = useState<string | null>(null);
@@ -169,6 +171,12 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
     outputRange: [0.35, 1],
   });
 
+  // Balances settle in the trip's home currency; a foreign-currency expense
+  // carries its own rate, fetched once here and stored with it.
+  const homeCurrency = group?.currency ?? '';
+  const isForeign    = !!expenseCurrency && !!homeCurrency && expenseCurrency !== homeCurrency;
+  const fx           = useExchangeRate(expenseCurrency, homeCurrency, savedRate?.currency, savedRate?.rate);
+
   useEffect(() => {
     Promise.all([
       getGroupDetails(route.params.groupId),
@@ -187,6 +195,9 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           setDate(new Date(y, m - 1, d));
           setReceiptUri(expenseData.receipt_photo_uri);
           setExpenseCurrency(expenseData.currency);
+          if (expenseData.exchange_rate != null) {
+            setSavedRate({ currency: expenseData.currency, rate: expenseData.exchange_rate });
+          }
         } else {
           setPaidBy(data.members[0]?.id ?? null);
           setSplitAmong(data.members.map((m) => m.id));
@@ -264,6 +275,8 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
     if (!group || !paidBy || saving || deleting) return;
     const parsed = parseFloat(amount);
     if (isNaN(parsed) || parsed <= 0 || splitAmong.length === 0) return;
+    const exchangeRate = isForeign ? fx.rate : 1;
+    if (exchangeRate === null) return;
     setSaving(true);
     try {
       if (isEditMode && route.params.expenseId) {
@@ -276,6 +289,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           splitMemberIds: splitAmong,
           customCategory: category === 'other' ? customCategoryText.trim() : undefined,
           receiptPhotoUri: receiptUri,
+          exchangeRate,
         });
       } else {
         await addExpense(
@@ -284,6 +298,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           undefined,
           category === 'other' ? customCategoryText.trim() : undefined,
           receiptUri ?? undefined,
+          exchangeRate,
         );
       }
       navigation.goBack();
@@ -328,6 +343,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
     parseFloat(amount) > 0 &&
     paidBy !== null &&
     splitAmong.length > 0 &&
+    (!isForeign || fx.rate !== null) &&
     (category !== 'other' || customCategoryText.trim().length > 0);
 
   if (loading) {
@@ -406,18 +422,29 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
             style={styles.currencyScroll}
             contentContainerStyle={styles.currencyScrollContent}
           >
-            {SUPPORTED_CURRENCIES.map((c) => (
+            {[group.currency, ...SUPPORTED_CURRENCIES.filter((c) => c !== group.currency)].map((c) => (
               <Pressable
                 key={c}
                 style={[styles.currencyChip, expenseCurrency === c && styles.currencyChipSelected]}
                 onPress={() => setExpenseCurrency(c)}
+                accessibilityLabel={c === group.currency ? `${c}, ${t('exchangeRate.home')}` : c}
               >
+                {c === group.currency && (
+                  <Ionicons
+                    name="home-outline"
+                    size={13}
+                    color={expenseCurrency === c ? colors.coral : colors.textSecondary}
+                  />
+                )}
                 <Text style={[styles.currencyChipText, expenseCurrency === c && styles.currencyChipTextSelected]}>
                   {c}
                 </Text>
               </Pressable>
             ))}
           </ScrollView>
+          {isForeign && (
+            <ExchangeRateField fx={fx} amount={parseFloat(amount) || null} />
+          )}
 
           <SectionLabel title={t('addExpense.category')} />
           <View style={styles.categoryGrid}>
@@ -915,6 +942,9 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     gap: 8,
   },
   currencyChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
     paddingHorizontal: 18,
     paddingVertical: 10,
     borderRadius: 20,
