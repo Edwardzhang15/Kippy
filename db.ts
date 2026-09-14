@@ -1,5 +1,6 @@
 import * as SQLite from 'expo-sqlite';
 import { getCachedRates, getCachedRate, convertAmount } from './currencyRates';
+import type { SplitMethod, SplitShare } from './splits';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -47,6 +48,7 @@ export type Expense = {
   // predate stored rates and haven't been backfilled yet.
   exchange_rate: number | null;
   converted_amount: number | null;
+  split_method: SplitMethod;
 };
 
 export type GroupDetails = Group & {
@@ -518,6 +520,15 @@ export async function initDatabase(): Promise<void> {
     `);
   } catch { /* table already exists */ }
 
+  // Migration v29: how an expense is split, plus the raw per-member input
+  // (amount, percentage or share count) behind each stored share.
+  try {
+    await db.execAsync("ALTER TABLE expenses ADD COLUMN split_method TEXT NOT NULL DEFAULT 'even';");
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE expense_splits ADD COLUMN split_value REAL;');
+  } catch { /* column already exists */ }
+
   // Migration v28: per-expense exchange rate to the trip's home currency, stored
   // at entry so balances never shift when live rates move.
   try {
@@ -879,40 +890,56 @@ export async function deleteMember(memberId: number): Promise<void> {
   await db.runAsync('DELETE FROM members WHERE id = ?', memberId);
 }
 
-export async function addExpense(
-  groupId: number,
-  amount: number,
-  currency: string,
-  category: string,
-  paidBy: number,
-  date: string,
-  splitMemberIds: number[],
-  note?: string,
-  customCategory?: string,
-  receiptPhotoUri?: string,
-  exchangeRate = 1,
-): Promise<number> {
-  const result = await db.runAsync(
-    `INSERT INTO expenses (group_id, amount, currency, category, paid_by, date, note, custom_category, receipt_photo_uri, exchange_rate, converted_amount)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-    groupId, amount, currency, category, paidBy, date, note ?? null, customCategory ?? null, receiptPhotoUri ?? null,
-    exchangeRate, round2(amount * exchangeRate),
-  );
-  const expenseId = result.lastInsertRowId;
-
-  const shareAmount = round2(amount / splitMemberIds.length);
-
-  for (const memberId of splitMemberIds) {
+// Per-member shares come from computeSplits() so the stored amounts always add
+// up to the expense total, whichever split method produced them.
+async function writeSplits(expenseId: number, splits: SplitShare[]): Promise<void> {
+  for (const s of splits) {
     await db.runAsync(
-      'INSERT INTO expense_splits (expense_id, member_id, share_amount) VALUES (?, ?, ?)',
-      expenseId, memberId, shareAmount,
+      'INSERT INTO expense_splits (expense_id, member_id, share_amount, split_value) VALUES (?, ?, ?, ?)',
+      expenseId, s.memberId, s.amount, s.value,
     );
   }
+}
 
+export type NewExpense = {
+  groupId: number;
+  amount: number;
+  currency: string;
+  category: string;
+  paidBy: number;
+  date: string;
+  splits: SplitShare[];
+  splitMethod: SplitMethod;
+  note?: string;
+  customCategory?: string;
+  receiptPhotoUri?: string;
+  exchangeRate?: number;
+};
+
+export async function addExpense(expense: NewExpense): Promise<number> {
+  const exchangeRate = expense.exchangeRate ?? 1;
+  const result = await db.runAsync(
+    `INSERT INTO expenses (group_id, amount, currency, category, paid_by, date, note, custom_category, receipt_photo_uri, exchange_rate, converted_amount, split_method)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    expense.groupId, expense.amount, expense.currency, expense.category, expense.paidBy, expense.date,
+    expense.note ?? null, expense.customCategory ?? null, expense.receiptPhotoUri ?? null,
+    exchangeRate, round2(expense.amount * exchangeRate), expense.splitMethod,
+  );
+  const expenseId = result.lastInsertRowId;
+  await writeSplits(expenseId, expense.splits);
   return expenseId;
 }
 
-export type ExpenseDetail = Expense & { splitMemberIds: number[] };
+export type ExpenseSplitRow = {
+  member_id: number;
+  share_amount: number;
+  split_value: number | null;
+};
+
+export type ExpenseDetail = Expense & {
+  splitMemberIds: number[];
+  splits: ExpenseSplitRow[];
+};
 
 export async function getExpense(expenseId: number): Promise<ExpenseDetail | null> {
   const expense = await db.getFirstAsync<Expense>(
@@ -923,11 +950,11 @@ export async function getExpense(expenseId: number): Promise<ExpenseDetail | nul
     expenseId,
   );
   if (!expense) return null;
-  const splitRows = await db.getAllAsync<{ member_id: number }>(
-    'SELECT member_id FROM expense_splits WHERE expense_id = ?',
+  const splitRows = await db.getAllAsync<ExpenseSplitRow>(
+    'SELECT member_id, share_amount, split_value FROM expense_splits WHERE expense_id = ?',
     expenseId,
   );
-  return { ...expense, splitMemberIds: splitRows.map((r) => r.member_id) };
+  return { ...expense, splits: splitRows, splitMemberIds: splitRows.map((r) => r.member_id) };
 }
 
 export async function updateExpense(
@@ -938,7 +965,8 @@ export async function updateExpense(
     category: string;
     paidBy: number;
     date: string;
-    splitMemberIds: number[];
+    splits: SplitShare[];
+    splitMethod: SplitMethod;
     customCategory?: string;
     receiptPhotoUri: string | null;
     exchangeRate: number;
@@ -949,22 +977,16 @@ export async function updateExpense(
   await db.runAsync(
     `UPDATE expenses
      SET amount = ?, category = ?, paid_by = ?, date = ?, custom_category = ?, receipt_photo_uri = ?,
-         exchange_rate = ?, converted_amount = ?${currencyClause}
+         exchange_rate = ?, converted_amount = ?, split_method = ?${currencyClause}
      WHERE id = ?`,
     updates.amount, updates.category, updates.paidBy, updates.date,
     updates.customCategory ?? null, updates.receiptPhotoUri,
-    updates.exchangeRate, round2(updates.amount * updates.exchangeRate),
+    updates.exchangeRate, round2(updates.amount * updates.exchangeRate), updates.splitMethod,
     ...currencyArg,
     expenseId,
   );
   await db.runAsync('DELETE FROM expense_splits WHERE expense_id = ?', expenseId);
-  const shareAmount = round2(updates.amount / updates.splitMemberIds.length);
-  for (const memberId of updates.splitMemberIds) {
-    await db.runAsync(
-      'INSERT INTO expense_splits (expense_id, member_id, share_amount) VALUES (?, ?, ?)',
-      expenseId, memberId, shareAmount,
-    );
-  }
+  await writeSplits(expenseId, updates.splits);
 }
 
 export async function deleteExpense(expenseId: number): Promise<void> {

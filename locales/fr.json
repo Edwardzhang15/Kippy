@@ -118,6 +118,22 @@
     "currency": "Devise",
     "amount": "Montant"
   },
+  "split": {
+    "method": {
+      "even": "Égal",
+      "amount": "Par montant",
+      "percent": "Par %",
+      "shares": "Par parts"
+    },
+    "allocated": "Réparti : {{allocated}} / {{total}}",
+    "left": "{{amount}} restants",
+    "over": "{{amount}} en trop",
+    "needShares": "Attribuez au moins une part à quelqu'un.",
+    "notBalanced": "Cette répartition ne tombe pas juste.",
+    "sharesTotal_one": "{{count}} part au total",
+    "sharesTotal_other": "{{count}} parts au total",
+    "splitEvenly": "Répartir également"
+  },
   "memberExpenses": {
     "title": "Détail",
     "totalCharged": "Total facturé à {{name}}",

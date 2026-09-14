@@ -118,6 +118,22 @@
     "currency": "货币",
     "amount": "金额"
   },
+  "split": {
+    "method": {
+      "even": "均分",
+      "amount": "按金额",
+      "percent": "按百分比",
+      "shares": "按份额"
+    },
+    "allocated": "已分配：{{allocated}} / {{total}}",
+    "left": "还差 {{amount}}",
+    "over": "超出 {{amount}}",
+    "needShares": "至少给一个人分配份额。",
+    "notBalanced": "这个分法还对不上总额。",
+    "sharesTotal_one": "共 {{count}} 份",
+    "sharesTotal_other": "共 {{count}} 份",
+    "splitEvenly": "平均分配"
+  },
   "memberExpenses": {
     "title": "明细",
     "totalCharged": "{{name}} 应分摊合计",

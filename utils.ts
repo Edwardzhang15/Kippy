@@ -40,6 +40,11 @@ export function getCurrencySymbol(currency: string): string {
   return CURRENCY_SYMBOLS[currency] ?? currency;
 }
 
+/** Decimal places a currency is written and split in: yen has no cents. */
+export function currencyDecimals(currency: string): number {
+  return ZERO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2;
+}
+
 export function formatAmount(amount: number, currency: string): string {
-  return amount.toFixed(ZERO_DECIMAL_CURRENCIES.has(currency) ? 0 : 2);
+  return amount.toFixed(currencyDecimals(currency));
 }

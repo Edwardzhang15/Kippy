@@ -118,6 +118,22 @@
     "currency": "Moneda",
     "amount": "Monto"
   },
+  "split": {
+    "method": {
+      "even": "Igual",
+      "amount": "Por importe",
+      "percent": "Por %",
+      "shares": "Por partes"
+    },
+    "allocated": "Asignado: {{allocated}} / {{total}}",
+    "left": "Faltan {{amount}}",
+    "over": "{{amount}} de más",
+    "needShares": "Dale al menos una parte a alguien.",
+    "notBalanced": "Este reparto todavía no cuadra.",
+    "sharesTotal_one": "{{count}} parte en total",
+    "sharesTotal_other": "{{count}} partes en total",
+    "splitEvenly": "Dividir por igual"
+  },
   "memberExpenses": {
     "title": "Desglose",
     "totalCharged": "Total cargado a {{name}}",

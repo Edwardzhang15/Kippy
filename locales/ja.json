@@ -118,6 +118,22 @@
     "currency": "通貨",
     "amount": "金額"
   },
+  "split": {
+    "method": {
+      "even": "均等",
+      "amount": "金額で",
+      "percent": "％で",
+      "shares": "口数で"
+    },
+    "allocated": "割当: {{allocated}} / {{total}}",
+    "left": "残り {{amount}}",
+    "over": "{{amount}} 超過",
+    "needShares": "少なくとも1人に口数を割り当ててください。",
+    "notBalanced": "この分け方はまだ合計と合いません。",
+    "sharesTotal_one": "合計 {{count}} 口",
+    "sharesTotal_other": "合計 {{count}} 口",
+    "splitEvenly": "均等に分ける"
+  },
   "memberExpenses": {
     "title": "内訳",
     "totalCharged": "{{name}} の負担合計",

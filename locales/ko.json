@@ -118,6 +118,22 @@
     "currency": "통화",
     "amount": "금액"
   },
+  "split": {
+    "method": {
+      "even": "균등",
+      "amount": "금액으로",
+      "percent": "퍼센트로",
+      "shares": "지분으로"
+    },
+    "allocated": "배분: {{allocated}} / {{total}}",
+    "left": "{{amount}} 남음",
+    "over": "{{amount}} 초과",
+    "needShares": "최소 한 명에게 지분을 지정해 주세요.",
+    "notBalanced": "이 분배는 아직 합계와 맞지 않아요.",
+    "sharesTotal_one": "총 {{count}}지분",
+    "sharesTotal_other": "총 {{count}}지분",
+    "splitEvenly": "균등하게 나누기"
+  },
   "memberExpenses": {
     "title": "내역",
     "totalCharged": "{{name}}에게 청구된 총액",

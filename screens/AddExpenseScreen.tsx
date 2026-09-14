@@ -7,6 +7,7 @@ import {
   Dimensions,
   Image,
   KeyboardAvoidingView,
+  LayoutAnimation,
   Modal,
   Platform,
   Pressable,
@@ -30,9 +31,11 @@ import {
 import { CATEGORIES, Category } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getAvatarColor, getInitials, getCurrencySymbol, SUPPORTED_CURRENCIES } from '../utils';
+import { getAvatarColor, getInitials, getCurrencySymbol, formatAmount, SUPPORTED_CURRENCIES } from '../utils';
+import { computeSplits, evenValues, type SplitMethod } from '../splits';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 import ExchangeRateField, { useExchangeRate } from '../components/ExchangeRateField';
+import SplitEditor from '../components/SplitEditor';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'AddExpense'>;
 
@@ -143,6 +146,12 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const [customCategoryText, setCustomCategoryText]     = useState('');
   const [paidBy, setPaidBy]                             = useState<number | null>(null);
   const [splitAmong, setSplitAmong]                     = useState<number[]>([]);
+  const [splitMethod, setSplitMethod]                   = useState<SplitMethod>('even');
+  // Typed values per method, so switching methods to compare them doesn't throw
+  // away what was already entered for the other one.
+  const [splitValues, setSplitValues]                   = useState<Record<SplitMethod, Record<number, string>>>(
+    { even: {}, amount: {}, percent: {}, shares: {} },
+  );
   const [activeSgId, setActiveSgId]                     = useState<number | null>(null);
   const [date, setDate]                                 = useState(new Date());
   const [showPicker, setShowPicker]                     = useState(false);
@@ -177,6 +186,54 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const isForeign    = !!expenseCurrency && !!homeCurrency && expenseCurrency !== homeCurrency;
   const fx           = useExchangeRate(expenseCurrency, homeCurrency, savedRate?.currency, savedRate?.rate);
 
+  // Members are listed in group order, so the odd cent of an uneven division
+  // always lands on the same person instead of moving around between saves.
+  const splitMembers    = (group?.members ?? [])
+    .map((m, i) => ({ id: m.id, name: m.name, avatarIndex: i }))
+    .filter((m) => splitAmong.includes(m.id));
+  const includedIds     = splitMembers.map((m) => m.id);
+  const parsedAmount    = parseFloat(amount) || 0;
+  const splitCurrency   = expenseCurrency || homeCurrency || 'USD';
+  const methodValues    = splitValues[splitMethod];
+  const splitResult     = computeSplits(
+    parsedAmount,
+    splitMethod,
+    includedIds.map((id) => ({ memberId: id, value: parseFloat((methodValues[id] ?? '').replace(',', '.')) || 0 })),
+    splitCurrency,
+  );
+
+  const seedEvenly = (method: SplitMethod) => {
+    if (method === 'even') return;
+    setSplitValues((prev) => ({ ...prev, [method]: evenValues(parsedAmount, method, includedIds, splitCurrency) }));
+  };
+
+  const changeMethod = (method: SplitMethod) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setSplitMethod(method);
+  };
+
+  // Start each uneven method from an even split the user can adjust. Only seeds
+  // when nothing has been entered for that method yet, so edits survive a change
+  // of total or a trip to another method; members added later start blank.
+  useEffect(() => {
+    if (loading || splitMethod === 'even' || includedIds.length === 0) return;
+    const current = splitValues[splitMethod];
+    const missing = includedIds.filter((id) => current[id] === undefined);
+    if (missing.length === 0) return;
+    if (missing.length === includedIds.length) {
+      if (parsedAmount <= 0 && splitMethod !== 'shares') return;
+      seedEvenly(splitMethod);
+      return;
+    }
+    setSplitValues((prev) => ({
+      ...prev,
+      [splitMethod]: {
+        ...prev[splitMethod],
+        ...Object.fromEntries(missing.map((id) => [id, splitMethod === 'shares' ? '1' : ''])),
+      },
+    }));
+  }, [loading, splitMethod, includedIds.join(','), parsedAmount]);
+
   useEffect(() => {
     Promise.all([
       getGroupDetails(route.params.groupId),
@@ -197,6 +254,17 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           setExpenseCurrency(expenseData.currency);
           if (expenseData.exchange_rate != null) {
             setSavedRate({ currency: expenseData.currency, rate: expenseData.exchange_rate });
+          }
+          const method = expenseData.split_method ?? 'even';
+          setSplitMethod(method);
+          if (method !== 'even') {
+            const restored: Record<number, string> = {};
+            for (const split of expenseData.splits) {
+              restored[split.member_id] = method === 'amount'
+                ? formatAmount(split.share_amount, expenseData.currency)
+                : String(split.split_value ?? '');
+            }
+            setSplitValues((prev) => ({ ...prev, [method]: restored }));
           }
         } else {
           setPaidBy(data.members[0]?.id ?? null);
@@ -274,7 +342,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const handleSave = async () => {
     if (!group || !paidBy || saving || deleting) return;
     const parsed = parseFloat(amount);
-    if (isNaN(parsed) || parsed <= 0 || splitAmong.length === 0) return;
+    if (isNaN(parsed) || parsed <= 0 || !splitResult.valid) return;
     const exchangeRate = isForeign ? fx.rate : 1;
     if (exchangeRate === null) return;
     setSaving(true);
@@ -286,20 +354,26 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
           category,
           paidBy,
           date: date.toISOString().split('T')[0],
-          splitMemberIds: splitAmong,
+          splits: splitResult.shares,
+          splitMethod,
           customCategory: category === 'other' ? customCategoryText.trim() : undefined,
           receiptPhotoUri: receiptUri,
           exchangeRate,
         });
       } else {
-        await addExpense(
-          group.id, parsed, expenseCurrency, category, paidBy,
-          date.toISOString().split('T')[0], splitAmong,
-          undefined,
-          category === 'other' ? customCategoryText.trim() : undefined,
-          receiptUri ?? undefined,
+        await addExpense({
+          groupId: group.id,
+          amount: parsed,
+          currency: expenseCurrency,
+          category,
+          paidBy,
+          date: date.toISOString().split('T')[0],
+          splits: splitResult.shares,
+          splitMethod,
+          customCategory: category === 'other' ? customCategoryText.trim() : undefined,
+          receiptPhotoUri: receiptUri ?? undefined,
           exchangeRate,
-        );
+        });
       }
       navigation.goBack();
     } finally {
@@ -342,7 +416,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
     !deleting &&
     parseFloat(amount) > 0 &&
     paidBy !== null &&
-    splitAmong.length > 0 &&
+    splitResult.valid &&
     (!isForeign || fx.rate !== null) &&
     (category !== 'other' || customCategoryText.trim().length > 0);
 
@@ -529,6 +603,22 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
               />
             ))}
           </ScrollView>
+
+          <SplitEditor
+            method={splitMethod}
+            onMethodChange={changeMethod}
+            members={splitMembers}
+            values={methodValues}
+            onValueChange={(memberId, text) =>
+              setSplitValues((prev) => ({
+                ...prev,
+                [splitMethod]: { ...prev[splitMethod], [memberId]: text },
+              }))
+            }
+            result={splitResult}
+            currency={splitCurrency}
+            onSplitEvenly={() => seedEvenly(splitMethod)}
+          />
 
           <SectionLabel title={t('addExpense.date')} />
           <Pressable style={[styles.dateRow, cardShadow]} onPress={() => setShowPicker(true)}>

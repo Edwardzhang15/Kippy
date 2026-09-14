@@ -118,6 +118,22 @@
     "currency": "Currency",
     "amount": "Amount"
   },
+  "split": {
+    "method": {
+      "even": "Even",
+      "amount": "By amount",
+      "percent": "By %",
+      "shares": "By shares"
+    },
+    "allocated": "Allocated: {{allocated}} / {{total}}",
+    "left": "{{amount}} left",
+    "over": "{{amount}} over",
+    "needShares": "Give at least one person a share.",
+    "notBalanced": "This split doesn't add up yet.",
+    "sharesTotal_one": "{{count}} share total",
+    "sharesTotal_other": "{{count}} shares total",
+    "splitEvenly": "Split evenly"
+  },
   "memberExpenses": {
     "title": "Breakdown",
     "totalCharged": "Total charged to {{name}}",
