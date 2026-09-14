@@ -21,6 +21,7 @@ import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 import PackingListShareCard from '../components/PackingListShareCard';
 import FeatureIntroSplash from '../components/FeatureIntroSplash';
+import ErrorRetry from '../components/ErrorRetry';
 import {
   getGroup,
   getPackingItems,
@@ -405,6 +406,8 @@ export default function PackingListScreen() {
   const [addingTo, setAddingTo] = useState<string | null>(null);
   const [customLabel, setCustomLabel] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
   const [showVibePrompt, setShowVibePrompt] = useState(false);
 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -438,7 +441,7 @@ export default function PackingListScreen() {
     if (!viewNode) return;
     setSharing(true);
     try {
-      const uri = await captureRef(viewNode as any, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(viewNode as any, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('packingList.title') });
     } catch {
       Alert.alert(t('packingList.shareError'), t('packingList.shareErrorMsg'));
@@ -474,8 +477,11 @@ export default function PackingListScreen() {
         setItems(existing);
         setLoading(false);
       }
-    })();
-  }, [groupId]);
+    })().catch(() => {
+      setLoadError(true);
+      setLoading(false);
+    });
+  }, [groupId, reloadTick]);
 
   const doRegenerate = async (newVibe: Vibe | null, currentGroup: Group) => {
     const days = getTripDays(currentGroup.planned_start_date, currentGroup.planned_end_date);
@@ -606,7 +612,13 @@ export default function PackingListScreen() {
         </ScrollView>
 
         {/* ── Category sections ──────────────────────────────────── */}
-        {!loading && orderedCategories.map((cat) => {
+        {loadError && (
+          <ErrorRetry
+            compact
+            onRetry={() => { setLoadError(false); setLoading(true); setReloadTick((n) => n + 1); }}
+          />
+        )}
+        {!loading && !loadError && orderedCategories.map((cat) => {
           const catItems = byCategory[cat] ?? [];
           const isCollapsed = collapsed.has(cat);
           const checkedInCat = catItems.filter((i) => i.is_checked).length;

@@ -8,7 +8,15 @@
     "groupNotFound": "Groupe introuvable.",
     "done": "OK",
     "remove": "Retirer",
-    "ratesUnavailable": "Taux de change indisponibles - les totaux en devises multiples peuvent être inexacts."
+    "ratesUnavailable": "Taux de change indisponibles - les totaux en devises multiples peuvent être inexacts.",
+    "retry": "Réessayer",
+    "loadErrorBody": "Kippy n'a pas pu charger ces données. Vérifiez votre connexion et réessayez.",
+    "startupErrorTitle": "Kippy n'a pas pu démarrer",
+    "startupErrorBody": "La préparation de vos données a échoué. Réessayez, et mettez l'app à jour si cela persiste.",
+    "unconvertedExpenses_one": "{{count}} dépense est exclue : aucun taux de change connu pour le moment.",
+    "unconvertedExpenses_other": "{{count}} dépenses sont exclues : aucun taux de change connu pour le moment.",
+    "unconvertedShort_one": "{{count}} non convertie",
+    "unconvertedShort_other": "{{count}} non converties"
   },
   "tabs": {
     "home": "Voyages en Groupe",
@@ -20,7 +28,7 @@
     "title": "Mes Voyages",
     "tabActive": "En cours",
     "tabPast": "Passés",
-    "totalSpent": "Total : ${{amount}} {{currency}}",
+    "totalSpent": "Total : {{symbol}}{{amount}} {{currency}}",
     "memberCount_one": "{{count}} personne",
     "memberCount_other": "{{count}} personnes",
     "emptyActiveTitle": "Aucun voyage pour l'instant",
@@ -42,7 +50,7 @@
     "deselectAll": "Tout désélectionner"
   },
   "groupDetail": {
-    "totalSpent": "Total dépensé : ${{amount}} {{currency}}",
+    "totalSpent": "Total dépensé : {{symbol}}{{amount}} {{currency}}",
     "conclude": "Terminer",
     "concludeTitle": "Terminer le voyage",
     "concludeMsg": "Terminer ce voyage ? Tu pourras toujours ajouter des dépenses, mais il sera déplacé dans Voyages Passés.",
@@ -73,7 +81,9 @@
     "expensePaidBy": "Payé par {{name}} · {{date}}",
     "receipt": "Reçu",
     "tripSummary": "Résumé du voyage",
-    "shareBalanceBreakdown": "Partager le récapitulatif des soldes"
+    "shareBalanceBreakdown": "Partager le récapitulatif des soldes",
+    "splitEven": "Partagé également : {{names}}",
+    "splitUneven": "Partagé inégalement : {{names}}"
   },
   "createGroup": {
     "title": "Nouveau groupe",
@@ -374,7 +384,7 @@
     "actualAmount": "{{amount}} réel",
     "overBudgetSuffix": "au-dessus du budget",
     "underBudgetSuffix": "sous le budget",
-    "spent": "${{amount}} dépensé",
+    "spent": "{{symbol}}{{amount}} dépensés",
     "overBudgetLabel": "Au-dessus du budget",
     "underBudgetLabel": "Sous le budget",
     "addCategory": "Ajouter une catégorie",
@@ -401,9 +411,9 @@
     "totalTripCost": "Coût total du voyage",
     "outstandingBalance": "Solde en attente",
     "allSettledUp": "Tout est soldé",
-    "remaining": "${{amount}} restant",
+    "remaining": "{{symbol}}{{amount}} restants",
     "settled": "Soldé",
-    "owed": "${{amount}} dû",
+    "owed": "{{symbol}}{{amount}} dus",
     "moreMembers": "+{{count}} de plus",
     "dayItinerary": "Jour {{day}} · Itinéraire",
     "eventCount_one": "  ·  {{count}} événement",
@@ -584,7 +594,9 @@
     "failed": "Impossible de récupérer le taux actuel. Saisissez-le manuellement.",
     "failedCached": "Impossible de récupérer le taux actuel. Votre dernier taux enregistré est affiché, modifiez-le si besoin.",
     "retry": "Réessayer",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ taux inconnu",
+    "needRate": "Saisissez d'abord un taux de change."
   },
   "createSubgroup": {
     "title": "Nouveau sous-groupe",

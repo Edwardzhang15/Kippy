@@ -23,7 +23,7 @@ import {
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
-import { SUPPORTED_CURRENCIES } from '../utils';
+import { SUPPORTED_CURRENCIES, getCurrencySymbol } from '../utils';
 import ExchangeRateField, { useExchangeRate } from '../components/ExchangeRateField';
 
 const UNSPLASH_KEY = process.env.EXPO_PUBLIC_UNSPLASH_API_KEY ?? '';
@@ -297,6 +297,10 @@ export default function EditTripScreen() {
       setBudget(group.budget_per_person != null ? String(group.budget_per_person) : '');
       setMembers(memberList.map((m) => ({ id: m.id, name: m.name })));
       setLoading(false);
+    }).catch(() => {
+      // Nothing to edit if the trip can't be read; say so instead of spinning.
+      Alert.alert(t('editTrip.errorTitle'), t('common.loadErrorBody'));
+      navigation.goBack();
     });
   }, [groupId]);
 
@@ -572,7 +576,7 @@ export default function EditTripScreen() {
               <SectionLabel title={t('editTrip.budgetPerPerson')} />
               <View style={[styles.inputCard, cardShadow]}>
                 <View style={styles.budgetRow}>
-                  <Text style={styles.currencyPrefix}>{currency === 'JPY' ? '¥' : '$'}</Text>
+                  <Text style={styles.currencyPrefix}>{getCurrencySymbol(currency)}</Text>
                   <TextInput
                     style={[styles.input, { flex: 1 }]}
                     placeholder="0.00"

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
   KeyboardAvoidingView,
   Modal,
@@ -22,6 +23,7 @@ import { useTheme } from '../context/ThemeContext';
 import BudgetShareCard from '../components/BudgetShareCard';
 import SharePreviewModal from '../components/SharePreviewModal';
 import FeatureIntroSplash from '../components/FeatureIntroSplash';
+import ErrorRetry from '../components/ErrorRetry';
 import {
   getGroup,
   getGroupDetails,
@@ -41,9 +43,11 @@ import {
   BudgetCategoryDef,
 } from '../data/budgetCategories';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
+import { getCurrencySymbol, DEFAULT_CURRENCY } from '../utils';
 
 function fmt(n: number, currency: string): string {
-  return `$${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
+  const symbol = getCurrencySymbol(currency);
+  return `${symbol}${n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${currency}`;
 }
 
 function BudgetRow({
@@ -114,7 +118,7 @@ function BudgetRow({
           </View>
           <View style={styles.actualLabelRow}>
             <Text style={[styles.actualLabel, isOver && styles.actualLabelOver]}>
-              {t('budget.spent', { amount: actual.toFixed(2) })}
+              {t('budget.spent', { symbol: getCurrencySymbol(currency), amount: actual.toFixed(2) })}
             </Text>
             <Text style={styles.pctLabel}>{pctLabel}</Text>
             {planned > 0 && (
@@ -142,6 +146,8 @@ export default function BudgetPlanScreen() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading]   = useState(true);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   const [showShareModal, setShowShareModal] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -154,7 +160,7 @@ export default function BudgetPlanScreen() {
     if (!shareCardRef.current) return;
     setSharing(true);
     try {
-      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('budget.title') });
     } catch {
       Alert.alert(t('budget.shareError'), t('budget.shareErrorMsg'));
@@ -191,8 +197,11 @@ export default function BudgetPlanScreen() {
       }
 
       setLoading(false);
-    })();
-  }, [groupId]);
+    })().catch(() => {
+      setLoadError(true);
+      setLoading(false);
+    });
+  }, [groupId, reloadTick]);
 
   const showActual = group ? group.is_planning === 0 : false;
 
@@ -264,7 +273,7 @@ export default function BudgetPlanScreen() {
 
   const usedNames = new Set(items.map((i) => i.category));
   const remaining = BUDGET_CATEGORIES.filter((c) => !usedNames.has(c.name));
-  const currency = group?.currency ?? 'CAD';
+  const currency = group?.currency ?? DEFAULT_CURRENCY;
   const overallOver = showActual && totalActual > totalPlanned && totalPlanned > 0;
 
   return (
@@ -291,10 +300,12 @@ export default function BudgetPlanScreen() {
         >
           <View style={[styles.totalCard, cardShadow]}>
             <Text style={styles.totalLabel}>{t('budget.totalPlanned')}</Text>
+            {/* Amounts wait for the trip: rendering them first would show a
+                total in a currency that isn't this trip's. */}
             <Text style={styles.totalAmount}>
-              {fmt(totalPlanned, currency)}
+              {group ? fmt(totalPlanned, currency) : ' '}
             </Text>
-            {showActual && (
+            {showActual && group && (
               <View style={styles.totalActualRow}>
                 <Ionicons
                   name={overallOver ? 'alert-circle-outline' : 'checkmark-circle-outline'}
@@ -313,7 +324,16 @@ export default function BudgetPlanScreen() {
             )}
           </View>
 
-          {!loading && items.map((item) => (
+          {loading && !loadError && (
+            <ActivityIndicator style={{ marginTop: 32 }} color={colors.textSecondary} />
+          )}
+          {loadError && (
+            <ErrorRetry
+              compact
+              onRetry={() => { setLoadError(false); setLoading(true); setReloadTick((n) => n + 1); }}
+            />
+          )}
+          {!loading && !loadError && items.map((item) => (
             <BudgetRow
               key={item.id}
               item={item}
@@ -389,7 +409,7 @@ export default function BudgetPlanScreen() {
           ref={shareCardRef}
           tripName={group?.name ?? ''}
           items={items}
-          currency={group?.currency ?? 'CAD'}
+          currency={group?.currency ?? DEFAULT_CURRENCY}
         />
       </SharePreviewModal>
 

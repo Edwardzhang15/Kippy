@@ -21,6 +21,7 @@ import { getGroupDetails, addMember, activatePlanTrip, getTripStops, GroupDetail
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
+import { getCurrencySymbol } from '../utils';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'PlanDetail'>;
 
@@ -620,7 +621,7 @@ export default function PlanDetailScreen({ route }: Props) {
                 <DetailRow
                   icon="wallet-outline"
                   label={t('planDetail.budgetPerPerson')}
-                  value={`$${group.budget_per_person.toFixed(2)} ${group.currency}`}
+                  value={`${getCurrencySymbol(group.currency)}${group.budget_per_person.toFixed(2)} ${group.currency}`}
                 />
               )}
             </View>

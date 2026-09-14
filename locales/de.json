@@ -8,7 +8,15 @@
     "groupNotFound": "Gruppe nicht gefunden.",
     "done": "Fertig",
     "remove": "Entfernen",
-    "ratesUnavailable": "Wechselkurse nicht verfügbar - Gesamtbeträge in mehreren Währungen können ungenau sein."
+    "ratesUnavailable": "Wechselkurse nicht verfügbar - Gesamtbeträge in mehreren Währungen können ungenau sein.",
+    "retry": "Erneut versuchen",
+    "loadErrorBody": "Kippy konnte das nicht laden. Prüfe deine Verbindung und versuche es erneut.",
+    "startupErrorTitle": "Kippy konnte nicht starten",
+    "startupErrorBody": "Beim Einrichten deiner Daten ist etwas schiefgelaufen. Versuche es erneut und aktualisiere die App, falls das öfter passiert.",
+    "unconvertedExpenses_one": "{{count}} Ausgabe fehlt: dafür ist noch kein Wechselkurs bekannt.",
+    "unconvertedExpenses_other": "{{count}} Ausgaben fehlen: dafür ist noch kein Wechselkurs bekannt.",
+    "unconvertedShort_one": "{{count}} nicht umgerechnet",
+    "unconvertedShort_other": "{{count}} nicht umgerechnet"
   },
   "tabs": {
     "home": "Gruppenreisen",
@@ -20,7 +28,7 @@
     "title": "Meine Reisen",
     "tabActive": "Aktiv",
     "tabPast": "Vergangen",
-    "totalSpent": "Gesamt: ${{amount}} {{currency}}",
+    "totalSpent": "Gesamt: {{symbol}}{{amount}} {{currency}}",
     "memberCount_one": "{{count}} Person",
     "memberCount_other": "{{count}} Personen",
     "emptyActiveTitle": "Noch keine Reisen",
@@ -42,7 +50,7 @@
     "deselectAll": "Alle abwählen"
   },
   "groupDetail": {
-    "totalSpent": "Gesamtausgaben: ${{amount}} {{currency}}",
+    "totalSpent": "Ausgaben gesamt: {{symbol}}{{amount}} {{currency}}",
     "conclude": "Abschließen",
     "concludeTitle": "Reise abschließen",
     "concludeMsg": "Diese Reise abschließen? Du kannst weiterhin Ausgaben hinzufügen, aber sie wird in Vergangene Reisen verschoben.",
@@ -73,7 +81,9 @@
     "expensePaidBy": "Bezahlt von {{name}} · {{date}}",
     "receipt": "Quittung",
     "tripSummary": "Reisezusammenfassung",
-    "shareBalanceBreakdown": "Saldenübersicht teilen"
+    "shareBalanceBreakdown": "Saldenübersicht teilen",
+    "splitEven": "Gleich geteilt: {{names}}",
+    "splitUneven": "Ungleich geteilt: {{names}}"
   },
   "createGroup": {
     "title": "Neue Gruppe",
@@ -374,7 +384,7 @@
     "actualAmount": "{{amount}} tatsächlich",
     "overBudgetSuffix": "über dem Budget",
     "underBudgetSuffix": "unter dem Budget",
-    "spent": "${{amount}} ausgegeben",
+    "spent": "{{symbol}}{{amount}} ausgegeben",
     "overBudgetLabel": "Über dem Budget",
     "underBudgetLabel": "Unter dem Budget",
     "addCategory": "Kategorie hinzufügen",
@@ -401,9 +411,9 @@
     "totalTripCost": "Gesamtkosten der Reise",
     "outstandingBalance": "Offener Saldo",
     "allSettledUp": "Alles abgerechnet",
-    "remaining": "${{amount}} übrig",
+    "remaining": "{{symbol}}{{amount}} übrig",
     "settled": "Ausgeglichen",
-    "owed": "${{amount}} offen",
+    "owed": "{{symbol}}{{amount}} offen",
     "moreMembers": "+{{count}} weitere",
     "dayItinerary": "Tag {{day}} · Reiseplan",
     "eventCount_one": "  ·  {{count}} Ereignis",
@@ -584,7 +594,9 @@
     "failed": "Aktueller Kurs nicht verfügbar. Bitte gib den Kurs manuell ein.",
     "failedCached": "Aktueller Kurs nicht verfügbar. Dein zuletzt gespeicherter Kurs wird angezeigt, passe ihn bei Bedarf an.",
     "retry": "Erneut versuchen",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ Kurs unbekannt",
+    "needRate": "Gib zuerst einen Wechselkurs ein."
   },
   "createSubgroup": {
     "title": "Neue Untergruppe",

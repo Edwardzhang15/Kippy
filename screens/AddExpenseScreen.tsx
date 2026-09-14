@@ -36,6 +36,7 @@ import { computeSplits, evenValues, type SplitMethod } from '../splits';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 import ExchangeRateField, { useExchangeRate } from '../components/ExchangeRateField';
 import SplitEditor from '../components/SplitEditor';
+import ErrorRetry from '../components/ErrorRetry';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'AddExpense'>;
 
@@ -141,6 +142,7 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
   const [group, setGroup]                               = useState<GroupDetails | null>(null);
   const [subgroups, setSubgroups]                       = useState<SubgroupWithMembers[]>([]);
   const [loading, setLoading]                           = useState(true);
+  const [loadError, setLoadError]                       = useState(false);
   const [amount, setAmount]                             = useState('');
   const [category, setCategory]                         = useState('food');
   const [customCategoryText, setCustomCategoryText]     = useState('');
@@ -234,7 +236,9 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
     }));
   }, [loading, splitMethod, includedIds.join(','), parsedAmount]);
 
-  useEffect(() => {
+  const loadExpense = () => {
+    setLoadError(false);
+    setLoading(true);
     Promise.all([
       getGroupDetails(route.params.groupId),
       getSubgroups(route.params.groupId),
@@ -274,8 +278,14 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
       }
       setSubgroups(sgData);
       setLoading(false);
+    }).catch(() => {
+      // An unreadable expense must not leave the form spinning forever.
+      setLoadError(true);
+      setLoading(false);
     });
-  }, []);
+  };
+
+  useEffect(loadExpense, []);
 
   const toggleSplit = (memberId: number) => {
     setActiveSgId(null);
@@ -428,10 +438,21 @@ export default function AddExpenseScreen({ route, navigation }: Props) {
     );
   }
 
-  if (!group) {
+  if (loadError || !group) {
     return (
       <SafeAreaView style={styles.safe}>
-        <Text style={{ padding: 24, color: colors.textSecondary }}>{t('common.groupNotFound')}</Text>
+        <View style={styles.header}>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="close" size={24} color={colors.textPrimary} />
+          </Pressable>
+          <Text style={styles.headerTitle}>
+            {isEditMode ? t('addExpense.editTitle') : t('addExpense.title')}
+          </Text>
+          <View style={{ width: 24 }} />
+        </View>
+        {loadError
+          ? <ErrorRetry onRetry={loadExpense} />
+          : <Text style={{ padding: 24, color: colors.textSecondary }}>{t('common.groupNotFound')}</Text>}
       </SafeAreaView>
     );
   }

@@ -1,6 +1,6 @@
 import './i18n'; // must be imported before any component that calls useTranslation()
-import { useEffect, useState } from 'react';
-import { Image, StatusBar, StyleSheet, View } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import { Image, StatusBar, StyleSheet, Text, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -13,6 +13,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { OnboardingProvider, useOnboarding } from './context/OnboardingContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import LoadingScreen from './components/LoadingScreen';
+import ErrorRetry from './components/ErrorRetry';
 import KeyboardDoneBar from './components/KeyboardDoneBar';
 import OnboardingScreen from './screens/OnboardingScreen';
 import LanguagePickerScreen from './screens/LanguagePickerScreen';
@@ -39,6 +40,7 @@ function AppCore() {
   const { colors, isDark } = useTheme();
   const { shouldShow: showOnboarding, onboardingReady } = useOnboarding();
   const [dbReady, setDbReady]           = useState(false);
+  const [initFailed, setInitFailed]     = useState(false);
   const [minTimeReady, setMinTimeReady] = useState(false);
   const [showWelcome, setShowWelcome]         = useState(false);
   const [welcomeReady, setWelcomeReady]       = useState(false);
@@ -65,7 +67,8 @@ function AppCore() {
     (pastWelcome && !langPickerReady) ||
     (pastWelcome && !needsLangPicker && !restReady);
 
-  useEffect(() => {
+  const runInit = useCallback(() => {
+    setInitFailed(false);
     Promise.all([
       initDatabase(),
       initRates(),
@@ -74,7 +77,16 @@ function AppCore() {
       // Non-fatal: rows it can't fill yet keep working off the rate cache.
       .then(() => backfillLegacyExpenseRates().catch(() => {}))
       .then(() => setDbReady(true))
-      .catch((e) => { if (__DEV__) console.error('Init failed:', e); });
+      .catch((e) => {
+        // Without this the loading overlay would stay up forever, with no way
+        // for the user to retry or even see that something went wrong.
+        if (__DEV__) console.error('Init failed:', e);
+        setInitFailed(true);
+      });
+  }, []);
+
+  useEffect(() => {
+    runInit();
 
     AsyncStorage.getItem('@kippy/welcome_seen').then(v => {
       setShowWelcome(!v);
@@ -174,9 +186,19 @@ function AppCore() {
         </View>
       )}
 
-      {showLoadingOverlay && (
+      {showLoadingOverlay && !initFailed && (
         <View style={StyleSheet.absoluteFill}>
           <LoadingScreen />
+        </View>
+      )}
+
+      {initFailed && (
+        <View style={[StyleSheet.absoluteFill, styles.initError, { backgroundColor: colors.background }]}>
+          <Text style={[styles.initErrorTitle, { color: colors.textPrimary }]}>
+            {t('common.startupErrorTitle')}
+          </Text>
+          {/* compact so the title and the retry stay centred together */}
+          <ErrorRetry onRetry={runInit} message={t('common.startupErrorBody')} compact />
         </View>
       )}
     </View>
@@ -198,5 +220,15 @@ export default function App() {
 const styles = StyleSheet.create({
   root: {
     flex: 1,
+  },
+  initError: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  initErrorTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    textAlign: 'center',
   },
 });

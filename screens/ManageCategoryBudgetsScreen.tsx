@@ -18,13 +18,13 @@ import { useTranslation } from 'react-i18next';
 import { type PersonalStackParamList } from '../navigation/types';
 import {
   getPersonalTrip, getPersonalTripBudgets, getPersonalTripExpenses,
-  setPersonalTripBudget,
+  setPersonalTripBudget, homeAmount,
   type PersonalTrip, type PersonalTripBudget, type PersonalTripExpense,
 } from '../db';
 import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getCurrencySymbol, formatAmount } from '../utils';
+import { getCurrencySymbol, formatAmount, DEFAULT_CURRENCY } from '../utils';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
 
 type Props = NativeStackScreenProps<PersonalStackParamList, 'ManageCategoryBudgets'>;
@@ -86,6 +86,8 @@ export default function ManageCategoryBudgetsScreen({ navigation, route }: Props
   const [budgets, setBudgets] = useState<Record<string, string>>({});
   const [spentByCategory, setSpentByCategory] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
 
   useFocusEffect(useCallback(() => {
     async function load() {
@@ -98,12 +100,18 @@ export default function ManageCategoryBudgetsScreen({ navigation, route }: Props
       const bMap: Record<string, string> = {};
       b_.forEach(b => { bMap[b.category] = String(b.planned_amount); });
       setBudgets(bMap);
+      // Spend counts in the trip's currency, at each expense's stored rate.
       const sMap: Record<string, number> = {};
-      e_.forEach(e => { sMap[e.category] = (sMap[e.category] ?? 0) + e.amount; });
+      e_.forEach(e => {
+        const amount = homeAmount(e, t_?.currency ?? DEFAULT_CURRENCY);
+        if (amount === null) return;
+        sMap[e.category] = (sMap[e.category] ?? 0) + amount;
+      });
       setSpentByCategory(sMap);
     }
-    load();
-  }, [tripId]));
+    setLoadError(false);
+    load().catch(() => setLoadError(true));
+  }, [tripId, reloadTick]));
 
   async function handleSave() {
     setSaving(true);
@@ -119,8 +127,8 @@ export default function ManageCategoryBudgetsScreen({ navigation, route }: Props
     }
   }
 
-  const sym = getCurrencySymbol(trip?.currency ?? 'CAD');
-  const currency = trip?.currency ?? 'CAD';
+  const sym = getCurrencySymbol(trip?.currency ?? DEFAULT_CURRENCY);
+  const currency = trip?.currency ?? DEFAULT_CURRENCY;
   const tripBudget = trip?.budget_amount ?? null;
 
   const catTotal = CATEGORIES.reduce((sum, cat) => sum + (parseFloat(budgets[cat.id] ?? '') || 0), 0);

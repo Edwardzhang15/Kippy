@@ -23,6 +23,12 @@ export function formatExpenseDate(dateStr: string): string {
  * here makes it selectable everywhere at once. Every code must also have an entry
  * in CURRENCY_SYMBOLS below.
  */
+/**
+ * Home currency for a new trip, and the stand-in wherever a screen needs a
+ * currency before the trip it belongs to has loaded.
+ */
+export const DEFAULT_CURRENCY = 'USD';
+
 export const SUPPORTED_CURRENCIES = [
   'CAD', 'USD', 'EUR', 'GBP', 'AUD', 'JPY', 'CHF', 'CNY',
   'INR', 'MXN', 'BRL', 'SGD', 'KRW', 'NZD', 'HKD',

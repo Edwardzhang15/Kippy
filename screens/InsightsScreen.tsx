@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
+  ActivityIndicator,
   Alert,
+  type DimensionValue,
   Image,
   Pressable,
   SafeAreaView,
@@ -19,6 +21,7 @@ import {
   getAllTripSummaries,
   getGroupDetails,
   homeAmount,
+  sumInHomeCurrency,
   deleteGroup,
   getAllGroupExpensesForInsights,
   getAllPersonalTripSummaries,
@@ -35,6 +38,7 @@ import {
   PersonalExpenseInsightRow,
 } from '../db';
 import TripBudgetRing from '../components/TripBudgetRing';
+import ErrorRetry from '../components/ErrorRetry';
 import { CATEGORIES, CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import { getAvatarColor, getInitials, getCurrencySymbol, formatAmount, formatExpenseDate } from '../utils';
 import { getCachedRates, convertAmount } from '../currencyRates';
@@ -87,14 +91,20 @@ function EmptyCard({ icon, text }: { icon: IconName; text: string }) {
   );
 }
 
-function RatesBanner() {
+// `count` is given when specific expenses were excluded from the figures on
+// screen; without it the banner refers to live conversion being unavailable.
+function RatesBanner({ count }: { count?: number }) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   return (
     <View style={styles.ratesBanner}>
-      <Ionicons name="warning-outline" size={13} color={colors.coral} />
-      <Text style={styles.ratesBannerText}>{t('common.ratesUnavailable')}</Text>
+      <Ionicons name="warning-outline" size={13} color={colors.textSecondary} />
+      <Text style={styles.ratesBannerText}>
+        {count === undefined
+          ? t('common.ratesUnavailable')
+          : t('common.unconvertedExpenses', { count })}
+      </Text>
     </View>
   );
 }
@@ -251,7 +261,7 @@ function RankedTripList<T extends RankableTrip>({
                   of some rows being shorter than others. */}
               <Text style={styles.allTripDest} numberOfLines={1}>{trip.destination || ' '}</Text>
               <View style={styles.barTrack}>
-                <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as any, backgroundColor: ACCENTS.sky.icon }]} />
+                <View style={[styles.barFill, { width: `${(pct * 100).toFixed(1)}%` as DimensionValue, backgroundColor: ACCENTS.sky.icon }]} />
               </View>
             </View>
             <View style={styles.allTripAmountCol}>
@@ -418,7 +428,7 @@ function CategoryBreakdown({
                   <View
                     style={[
                       styles.barFill,
-                      { width: `${(barPct * 100).toFixed(1)}%`, backgroundColor: cat.color },
+                      { width: `${(barPct * 100).toFixed(1)}%` as DimensionValue, backgroundColor: cat.color },
                     ]}
                   />
                 </View>
@@ -960,6 +970,13 @@ export default function InsightsScreen() {
   const [selectedPersonalId, setSelectedPersonalId] = useState<number | null>(null);
   const [personalDetail, setPersonalDetail]         = useState<{ trip: PersonalTrip; expenses: PersonalTripExpense[] } | null>(null);
   const [personalLoading, setPersonalLoading]       = useState(false);
+  const [loadError, setLoadError]                   = useState(false);
+  const [reloadTick, setReloadTick]                 = useState(0);
+
+  const reloadInsights = () => {
+    setLoadError(false);
+    setReloadTick((n) => n + 1);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -977,9 +994,12 @@ export default function InsightsScreen() {
         setPersonalExpensesAll(pExp);
         setSelectedTripId((prev) => (prev === null && trips.length > 0 ? trips[0].id : prev));
         setSelectedPersonalId((prev) => (prev === null && pTrips.length > 0 ? pTrips[0].id : prev));
+        setLoadError(false);
+      }).catch(() => {
+        if (active) setLoadError(true);
       });
       return () => { active = false; };
-    }, []),
+    }, [reloadTick]),
   );
 
   useEffect(() => {
@@ -993,9 +1013,14 @@ export default function InsightsScreen() {
       if (!active) return;
       setTripDetails(data);
       setTripLoading(false);
+    }).catch(() => {
+      if (!active) return;
+      setTripDetails(null);
+      setTripLoading(false);
+      setLoadError(true);
     });
     return () => { active = false; };
-  }, [selectedTripId]);
+  }, [selectedTripId, reloadTick]);
 
   useEffect(() => {
     if (selectedPersonalId === null) {
@@ -1010,9 +1035,14 @@ export default function InsightsScreen() {
         setPersonalDetail(trip ? { trip, expenses } : null);
         setPersonalLoading(false);
       },
-    );
+    ).catch(() => {
+      if (!active) return;
+      setPersonalDetail(null);
+      setPersonalLoading(false);
+      setLoadError(true);
+    });
     return () => { active = false; };
-  }, [selectedPersonalId]);
+  }, [selectedPersonalId, reloadTick]);
 
   const switchMode = (m: 'group' | 'personal') => {
     rememberedMode = m;
@@ -1082,29 +1112,28 @@ export default function InsightsScreen() {
   // Each expense converts at the rate stored with it, so this matches the trip's balances.
   const tripDetailsNorm: GroupDetails | null = tripDetails ? {
     ...tripDetails,
-    expenses: tripDetails.expenses.map((e) => ({
-      ...e,
-      amount: homeAmount(e, tripDetails.currency),
-    })),
+    expenses: tripDetails.expenses.flatMap((e) => {
+      const amount = homeAmount(e, tripDetails.currency);
+      return amount === null ? [] : [{ ...e, amount }];
+    }),
   } : null;
-  // Only legacy expenses without a stored rate depend on the live rate cache.
-  const hasMixedExpCurrencies = tripDetails
-    ? tripDetails.expenses.some((e) => e.exchange_rate == null && e.currency !== tripDetails.currency)
-    : false;
+  // Expenses with no known rate are left out of every figure on this screen.
+  const unconvertedTripCount = tripDetails?.unconvertedCount ?? 0;
 
   const personalSpent = personalDetail
-    ? personalDetail.expenses.reduce((s, e) =>
-        s + (rates ? convertAmount(e.amount, e.currency, personalDetail.trip.currency, rates) : e.amount), 0)
+    ? sumInHomeCurrency(personalDetail.expenses, personalDetail.trip.currency).total
     : 0;
-  const personalExpensesNorm: PersonalTripExpense[] = personalDetail && rates
-    ? personalDetail.expenses.map((e) => ({
-        ...e,
-        amount: convertAmount(e.amount, e.currency, personalDetail.trip.currency, rates),
-      }))
-    : personalDetail?.expenses ?? [];
-  const hasMixedPersonalCurrencies = personalDetail
-    ? personalDetail.expenses.some((e) => e.currency !== personalDetail.trip.currency)
-    : false;
+  const personalExpensesNorm: PersonalTripExpense[] = personalDetail
+    ? personalDetail.expenses.flatMap((e) => {
+        const amount = homeAmount(e, personalDetail.trip.currency);
+        return amount === null ? [] : [{ ...e, amount }];
+      })
+    : [];
+  const unconvertedPersonalCount = personalDetail
+    ? personalDetail.expenses.filter(
+        (e) => homeAmount(e, personalDetail.trip.currency) === null,
+      ).length
+    : 0;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -1227,7 +1256,7 @@ export default function InsightsScreen() {
                         : ''}
                     </Text>
                   </View>
-                  {rates === null && hasMixedExpCurrencies && <RatesBanner />}
+                  {unconvertedTripCount > 0 && <RatesBanner count={unconvertedTripCount} />}
 
                   <TripHighlights tripDetails={tripDetailsNorm ?? tripDetails} />
                   <CategoryBreakdown
@@ -1242,6 +1271,10 @@ export default function InsightsScreen() {
                     </>
                   )}
                 </>
+              ) : loadError ? (
+                <ErrorRetry onRetry={reloadInsights} compact />
+              ) : tripLoading ? (
+                <ActivityIndicator style={{ marginTop: 32 }} color={colors.textSecondary} />
               ) : allTrips.length > 0 && selectedTripId === null ? (
                 <EmptyCard icon="airplane-outline" text={t('insights.selectTrip')} />
               ) : null}
@@ -1311,7 +1344,7 @@ export default function InsightsScreen() {
                       : ''}
                   </Text>
                 </View>
-                {rates === null && hasMixedPersonalCurrencies && <RatesBanner />}
+                {unconvertedPersonalCount > 0 && <RatesBanner count={unconvertedPersonalCount} />}
 
                 <PersonalBiggestExpense trip={personalDetail.trip} expenses={personalExpensesNorm} />
                 <CategoryBreakdown

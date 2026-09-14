@@ -8,7 +8,15 @@
     "groupNotFound": "未找到群组。",
     "done": "完成",
     "remove": "移除",
-    "ratesUnavailable": "汇率不可用，多货币合计可能不准确。"
+    "ratesUnavailable": "汇率不可用，多货币合计可能不准确。",
+    "retry": "重试",
+    "loadErrorBody": "加载失败。请检查网络连接后重试。",
+    "startupErrorTitle": "Kippy 无法启动",
+    "startupErrorBody": "准备数据时出错了。请重试，如果反复出现请更新应用。",
+    "unconvertedExpenses_one": "有 {{count}} 笔支出未计入：暂时没有它的汇率。",
+    "unconvertedExpenses_other": "有 {{count}} 笔支出未计入：暂时没有它们的汇率。",
+    "unconvertedShort_one": "{{count}} 笔未换算",
+    "unconvertedShort_other": "{{count}} 笔未换算"
   },
   "tabs": {
     "home": "团体行程",
@@ -20,7 +28,7 @@
     "title": "我的行程",
     "tabActive": "进行中",
     "tabPast": "历史行程",
-    "totalSpent": "合计：${{amount}} {{currency}}",
+    "totalSpent": "合计：{{symbol}}{{amount}} {{currency}}",
     "memberCount_other": "{{count}} 人",
     "emptyActiveTitle": "暂无行程",
     "emptyActiveSubtitle": "点击 + 创建您的第一个群组",
@@ -42,7 +50,7 @@
     "memberCount_one": "{{count}} 人"
   },
   "groupDetail": {
-    "totalSpent": "合计：${{amount}} {{currency}}",
+    "totalSpent": "总支出：{{symbol}}{{amount}} {{currency}}",
     "conclude": "结束",
     "concludeTitle": "结束行程",
     "concludeMsg": "结束此行程？您仍可添加费用，但它将移至历史行程。",
@@ -73,7 +81,9 @@
     "receipt": "收据",
     "tripSummary": "行程总结",
     "shareBalanceBreakdown": "分享余额明细",
-    "subgroupCount_one": "{{count}} 人"
+    "subgroupCount_one": "{{count}} 人",
+    "splitEven": "均分：{{names}}",
+    "splitUneven": "不均分：{{names}}"
   },
   "createGroup": {
     "title": "新建群组",
@@ -374,7 +384,7 @@
     "actualAmount": "实际 {{amount}}",
     "overBudgetSuffix": "超出预算",
     "underBudgetSuffix": "未超预算",
-    "spent": "已花 ${{amount}}",
+    "spent": "已花费 {{symbol}}{{amount}}",
     "overBudgetLabel": "超出预算",
     "underBudgetLabel": "未超预算",
     "addCategory": "添加类别",
@@ -401,9 +411,9 @@
     "totalTripCost": "行程总费用",
     "outstandingBalance": "未结余额",
     "allSettledUp": "已全部结清",
-    "remaining": "${{amount}} 未结清",
+    "remaining": "剩余 {{symbol}}{{amount}}",
     "settled": "已结清",
-    "owed": "欠款 ${{amount}}",
+    "owed": "待结算 {{symbol}}{{amount}}",
     "moreMembers": "另 {{count}} 人",
     "dayItinerary": "第 {{day}} 天 · 行程安排",
     "eventCount_other": "  ·  {{count}} 项活动",
@@ -584,7 +594,9 @@
     "failed": "无法获取实时汇率，请手动输入汇率。",
     "failedCached": "无法获取实时汇率，显示的是上次保存的汇率，可按需调整。",
     "retry": "重试",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ 汇率未知",
+    "needRate": "请先输入汇率。"
   },
   "createSubgroup": {
     "title": "新子群组",

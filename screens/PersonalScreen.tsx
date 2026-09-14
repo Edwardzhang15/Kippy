@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   Image,
   Platform,
@@ -23,6 +24,7 @@ import {
   getPersonalTripExpenses,
   setCurrentPersonalTrip,
   getPersonalTripCategoryBudgetsWithSpent,
+  sumInHomeCurrency,
   deletePersonalTrip,
   archivePersonalTrip,
   canCreatePersonalTrip,
@@ -31,6 +33,7 @@ import {
 } from '../db';
 import TripBudgetRing from '../components/TripBudgetRing';
 import ActionSheet, { type SheetOption } from '../components/ActionSheet';
+import ErrorRetry from '../components/ErrorRetry';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
@@ -162,7 +165,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   // ── Bulk action bar ─────────────────────────────────────────────────────
   bulkBar:         { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: c.card, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: c.border, paddingHorizontal: 20, paddingVertical: 14, paddingBottom: Platform.OS === 'ios' ? 28 : 14, flexDirection: 'row', alignItems: 'center', gap: 10 },
   bulkCount:       { flex: 1, fontSize: fontSizes.body, fontWeight: '600', color: c.textPrimary },
-  bulkConcludeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.sage, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radii.button },
+  bulkConcludeBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.textPrimary, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radii.button },
   bulkDeleteBtn:   { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: c.coral, paddingHorizontal: 16, paddingVertical: 10, borderRadius: radii.button },
   bulkBtnTxt:      { fontSize: fontSizes.caption, fontWeight: '700', color: '#fff' },
 });
@@ -176,6 +179,8 @@ export default function PersonalScreen({ navigation }: Props) {
   const [archivedTrips, setArchivedTrips] = useState<TripWithSpent[]>([]);
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudgetWithSpent[]>([]);
   const [loading, setLoading]             = useState(true);
+  const [loadError, setLoadError]         = useState(false);
+  const [reloadTick, setReloadTick]       = useState(0);
   const [tripTab, setTripTab]             = useState<'active' | 'past'>('active');
   const [creationLocked, setCreationLocked] = useState(false);
 
@@ -213,7 +218,7 @@ export default function PersonalScreen({ navigation }: Props) {
       const toWithSpent = async (list: PersonalTrip[]) =>
         Promise.all(list.map(async trip => {
           const exps = await getPersonalTripExpenses(trip.id);
-          return { ...trip, spent: exps.reduce((s, e) => s + e.amount, 0) };
+          return { ...trip, spent: sumInHomeCurrency(exps, trip.currency).total };
         }));
 
       const [withSpent, withSpentArchived] = await Promise.all([
@@ -244,11 +249,15 @@ export default function PersonalScreen({ navigation }: Props) {
         setPhotoCache(new Map(photoCacheRef.current));
       }
     }
-    load();
-    canCreatePersonalTrip().then(can => setCreationLocked(!can));
+    load().catch(() => {
+      // Show the empty/retry state rather than an endless spinner.
+      setLoadError(true);
+      setLoading(false);
+    });
+    canCreatePersonalTrip().then(can => setCreationLocked(!can)).catch(() => {});
     setSelectMode(false);
     setSelectedIds(new Set());
-  }, []));
+  }, [reloadTick]));
 
   const handleCreatePress = async () => {
     if (await canCreatePersonalTrip()) {
@@ -413,7 +422,21 @@ export default function PersonalScreen({ navigation }: Props) {
         ]
     : [];
 
-  if (loading) return <SafeAreaView style={styles.safe} />;
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ActivityIndicator style={{ marginTop: 64 }} color={colors.textSecondary} />
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <ErrorRetry onRetry={() => { setLoading(true); setLoadError(false); setReloadTick((n) => n + 1); }} />
+      </SafeAreaView>
+    );
+  }
 
   const noAnyTrips      = trips.length === 0 && archivedTrips.length === 0;
   const currentTrip     = trips.find(t => t.is_current === 1) ?? trips[0] ?? null;

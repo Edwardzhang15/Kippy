@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActionSheetIOS,
+  ActivityIndicator,
   Alert,
   Animated,
   FlatList,
@@ -21,9 +22,10 @@ import { useTranslation } from 'react-i18next';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getGroupSummaries, archiveGroup, deleteGroup, canCreateGroupTrip, GroupSummary } from '../db';
-import { getAvatarColor, getInitials } from '../utils';
+import { getAvatarColor, getInitials, getCurrencySymbol } from '../utils';
 import { HomeStackParamList } from '../navigation/types';
 import AnimatedFAB from '../components/AnimatedFAB';
+import ErrorRetry from '../components/ErrorRetry';
 import ActionSheet, { SheetOption } from '../components/ActionSheet';
 
 type NavProp = NativeStackNavigationProp<HomeStackParamList, 'HomeScreen'>;
@@ -238,7 +240,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    backgroundColor: c.sage,
+    backgroundColor: c.textPrimary,
     paddingHorizontal: 16,
     paddingVertical: 10,
     borderRadius: radii.button,
@@ -392,9 +394,13 @@ function GroupCard({
               </Text>
               <Text style={[styles.totalSpent, hasPhoto && styles.photoSubText]}>
                 {t('home.totalSpent', {
+                  symbol: getCurrencySymbol(group.currency),
                   amount: group.totalSpent.toLocaleString(),
                   currency: group.currency,
                 })}
+                {group.unconvertedCount > 0
+                  ? ` · ${t('common.unconvertedShort', { count: group.unconvertedCount })}`
+                  : ''}
               </Text>
               <View style={styles.avatarRow}>
                 {group.members.slice(0, 5).map((m, i) => (
@@ -513,6 +519,7 @@ export default function HomeScreen() {
   const styles     = makeStyles(colors);
   const [groups, setGroups]       = useState<GroupSummary[]>([]);
   const [loading, setLoading]     = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [tab, setTab]             = useState<'active' | 'archived'>('active');
   const [focusTick, setFocusTick] = useState(0);
   const [creationLocked, setCreationLocked] = useState(false);
@@ -550,16 +557,27 @@ export default function HomeScreen() {
     setSelectedIds(new Set());
   }, [tab]);
 
+  const loadGroups = useCallback((isActive: () => boolean) => {
+    getGroupSummaries(tab === 'archived')
+      .then((data) => {
+        if (!isActive()) return;
+        setGroups(data);
+        setLoadError(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        // Show a retry rather than an empty list that looks like "no trips".
+        if (!isActive()) return;
+        setLoadError(true);
+        setLoading(false);
+      });
+  }, [tab]);
+
   useEffect(() => {
     let active = true;
-    getGroupSummaries(tab === 'archived').then((data) => {
-      if (active) {
-        setGroups(data);
-        setLoading(false);
-      }
-    });
+    loadGroups(() => active);
     return () => { active = false; };
-  }, [tab, focusTick]);
+  }, [loadGroups, focusTick]);
 
   function toggleSelectGroup(id: number) {
     setSelectedIds(prev => {
@@ -699,7 +717,17 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      {!loading && (
+      {loading && (
+        <ActivityIndicator style={{ marginTop: 64 }} color={colors.textSecondary} />
+      )}
+
+      {!loading && loadError && (
+        <ErrorRetry
+          onRetry={() => { setLoading(true); setLoadError(false); loadGroups(() => true); }}
+        />
+      )}
+
+      {!loading && !loadError && (
         <FlatList
           data={groups}
           keyExtractor={(item) => String(item.id)}

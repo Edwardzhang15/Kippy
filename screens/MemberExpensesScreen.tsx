@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import {
+  ActivityIndicator,
   Modal,
   Pressable,
   SafeAreaView,
@@ -21,6 +22,7 @@ import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, formatAmount } from '../utils';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import MemberExpenseShareCard from '../components/MemberExpenseShareCard';
+import ErrorRetry from '../components/ErrorRetry';
 import SettleUpModal from '../components/SettleUpModal';
 
 type Props = NativeStackScreenProps<HomeStackParamList, 'MemberExpenses'>;
@@ -193,6 +195,11 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     fontSize: fontSizes.caption,
     color: c.textSecondary,
   },
+  unconvertedNote: {
+    fontSize: fontSizes.caption,
+    color: c.textSecondary,
+    marginTop: 4,
+  },
   shareAmount: {
     fontSize: fontSizes.caption,
     fontWeight: '600',
@@ -300,6 +307,7 @@ function ExpenseItem({
   const { colors } = useTheme();
   const styles = makeStyles(colors);
   const isForeign = expense.currency !== homeCurrency;
+  const converted = isForeign ? homeAmount(expense, homeCurrency) : expense.amount;
   const cat = expense.category;
   const catDef = CATEGORY_MAP[cat];
   const { icon: iconName, color: iconColor, bg: iconBg } = catDef ?? FALLBACK_CATEGORY;
@@ -333,11 +341,13 @@ function ExpenseItem({
           </Text>
           {isForeign && (
             <Text style={styles.expenseConverted}>
-              {t('exchangeRate.converted', {
-                sym: getCurrencySymbol(homeCurrency),
-                amount: formatAmount(homeAmount(expense, homeCurrency), homeCurrency),
-                currency: homeCurrency,
-              })}
+              {converted === null
+                ? t('exchangeRate.unknown')
+                : t('exchangeRate.converted', {
+                    sym: getCurrencySymbol(homeCurrency),
+                    amount: formatAmount(converted, homeCurrency),
+                    currency: homeCurrency,
+                  })}
             </Text>
           )}
           {showShare && expense.share_amount != null && (
@@ -362,6 +372,8 @@ export default function MemberExpensesScreen({ route }: Props) {
   const styles = makeStyles(colors);
   const { groupId, memberId, memberName, avatarIndex, balance, groupCurrency } = route.params;
   const [data, setData] = useState<MemberExpensesData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [showSettleModal, setShowSettleModal] = useState(false);
   const [sharingSummary, setSharingSummary] = useState(false);
@@ -376,22 +388,41 @@ export default function MemberExpensesScreen({ route }: Props) {
     pageRefs.current[i] = r;
   }, []);
 
+  const load = useCallback((isActive: () => boolean) => {
+    getMemberExpenses(groupId, memberId)
+      .then((d) => {
+        if (!isActive()) return;
+        setData(d);
+        setLoadError(false);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!isActive()) return;
+        setLoadError(true);
+        setLoading(false);
+      });
+  }, [groupId, memberId]);
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      getMemberExpenses(groupId, memberId).then((d) => {
-        if (active) setData(d);
-      });
+      load(() => active);
       return () => { active = false; };
-    }, [groupId, memberId]),
+    }, [load]),
   );
+
+  const retry = () => {
+    setLoading(true);
+    setLoadError(false);
+    load(() => true);
+  };
 
   const handleShareSummary = async () => {
     const ref = pageRefs.current[0];
     if (!ref) return;
     setSharingSummary(true);
     try {
-      const uri = await captureRef(ref, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(ref, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('memberExpenses.shareTitle') });
     } catch {}
     setSharingSummary(false);
@@ -401,7 +432,7 @@ export default function MemberExpensesScreen({ route }: Props) {
     if (!memberCardRef.current) return;
     setSharingAll(true);
     try {
-      const uri = await captureRef(memberCardRef.current, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(memberCardRef.current, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('memberExpenses.shareTitle') });
     } catch {}
     setSharingAll(false);
@@ -426,6 +457,11 @@ export default function MemberExpensesScreen({ route }: Props) {
         </Pressable>
       </View>
 
+      {loadError ? (
+        <ErrorRetry onRetry={retry} />
+      ) : loading ? (
+        <ActivityIndicator style={{ marginTop: 48 }} color={colors.textSecondary} />
+      ) : (
       <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
         <View style={[styles.heroCard, cardShadow]}>
           <View style={styles.heroTop}>
@@ -441,6 +477,11 @@ export default function MemberExpensesScreen({ route }: Props) {
                 {getCurrencySymbol(groupCurrency)}
                 {formatAmount(data?.totalCharged ?? 0, groupCurrency)}
               </Text>
+              {!!data?.unconvertedCount && (
+                <Text style={styles.unconvertedNote}>
+                  {t('common.unconvertedExpenses', { count: data.unconvertedCount })}
+                </Text>
+              )}
             </View>
           </View>
 
@@ -521,6 +562,7 @@ export default function MemberExpensesScreen({ route }: Props) {
           <Text style={styles.emptyText}>{t('memberExpenses.noExpenses')}</Text>
         )}
       </ScrollView>
+      )}
 
       <Modal
         visible={showShareModal}

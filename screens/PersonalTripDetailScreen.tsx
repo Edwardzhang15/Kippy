@@ -19,9 +19,11 @@ import { type PersonalStackParamList } from '../navigation/types';
 import {
   getPersonalTrip, getPersonalTripExpenses, deletePersonalTrip,
   getPersonalTripCategoryBudgetsWithSpent,
+  sumInHomeCurrency,
   type PersonalTrip, type PersonalTripExpense, type CategoryBudgetWithSpent,
 } from '../db';
 import TripBudgetRing from '../components/TripBudgetRing';
+import { DEFAULT_CURRENCY } from '../utils';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 
 function catBarColor(pct: number, coral: string, sage: string): string {
@@ -124,6 +126,9 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
   const [categoryBudgets, setCategoryBudgets] = useState<CategoryBudgetWithSpent[]>([]);
   const enterAnim = useRef(new Animated.Value(0)).current;
 
+  const [loadError, setLoadError] = useState(false);
+  const [reloadTick, setReloadTick] = useState(0);
+
   useFocusEffect(useCallback(() => {
     async function load() {
       const [t_, e_, b_] = await Promise.all([
@@ -135,10 +140,11 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
       setExpenses(e_);
       setCategoryBudgets(b_);
     }
-    load();
+    setLoadError(false);
+    load().catch(() => setLoadError(true));
     enterAnim.setValue(0);
     Animated.spring(enterAnim, { toValue: 1, useNativeDriver: true, tension: 80, friction: 10 }).start();
-  }, [tripId, enterAnim]));
+  }, [tripId, enterAnim, reloadTick]));
 
   function getKipMessage(spent: number, budget: number | null): string {
     if (!budget || budget <= 0) return t('personalTrip.kipNoBudget');
@@ -165,8 +171,9 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
     );
   }
 
-  const spent = expenses.reduce((s, e) => s + e.amount, 0);
-  const sym = getCurrencySymbol(trip?.currency ?? 'CAD');
+  const spent = sumInHomeCurrency(expenses, trip?.currency ?? DEFAULT_CURRENCY).total;
+  const tripCurrency = trip?.currency ?? DEFAULT_CURRENCY;
+  const sym = getCurrencySymbol(tripCurrency);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -217,7 +224,7 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
             <TripBudgetRing
               spent={spent}
               budget={trip?.budget_amount ?? null}
-              currency={trip?.currency ?? 'CAD'}
+              currency={tripCurrency}
               size={148}
               strokeWidth={11}
             />
@@ -225,7 +232,7 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
               <Text style={styles.tripName}>{trip?.name ?? ''}</Text>
             )}
             <Text style={styles.spentLabel}>
-              {`${sym}${formatAmount(spent, trip?.currency ?? 'CAD')}${trip?.budget_amount ? ` / ${sym}${formatAmount(trip.budget_amount, trip.currency)}` : ''}`}
+              {`${sym}${formatAmount(spent, tripCurrency)}${trip?.budget_amount ? ` / ${sym}${formatAmount(trip.budget_amount, trip.currency)}` : ''}`}
             </Text>
             <View style={styles.chipRow}>
               <Pressable
@@ -256,7 +263,7 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
                     const pct = item.budget_amount > 0 ? item.spent / item.budget_amount : 0;
                     const cat = CATEGORY_MAP[item.category] ?? FALLBACK_CATEGORY;
                     const fillColor = catBarColor(pct, colors.coral, colors.sage);
-                    const catSym = getCurrencySymbol(trip?.currency ?? 'CAD');
+                    const catSym = getCurrencySymbol(tripCurrency);
                     return (
                       <View key={item.category} style={styles.catRow}>
                         <View style={[styles.catIconBg, { backgroundColor: (cat as any).bg ?? '#F5F5F5' }]}>
@@ -268,7 +275,7 @@ export default function PersonalTripDetailScreen({ navigation, route }: Props) {
                               {t(`categories.${item.category}`, item.category)}
                             </Text>
                             <Text style={styles.catAmt}>
-                              {`${catSym}${formatAmount(item.spent, trip?.currency ?? 'CAD')} / ${catSym}${formatAmount(item.budget_amount, trip?.currency ?? 'CAD')}`}
+                              {`${catSym}${formatAmount(item.spent, tripCurrency)} / ${catSym}${formatAmount(item.budget_amount, tripCurrency)}`}
                             </Text>
                           </View>
                           <View style={styles.catBarBg}>

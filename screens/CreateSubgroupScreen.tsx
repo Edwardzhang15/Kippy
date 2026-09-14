@@ -160,7 +160,7 @@ export default function CreateSubgroupScreen({ route, navigation }: Props) {
   const [saving, setSaving]   = useState(false);
 
   useEffect(() => {
-    getGroupDetails(route.params.groupId).then((data) => {
+    getGroupDetails(route.params.groupId).catch(() => null).then((data) => {
       if (data) {
         setMembers(data.members);
         setSelected(data.members.map((m) => m.id));

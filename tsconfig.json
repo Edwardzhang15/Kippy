@@ -1,6 +1,21 @@
 {
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
-    "strict": true
+    "strict": true,
+    "baseUrl": ".",
+    "paths": {
+      // @expo/vector-icons ships as a dependency of `expo` and npm does not
+      // hoist it here, so TypeScript can't find it by plain node resolution
+      // even though Metro bundles it fine. Both locations are listed so this
+      // keeps working if a future install does hoist it.
+      "@expo/vector-icons": [
+        "./node_modules/@expo/vector-icons",
+        "./node_modules/expo/node_modules/@expo/vector-icons"
+      ],
+      "@expo/vector-icons/*": [
+        "./node_modules/@expo/vector-icons/*",
+        "./node_modules/expo/node_modules/@expo/vector-icons/*"
+      ]
+    }
   }
 }

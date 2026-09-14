@@ -602,7 +602,7 @@ export default function ItineraryScreen() {
   const introPhraseIdx = useRef(Math.floor(Math.random() * 5)).current;
 
   useEffect(() => {
-    getGroup(groupId).then((g) => {
+    getGroup(groupId).catch(() => null).then((g) => {
       setGroup(g);
       if (g && !g.has_seen_itinerary_intro) setShowIntro(true);
     });
@@ -662,7 +662,7 @@ export default function ItineraryScreen() {
     if (!shareCardRef.current) return;
     setSharing(true);
     try {
-      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(shareCardRef, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, { mimeType: 'image/png', dialogTitle: t('itinerary.title') });
     } catch {
       Alert.alert(t('itinerary.shareError'), t('itinerary.shareErrorMsg'));

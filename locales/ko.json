@@ -8,7 +8,15 @@
     "groupNotFound": "그룹을 찾을 수 없어요.",
     "done": "완료",
     "remove": "제거",
-    "ratesUnavailable": "환율을 불러올 수 없어요 - 다중 통화 합계가 부정확할 수 있어요."
+    "ratesUnavailable": "환율을 불러올 수 없어요 - 다중 통화 합계가 부정확할 수 있어요.",
+    "retry": "다시 시도",
+    "loadErrorBody": "불러오지 못했어요. 연결을 확인하고 다시 시도해 주세요.",
+    "startupErrorTitle": "Kippy를 시작할 수 없어요",
+    "startupErrorBody": "데이터를 준비하는 중 문제가 생겼어요. 다시 시도해 보고, 계속되면 앱을 업데이트해 주세요.",
+    "unconvertedExpenses_one": "지출 {{count}}건이 빠져 있어요. 아직 환율을 알 수 없어요.",
+    "unconvertedExpenses_other": "지출 {{count}}건이 빠져 있어요. 아직 환율을 알 수 없어요.",
+    "unconvertedShort_one": "{{count}}건 미환산",
+    "unconvertedShort_other": "{{count}}건 미환산"
   },
   "tabs": {
     "home": "그룹 여행",
@@ -20,7 +28,7 @@
     "title": "내 여행",
     "tabActive": "진행 중",
     "tabPast": "지난 여행",
-    "totalSpent": "총액: ${{amount}} {{currency}}",
+    "totalSpent": "합계: {{symbol}}{{amount}} {{currency}}",
     "memberCount_one": "{{count}}명",
     "memberCount_other": "{{count}}명",
     "emptyActiveTitle": "아직 여행이 없어요",
@@ -42,7 +50,7 @@
     "deselectAll": "전체 해제"
   },
   "groupDetail": {
-    "totalSpent": "총 지출: ${{amount}} {{currency}}",
+    "totalSpent": "총 지출: {{symbol}}{{amount}} {{currency}}",
     "conclude": "종료",
     "concludeTitle": "여행 종료",
     "concludeMsg": "이 여행을 종료할까요? 지출은 계속 추가할 수 있지만 지난 여행으로 이동돼요.",
@@ -73,7 +81,9 @@
     "expensePaidBy": "{{name}} 결제 · {{date}}",
     "receipt": "영수증",
     "tripSummary": "여행 요약",
-    "shareBalanceBreakdown": "잔액 내역 공유"
+    "shareBalanceBreakdown": "잔액 내역 공유",
+    "splitEven": "균등 분배: {{names}}",
+    "splitUneven": "차등 분배: {{names}}"
   },
   "createGroup": {
     "title": "새 그룹",
@@ -374,7 +384,7 @@
     "actualAmount": "실제 {{amount}}",
     "overBudgetSuffix": "예산 초과",
     "underBudgetSuffix": "예산 미달",
-    "spent": "${{amount}} 지출",
+    "spent": "{{symbol}}{{amount}} 지출",
     "overBudgetLabel": "예산 초과",
     "underBudgetLabel": "예산 미달",
     "addCategory": "카테고리 추가",
@@ -401,9 +411,9 @@
     "totalTripCost": "총 여행 경비",
     "outstandingBalance": "미정산 잔액",
     "allSettledUp": "모두 정산 완료",
-    "remaining": "${{amount}} 남음",
+    "remaining": "{{symbol}}{{amount}} 남음",
     "settled": "정산 완료",
-    "owed": "${{amount}} 미정산",
+    "owed": "{{symbol}}{{amount}} 미정산",
     "moreMembers": "+{{count}}명 더",
     "dayItinerary": "{{day}}일차 · 일정표",
     "eventCount_one": "  ·  {{count}}개 일정",
@@ -584,7 +594,9 @@
     "failed": "실시간 환율을 불러오지 못했어요. 환율을 직접 입력해 주세요.",
     "failedCached": "실시간 환율을 불러오지 못했어요. 마지막으로 저장된 환율을 보여드려요. 필요하면 수정하세요.",
     "retry": "다시 시도",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ 환율 미확인",
+    "needRate": "먼저 환율을 입력해 주세요."
   },
   "createSubgroup": {
     "title": "새 서브그룹",

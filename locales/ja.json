@@ -8,7 +8,15 @@
     "groupNotFound": "グループが見つかりません。",
     "done": "完了",
     "remove": "削除",
-    "ratesUnavailable": "為替レートが利用できません、複数通貨の合計が不正確な場合があります。"
+    "ratesUnavailable": "為替レートが利用できません、複数通貨の合計が不正確な場合があります。",
+    "retry": "再試行",
+    "loadErrorBody": "読み込めませんでした。接続を確認してもう一度お試しください。",
+    "startupErrorTitle": "Kippyを起動できませんでした",
+    "startupErrorBody": "データの準備中に問題が発生しました。もう一度お試しください。繰り返す場合はアプリを更新してください。",
+    "unconvertedExpenses_one": "{{count}}件の支出は除外されています。為替レートが不明です。",
+    "unconvertedExpenses_other": "{{count}}件の支出は除外されています。為替レートが不明です。",
+    "unconvertedShort_one": "{{count}}件未換算",
+    "unconvertedShort_other": "{{count}}件未換算"
   },
   "tabs": {
     "home": "グループ旅行",
@@ -20,7 +28,7 @@
     "title": "旅行一覧",
     "tabActive": "進行中",
     "tabPast": "過去の旅行",
-    "totalSpent": "合計：${{amount}} {{currency}}",
+    "totalSpent": "合計: {{symbol}}{{amount}} {{currency}}",
     "memberCount_other": "{{count}} 人",
     "emptyActiveTitle": "旅行がありません",
     "emptyActiveSubtitle": "+ を押して最初のグループを作成しましょう",
@@ -42,7 +50,7 @@
     "memberCount_one": "{{count}} 人"
   },
   "groupDetail": {
-    "totalSpent": "合計：${{amount}} {{currency}}",
+    "totalSpent": "支出合計: {{symbol}}{{amount}} {{currency}}",
     "conclude": "終了",
     "concludeTitle": "旅行を終了",
     "concludeMsg": "この旅行を終了しますか？費用の追加は引き続き可能ですが、過去の旅行に移動されます。",
@@ -73,7 +81,9 @@
     "receipt": "レシート",
     "tripSummary": "旅行まとめ",
     "shareBalanceBreakdown": "残高明細をシェア",
-    "subgroupCount_one": "{{count}} 人"
+    "subgroupCount_one": "{{count}} 人",
+    "splitEven": "均等に分割: {{names}}",
+    "splitUneven": "不均等に分割: {{names}}"
   },
   "createGroup": {
     "title": "新しいグループ",
@@ -374,7 +384,7 @@
     "actualAmount": "実績 {{amount}}",
     "overBudgetSuffix": "予算オーバー",
     "underBudgetSuffix": "予算内",
-    "spent": "${{amount}} 使用済み",
+    "spent": "{{symbol}}{{amount}} 使用",
     "overBudgetLabel": "予算オーバー",
     "underBudgetLabel": "予算内",
     "addCategory": "カテゴリを追加",
@@ -401,9 +411,9 @@
     "totalTripCost": "旅行総費用",
     "outstandingBalance": "未精算残高",
     "allSettledUp": "全額精算済み",
-    "remaining": "${{amount}} 未精算",
+    "remaining": "残り {{symbol}}{{amount}}",
     "settled": "精算済み",
-    "owed": "${{amount}} の負債",
+    "owed": "未精算 {{symbol}}{{amount}}",
     "moreMembers": "他 {{count}} 人",
     "dayItinerary": "第 {{day}} 日 · 旅程",
     "eventCount_other": "  ·  {{count}} 件",
@@ -584,7 +594,9 @@
     "failed": "最新レートを取得できませんでした。レートを手動で入力してください。",
     "failedCached": "最新レートを取得できませんでした。最後に保存したレートを表示しています。必要に応じて調整してください。",
     "retry": "再試行",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ レート不明",
+    "needRate": "先に為替レートを入力してください。"
   },
   "createSubgroup": {
     "title": "新しいサブグループ",

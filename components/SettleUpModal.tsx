@@ -13,10 +13,10 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { recordSettlement } from '../db';
-import { getCachedRates, convertAmount } from '../currencyRates';
 import { type ColorPalette, fontSizes, radii } from '../theme';
 import { getAvatarColor, getInitials, getCurrencySymbol, formatAmount, SUPPORTED_CURRENCIES } from '../utils';
 import { useTheme } from '../context/ThemeContext';
+import ExchangeRateField, { useExchangeRate } from './ExchangeRateField';
 
 type Props = {
   visible: boolean;
@@ -65,16 +65,17 @@ export default function SettleUpModal({
   const baseSym = getCurrencySymbol(currency);
   const baseAmt = formatAmount(absBase, currency);
 
-  const rates         = getCachedRates();
   const isCrossCur    = payInCurrency !== currency;
-  const payInAbsAmt   = isCrossCur && rates
-    ? convertAmount(absBase, currency, payInCurrency, rates)
-    : absBase;
+  // Fetched once for this pair, editable, and stored with the settlement, so
+  // the recorded amount is the rate the user actually agreed to.
+  const fx            = useExchangeRate(currency, isCrossCur ? payInCurrency : currency);
+  const payInAbsAmt   = isCrossCur && fx.rate !== null ? absBase * fx.rate : absBase;
   const payInSym      = getCurrencySymbol(payInCurrency);
   const payInAmtStr   = formatAmount(payInAbsAmt, payInCurrency);
+  const rateMissing   = isCrossCur && fx.rate === null;
 
   const handleSettle = async () => {
-    if (settling || isZero) return;
+    if (settling || isZero || rateMissing) return;
     setSettling(true);
 
     const finalPayCur = payInCurrency;
@@ -176,11 +177,18 @@ export default function SettleUpModal({
                 </ScrollView>
 
                 {isCrossCur && (
-                  <Text style={styles.equivalentText}>
-                    {rates
-                      ? t('settleUp.equivalent', { sym: payInSym, amount: payInAmtStr, currency: payInCurrency })
-                      : `≈ ${payInSym}- ${payInCurrency}`}
-                  </Text>
+                  <>
+                    {fx.rate !== null && (
+                      <Text style={styles.equivalentText}>
+                        {t('settleUp.equivalent', {
+                          sym: payInSym,
+                          amount: payInAmtStr,
+                          currency: payInCurrency,
+                        })}
+                      </Text>
+                    )}
+                    <ExchangeRateField fx={fx} />
+                  </>
                 )}
               </View>
             </>
@@ -192,7 +200,7 @@ export default function SettleUpModal({
             <Animated.View
               style={[styles.checkContainer, { opacity: checkOpacity, transform: [{ scale: checkScale }] }]}
             >
-              <Ionicons name="checkmark-circle" size={60} color={colors.coral} />
+              <Ionicons name="checkmark-circle" size={60} color={colors.textPrimary} />
               <Text style={styles.settledLabel}>{t('settleUp.settled')}</Text>
               {settledPayCurrency !== currency && (
                 <Text style={styles.settledDetail}>
@@ -210,9 +218,9 @@ export default function SettleUpModal({
           ) : (
             <Animated.View style={{ opacity: buttonOpacity, width: '100%' }}>
               <Pressable
-                style={[styles.button, (settling || isZero) && styles.buttonDisabled]}
+                style={[styles.button, (settling || isZero || rateMissing) && styles.buttonDisabled]}
                 onPress={handleSettle}
-                disabled={settling || isZero}
+                disabled={settling || isZero || rateMissing}
               >
                 <Text style={styles.buttonText}>
                   {settling ? t('settleUp.saving') : t('settleUp.markAsSettled')}
@@ -369,7 +377,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   settledLabel: {
     fontSize: fontSizes.sectionTitle,
     fontWeight: '700',
-    color: c.coral,
+    color: c.textPrimary,
   },
   settledDetail: {
     fontSize: fontSizes.caption,

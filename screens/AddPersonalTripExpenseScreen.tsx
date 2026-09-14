@@ -25,8 +25,9 @@ import {
 import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getCurrencySymbol } from '../utils';
+import { getCurrencySymbol, DEFAULT_CURRENCY, SUPPORTED_CURRENCIES } from '../utils';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
+import ExchangeRateField, { useExchangeRate } from '../components/ExchangeRateField';
 
 type Props = NativeStackScreenProps<PersonalStackParamList, 'AddPersonalTripExpense'>;
 
@@ -65,6 +66,12 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   datePickerWrap:    { backgroundColor: c.card, borderRadius: radii.button, marginTop: 8, overflow: 'hidden' },
   datePickerDoneRow: { flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: c.border },
   datePickerDone:    { fontSize: fontSizes.body, fontWeight: '600', color: c.coral },
+  currencyScroll:         { flexGrow: 0 },
+  currencyScrollContent:  { gap: 8 },
+  currencyChip:           { flexDirection: 'row', alignItems: 'center', gap: 5, paddingHorizontal: 16, paddingVertical: 9, borderRadius: 20, backgroundColor: c.card, borderWidth: 2, borderColor: 'transparent' },
+  currencyChipSelected:   { borderColor: c.coral },
+  currencyChipText:       { fontSize: fontSizes.body, fontWeight: '600', color: c.textSecondary },
+  currencyChipTextSelected: { color: c.coral },
   saveBtn:        { margin: 20, marginTop: 24, backgroundColor: c.coral, borderRadius: radii.button, paddingVertical: 16, alignItems: 'center' },
   saveBtnText:    { fontSize: fontSizes.body, fontWeight: '700', color: '#fff' },
 });
@@ -76,7 +83,11 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
   const { tripId, expenseId } = route.params;
   const isEditing = expenseId != null;
 
-  const [tripCurrency, setTripCurrency] = useState('CAD');
+  const [tripCurrency, setTripCurrency] = useState(DEFAULT_CURRENCY);
+  // An expense can be logged in any currency; the trip's own currency is what
+  // its budget and totals are stated in, so a rate is frozen onto the expense.
+  const [expenseCurrency, setExpenseCurrency] = useState('');
+  const [savedRate, setSavedRate] = useState<{ currency: string; rate: number } | null>(null);
   const [amountText, setAmountText] = useState('');
   const [category, setCategory] = useState('other');
   const [note, setNote] = useState('');
@@ -87,8 +98,11 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
 
   useFocusEffect(useCallback(() => {
     getPersonalTrip(tripId).then(trip => {
-      if (trip) setTripCurrency(trip.currency);
-    });
+      if (trip) {
+        setTripCurrency(trip.currency);
+        setExpenseCurrency((prev) => prev || trip.currency);
+      }
+    }).catch(() => {});
     if (isEditing) {
       getPersonalTripExpense(expenseId!).then(exp => {
         if (exp) {
@@ -96,12 +110,18 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           setCategory(exp.category);
           setNote(exp.note ?? '');
           setDate(exp.date);
+          setExpenseCurrency(exp.currency);
+          if (exp.exchange_rate != null) {
+            setSavedRate({ currency: exp.currency, rate: exp.exchange_rate });
+          }
         }
-      });
+      }).catch(() => {});
     }
   }, [tripId, expenseId, isEditing]));
 
-  const sym = getCurrencySymbol(tripCurrency);
+  const isForeign = !!expenseCurrency && expenseCurrency !== tripCurrency;
+  const fx        = useExchangeRate(expenseCurrency, tripCurrency, savedRate?.currency, savedRate?.rate);
+  const sym       = getCurrencySymbol(expenseCurrency || tripCurrency);
 
   function formatDisplay(raw: string): string {
     if (!raw) return '0';
@@ -115,9 +135,23 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
       Alert.alert(t('personalTrip.amountRequired'));
       return;
     }
+    const exchangeRate = isForeign ? fx.rate : 1;
+    if (exchangeRate === null) {
+      Alert.alert(t('exchangeRate.needRate'));
+      return;
+    }
     setSaving(true);
     try {
-      const data = { personal_trip_id: tripId, amount, currency: tripCurrency, category, date, note: note || null, receipt_photo_uri: null };
+      const data = {
+        personal_trip_id: tripId,
+        amount,
+        currency: expenseCurrency || tripCurrency,
+        category,
+        date,
+        note: note || null,
+        receipt_photo_uri: null,
+        exchange_rate: exchangeRate,
+      };
       if (isEditing) {
         await updatePersonalTripExpense(expenseId!, data);
       } else {
@@ -182,6 +216,38 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
           returnKeyType="done"
           inputAccessoryViewID={DONE_BAR_ID}
         />
+
+        {/* Currency */}
+        <Text style={styles.label}>{t('addExpense.currency')}</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.currencyScroll}
+          contentContainerStyle={styles.currencyScrollContent}
+        >
+          {[tripCurrency, ...SUPPORTED_CURRENCIES.filter(c => c !== tripCurrency)].map(c => {
+            const selected = (expenseCurrency || tripCurrency) === c;
+            return (
+              <Pressable
+                key={c}
+                style={[styles.currencyChip, selected && styles.currencyChipSelected]}
+                onPress={() => setExpenseCurrency(c)}
+              >
+                {c === tripCurrency && (
+                  <Ionicons
+                    name="home-outline"
+                    size={13}
+                    color={selected ? colors.coral : colors.textSecondary}
+                  />
+                )}
+                <Text style={[styles.currencyChipText, selected && styles.currencyChipTextSelected]}>
+                  {c}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+        {isForeign && <ExchangeRateField fx={fx} amount={parseFloat(amountText) || null} />}
 
         {/* Category */}
         <Text style={styles.label}>{t('addExpense.category')}</Text>
@@ -254,7 +320,11 @@ export default function AddPersonalTripExpenseScreen({ navigation, route }: Prop
         )}
       </ScrollView>
 
-      <Pressable style={styles.saveBtn} onPress={handleSave} disabled={saving}>
+      <Pressable
+        style={[styles.saveBtn, (saving || (isForeign && fx.rate === null)) && { opacity: 0.45 }]}
+        onPress={handleSave}
+        disabled={saving || (isForeign && fx.rate === null)}
+      >
         <Text style={styles.saveBtnText}>{saving ? t('personalTrip.saving') : t('personalTrip.saveExpense')}</Text>
       </Pressable>
     </KeyboardAvoidingView>

@@ -40,9 +40,9 @@ import {
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { getAvatarColor, getInitials, formatExpenseDate, getCurrencySymbol, formatAmount } from '../utils';
-import { getCachedRates } from '../currencyRates';
 import { CATEGORY_MAP, FALLBACK_CATEGORY } from '../categories';
 import AnimatedFAB from '../components/AnimatedFAB';
+import ErrorRetry from '../components/ErrorRetry';
 import TripShareGridCard from '../components/TripShareGridCard';
 import BalanceBreakdownShareCard from '../components/BalanceBreakdownShareCard';
 
@@ -70,7 +70,11 @@ function MemberBalanceCard({
 }) {
   const { colors } = useTheme();
   const styles = makeStyles(colors);
-  const isPositive    = member.balance >= 0;
+  // A settled member owes nothing and is owed nothing, so neither colour applies.
+  const isSettled     = Math.abs(member.balance) < 0.005;
+  const balanceColor  = isSettled ? colors.textSecondary
+                      : member.balance > 0 ? colors.sage
+                      : colors.coral;
   const fadeAnim      = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(16)).current;
 
@@ -108,7 +112,7 @@ function MemberBalanceCard({
         <View style={styles.memberCardDivider} />
         <View style={styles.memberCardLower}>
           <Text
-            style={[styles.memberBalance, { color: isPositive ? colors.sage : colors.coral }]}
+            style={[styles.memberBalance, { color: balanceColor }]}
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
@@ -152,6 +156,7 @@ function ExpenseRow({
       ? expense.custom_category.trim()
       : expense.note?.trim() || t(`categories.${cat}`, catDef?.label ?? cat);
   const isForeign = expense.currency !== homeCurrency;
+  const converted = isForeign ? homeAmount(expense, homeCurrency) : expense.amount;
   const delay   = memberCount * 60 + 80 + index * 60;
   const fadeAnim      = useRef(new Animated.Value(0)).current;
   const translateAnim = useRef(new Animated.Value(12)).current;
@@ -192,7 +197,10 @@ function ExpenseRow({
           </Text>
           {splitNames && splitNames.length > 0 && (
             <Text style={styles.expenseSplit} numberOfLines={1}>
-              {'Split: ' + splitNames.join(', ')}
+              {t(
+                expense.split_method === 'even' ? 'groupDetail.splitEven' : 'groupDetail.splitUneven',
+                { names: splitNames.join(', ') },
+              )}
             </Text>
           )}
         </View>
@@ -203,11 +211,13 @@ function ExpenseRow({
           </Text>
           {isForeign && (
             <Text style={styles.expenseConverted}>
-              {t('exchangeRate.converted', {
-                sym: getCurrencySymbol(homeCurrency),
-                amount: formatAmount(homeAmount(expense, homeCurrency), homeCurrency),
-                currency: homeCurrency,
-              })}
+              {converted === null
+                ? t('exchangeRate.unknown')
+                : t('exchangeRate.converted', {
+                    sym: getCurrencySymbol(homeCurrency),
+                    amount: formatAmount(converted, homeCurrency),
+                    currency: homeCurrency,
+                  })}
             </Text>
           )}
           {expense.receipt_photo_uri ? (
@@ -267,6 +277,7 @@ export default function GroupDetailScreen({ route }: Props) {
   const [subgroups, setSubgroups] = useState<SubgroupWithMembers[]>([]);
   const [stops, setStops]       = useState<TripStop[]>([]);
   const [loading, setLoading]   = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const [toolsExpanded, setToolsExpanded] = useState(true);
   const [subgroupHintExpanded, setSubgroupHintExpanded] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -284,26 +295,41 @@ export default function GroupDetailScreen({ route }: Props) {
     setToolsExpanded(prev => !prev);
   };
 
+  const load = useCallback((active: () => boolean) => {
+    Promise.all([
+      getGroupDetails(route.params.groupId),
+      getSubgroups(route.params.groupId),
+      getTripStops(route.params.groupId),
+      getGroupExpensesWithSplits(route.params.groupId),
+    ]).then(([groupData, subgroupData, stopsData, expWithSplits]) => {
+      if (!active()) return;
+      setGroup(groupData);
+      setSubgroups(subgroupData);
+      setStops(stopsData);
+      setExpensesWithSplits(expWithSplits);
+      setLoadError(false);
+      setLoading(false);
+    }).catch(() => {
+      // Never leave the spinner up: a failed read gets a retry instead.
+      if (!active()) return;
+      setLoadError(true);
+      setLoading(false);
+    });
+  }, [route.params.groupId]);
+
   useFocusEffect(
     useCallback(() => {
       let active = true;
-      Promise.all([
-        getGroupDetails(route.params.groupId),
-        getSubgroups(route.params.groupId),
-        getTripStops(route.params.groupId),
-        getGroupExpensesWithSplits(route.params.groupId),
-      ]).then(([groupData, subgroupData, stopsData, expWithSplits]) => {
-        if (active) {
-          setGroup(groupData);
-          setSubgroups(subgroupData);
-          setStops(stopsData);
-          setExpensesWithSplits(expWithSplits);
-          setLoading(false);
-        }
-      });
+      load(() => active);
       return () => { active = false; };
-    }, [route.params.groupId]),
+    }, [load]),
   );
+
+  const retry = () => {
+    setLoading(true);
+    setLoadError(false);
+    load(() => true);
+  };
 
   if (loading) {
     return (
@@ -311,6 +337,19 @@ export default function GroupDetailScreen({ route }: Props) {
         <Animated.View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
           <Ionicons name="hourglass-outline" size={32} color={colors.coral} />
         </Animated.View>
+      </SafeAreaView>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <View style={styles.errorNav}>
+          <Pressable onPress={() => navigation.goBack()} hitSlop={12}>
+            <Ionicons name="chevron-back" size={22} color={colors.textPrimary} />
+          </Pressable>
+        </View>
+        <ErrorRetry onRetry={retry} />
       </SafeAreaView>
     );
   }
@@ -327,7 +366,7 @@ export default function GroupDetailScreen({ route }: Props) {
     if (!cardRef.current) return;
     setSharing(true);
     try {
-      const uri = await captureRef(cardRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(cardRef, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         dialogTitle: t('groupDetail.shareTripSummary'),
@@ -343,7 +382,7 @@ export default function GroupDetailScreen({ route }: Props) {
     if (!balanceCardRef.current) return;
     setSharingBalance(true);
     try {
-      const uri = await captureRef(balanceCardRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(balanceCardRef, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         dialogTitle: t('groupDetail.shareBalanceBreakdown'),
@@ -360,7 +399,7 @@ export default function GroupDetailScreen({ route }: Props) {
     if (!summaryRef) return;
     setSharingSummary(true);
     try {
-      const uri = await captureRef(summaryRef, { format: 'png', quality: 1, pixelRatio: 3 });
+      const uri = await captureRef(summaryRef, { format: 'png', quality: 1 });
       await Sharing.shareAsync(uri, {
         mimeType: 'image/png',
         dialogTitle: t('groupDetail.shareBalanceBreakdown'),
@@ -451,14 +490,17 @@ export default function GroupDetailScreen({ route }: Props) {
         {!hasPhoto && <Text style={styles.screenTitle}>{group.name}</Text>}
         <Text style={[styles.totalLabel, hasPhoto && styles.totalLabelAfterHero]}>
           {t('groupDetail.totalSpent', {
+            symbol: getCurrencySymbol(group.currency),
             amount: formatAmount(group.totalSpent, group.currency),
             currency: group.currency,
           })}
         </Text>
-        {getCachedRates() === null && group.expenses.some(e => e.exchange_rate == null && e.currency !== group.currency) && (
+        {group.unconvertedCount > 0 && (
           <View style={styles.ratesBanner}>
-            <Ionicons name="warning-outline" size={13} color={colors.coral} />
-            <Text style={styles.ratesBannerText}>{t('common.ratesUnavailable')}</Text>
+            <Ionicons name="warning-outline" size={13} color={colors.textSecondary} />
+            <Text style={styles.ratesBannerText}>
+              {t('common.unconvertedExpenses', { count: group.unconvertedCount })}
+            </Text>
           </View>
         )}
 
@@ -958,6 +1000,10 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
     marginTop: 0,
   },
 
+  errorNav: {
+    paddingHorizontal: SCREEN_H_PAD,
+    paddingTop: 16,
+  },
   navRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -995,7 +1041,7 @@ const makeStyles = (c: ColorPalette) => StyleSheet.create({
   },
   ratesBannerText: {
     fontSize: fontSizes.caption,
-    color: c.coral,
+    color: c.textSecondary,
     flex: 1,
   },
   sectionTitle: {

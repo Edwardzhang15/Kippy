@@ -18,7 +18,7 @@ import { createPersonalTrip, updatePersonalTrip, getPersonalTrip, setPersonalTri
 import { CATEGORIES } from '../categories';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
-import { getCurrencySymbol, formatAmount, SUPPORTED_CURRENCIES } from '../utils';
+import { getCurrencySymbol, formatAmount, SUPPORTED_CURRENCIES, DEFAULT_CURRENCY } from '../utils';
 import { useFocusEffect } from '@react-navigation/native';
 import { useCallback } from 'react';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
@@ -92,7 +92,7 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
   const isEditing = editingTripId != null;
 
   const [name, setName] = useState('');
-  const [currency, setCurrency] = useState('CAD');
+  const [currency, setCurrency] = useState(DEFAULT_CURRENCY);
   const [budgetText, setBudgetText] = useState('');
   const [destination, setDestination] = useState('');
   const [originalDestination, setOriginalDestination] = useState('');
@@ -103,7 +103,7 @@ export default function CreatePersonalTripScreen({ navigation, route }: Props) {
 
   useFocusEffect(useCallback(() => {
     if (isEditing) {
-      getPersonalTrip(editingTripId!).then(trip => {
+      getPersonalTrip(editingTripId!).catch(() => null).then(trip => {
         if (trip) {
           setName(trip.name);
           setCurrency(trip.currency);

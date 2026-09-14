@@ -8,7 +8,15 @@
     "groupNotFound": "Grupo no encontrado.",
     "done": "Listo",
     "remove": "Quitar",
-    "ratesUnavailable": "Tipos de cambio no disponibles - los totales en múltiples divisas pueden ser inexactos."
+    "ratesUnavailable": "Tipos de cambio no disponibles - los totales en múltiples divisas pueden ser inexactos.",
+    "retry": "Reintentar",
+    "loadErrorBody": "Kippy no pudo cargar esto. Revisa tu conexión e inténtalo de nuevo.",
+    "startupErrorTitle": "Kippy no pudo iniciarse",
+    "startupErrorBody": "Algo falló al preparar tus datos. Inténtalo de nuevo y actualiza la app si sigue pasando.",
+    "unconvertedExpenses_one": "Queda {{count}} gasto fuera: todavía no se conoce su tipo de cambio.",
+    "unconvertedExpenses_other": "Quedan {{count}} gastos fuera: todavía no se conoce su tipo de cambio.",
+    "unconvertedShort_one": "{{count}} sin convertir",
+    "unconvertedShort_other": "{{count}} sin convertir"
   },
   "tabs": {
     "home": "Viajes en Grupo",
@@ -20,7 +28,7 @@
     "title": "Tus Viajes",
     "tabActive": "Activos",
     "tabPast": "Pasados",
-    "totalSpent": "Total: ${{amount}} {{currency}}",
+    "totalSpent": "Total: {{symbol}}{{amount}} {{currency}}",
     "memberCount_one": "{{count}} persona",
     "memberCount_other": "{{count}} personas",
     "emptyActiveTitle": "Sin viajes aún",
@@ -42,7 +50,7 @@
     "deselectAll": "Deseleccionar todo"
   },
   "groupDetail": {
-    "totalSpent": "Total gastado: ${{amount}} {{currency}}",
+    "totalSpent": "Gasto total: {{symbol}}{{amount}} {{currency}}",
     "conclude": "Concluir",
     "concludeTitle": "Concluir Viaje",
     "concludeMsg": "¿Concluir este viaje? Aún puedes agregar gastos, pero se moverá a Viajes Pasados.",
@@ -73,7 +81,9 @@
     "expensePaidBy": "Pagado por {{name}} · {{date}}",
     "receipt": "Recibo",
     "tripSummary": "Resumen del Viaje",
-    "shareBalanceBreakdown": "Compartir Desglose de Balances"
+    "shareBalanceBreakdown": "Compartir Desglose de Balances",
+    "splitEven": "Dividido por igual: {{names}}",
+    "splitUneven": "Dividido de forma desigual: {{names}}"
   },
   "createGroup": {
     "title": "Nuevo Grupo",
@@ -374,7 +384,7 @@
     "actualAmount": "{{amount}} real",
     "overBudgetSuffix": "sobre el presupuesto",
     "underBudgetSuffix": "bajo el presupuesto",
-    "spent": "${{amount}} gastado",
+    "spent": "{{symbol}}{{amount}} gastado",
     "overBudgetLabel": "Sobre el presupuesto",
     "underBudgetLabel": "Bajo el presupuesto",
     "addCategory": "Agregar Categoría",
@@ -401,9 +411,9 @@
     "totalTripCost": "Costo Total del Viaje",
     "outstandingBalance": "Balance Pendiente",
     "allSettledUp": "Todo saldado",
-    "remaining": "${{amount}} restante",
+    "remaining": "Quedan {{symbol}}{{amount}}",
     "settled": "Saldado",
-    "owed": "${{amount}} adeudado",
+    "owed": "{{symbol}}{{amount}} pendiente",
     "moreMembers": "+{{count}} más",
     "dayItinerary": "Día {{day}} · Itinerario",
     "eventCount_one": "  ·  {{count}} evento",
@@ -584,7 +594,9 @@
     "failed": "No se pudo obtener el tipo de cambio actual. Introdúcelo manualmente.",
     "failedCached": "No se pudo obtener el tipo de cambio actual. Se muestra el último guardado, ajústalo si hace falta.",
     "retry": "Reintentar",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ tipo desconocido",
+    "needRate": "Introduce primero un tipo de cambio."
   },
   "createSubgroup": {
     "title": "Nuevo Subgrupo",

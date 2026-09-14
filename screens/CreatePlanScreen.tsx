@@ -19,7 +19,7 @@ import { createPlanTrip, addTripStop } from '../db';
 import { type ColorPalette, fontSizes, radii, cardShadow } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { DONE_BAR_ID } from '../components/KeyboardDoneBar';
-import { SUPPORTED_CURRENCIES } from '../utils';
+import { SUPPORTED_CURRENCIES, getCurrencySymbol } from '../utils';
 
 type Props = NativeStackScreenProps<PlanStackParamList, 'CreatePlan'>;
 
@@ -280,7 +280,7 @@ export default function CreatePlanScreen({ navigation }: Props) {
           <SectionLabel title={t('createPlan.budget')} />
           <View style={[styles.inputCard, cardShadow]}>
             <View style={styles.budgetRow}>
-              <Text style={styles.currencyPrefix}>{currency === 'JPY' ? '¥' : '$'}</Text>
+              <Text style={styles.currencyPrefix}>{getCurrencySymbol(currency)}</Text>
               <TextInput
                 style={[styles.input, { flex: 1 }]}
                 placeholder="0.00"

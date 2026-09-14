@@ -1,6 +1,7 @@
 import * as SQLite from 'expo-sqlite';
-import { getCachedRates, getCachedRate, convertAmount } from './currencyRates';
+import { getCachedRate } from './currencyRates';
 import type { SplitMethod, SplitShare } from './splits';
+import { DEFAULT_CURRENCY } from './utils';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,6 +54,8 @@ export type Expense = {
 
 export type GroupDetails = Group & {
   totalSpent: number;
+  /** Expenses excluded from totals and balances because no rate is known for them. */
+  unconvertedCount: number;
   members: MemberWithBalance[];
   expenses: Expense[];
 };
@@ -155,6 +158,10 @@ export type PersonalTripExpense = {
   date: string;
   note: string | null;
   receipt_photo_uri: string | null;
+  // Frozen at entry, exactly like group expenses: units of the trip's currency
+  // per 1 unit of `currency`, and `amount` converted with it.
+  exchange_rate: number | null;
+  converted_amount: number | null;
 };
 
 export type PersonalTripBudget = {
@@ -520,6 +527,20 @@ export async function initDatabase(): Promise<void> {
     `);
   } catch { /* table already exists */ }
 
+  // Migration v30: personal trip expenses freeze their own exchange rate, so a
+  // personal trip's totals stop moving when live rates do.
+  try {
+    await db.execAsync('ALTER TABLE personal_trip_expenses ADD COLUMN exchange_rate REAL;');
+  } catch { /* column already exists */ }
+  try {
+    await db.execAsync('ALTER TABLE personal_trip_expenses ADD COLUMN converted_amount REAL;');
+  } catch { /* column already exists */ }
+  await db.runAsync(
+    `UPDATE personal_trip_expenses SET exchange_rate = 1, converted_amount = amount
+     WHERE exchange_rate IS NULL
+       AND currency = (SELECT pt.currency FROM personal_trips pt WHERE pt.id = personal_trip_expenses.personal_trip_id)`,
+  );
+
   // Migration v29: how an expense is split, plus the raw per-member input
   // (amount, percentage or share count) behind each stored share.
   try {
@@ -558,19 +579,35 @@ export async function initDatabase(): Promise<void> {
 }
 
 // Freezes a rate onto cross-currency expenses saved before rates were stored,
-// using the cached rate table. Rows stay NULL (and keep using the live cache)
-// until rates are available, so this retries on every startup until done.
+// using the cached rate table. Rows it can't fill stay NULL, which keeps them
+// out of every total until a rate is known, so this retries on each startup.
 export async function backfillLegacyExpenseRates(): Promise<void> {
-  const rows = await db.getAllAsync<{ id: number; amount: number; currency: string; home: string }>(
+  type LegacyRow = { id: number; amount: number; currency: string; home: string };
+
+  const groupRows = await db.getAllAsync<LegacyRow>(
     `SELECT e.id, e.amount, e.currency, g.currency AS home
      FROM expenses e JOIN groups g ON e.group_id = g.id
      WHERE e.exchange_rate IS NULL`,
   );
-  for (const r of rows) {
+  for (const r of groupRows) {
     const rate = getCachedRate(r.currency, r.home);
     if (rate === null) continue;
     await db.runAsync(
       'UPDATE expenses SET exchange_rate = ?, converted_amount = ? WHERE id = ?',
+      rate, round2(r.amount * rate), r.id,
+    );
+  }
+
+  const personalRows = await db.getAllAsync<LegacyRow>(
+    `SELECT pte.id, pte.amount, pte.currency, pt.currency AS home
+     FROM personal_trip_expenses pte JOIN personal_trips pt ON pte.personal_trip_id = pt.id
+     WHERE pte.exchange_rate IS NULL`,
+  );
+  for (const r of personalRows) {
+    const rate = getCachedRate(r.currency, r.home);
+    if (rate === null) continue;
+    await db.runAsync(
+      'UPDATE personal_trip_expenses SET exchange_rate = ?, converted_amount = ? WHERE id = ?',
       rate, round2(r.amount * rate), r.id,
     );
   }
@@ -702,6 +739,8 @@ export async function getGroupHasLedger(groupId: number): Promise<boolean> {
  * it. `factor` is units of the new home currency per 1 unit of the old one,
  * chosen once by the user, so stored per-expense rates are rebased rather than
  * re-fetched. Expenses logged in the new home currency snap to a rate of 1.
+ * Planned budgets are money in the home currency too, so they move by the same
+ * factor; leaving them behind would silently change what they mean.
  */
 export async function changeGroupHomeCurrency(
   groupId: number,
@@ -717,9 +756,11 @@ export async function changeGroupHomeCurrency(
   );
   await db.withTransactionAsync(async () => {
     for (const r of rows) {
-      const rate = r.currency === newCurrency
-        ? 1
-        : rateToHome(r.currency, r.exchange_rate, oldCurrency) * factor;
+      const oldRate = rateToHome(r.currency, r.exchange_rate, oldCurrency);
+      // No known old rate means no honest way to rebase this one; leave it
+      // unconverted so it stays visibly excluded rather than becoming a guess.
+      if (r.currency !== newCurrency && oldRate === null) continue;
+      const rate = r.currency === newCurrency ? 1 : oldRate! * factor;
       await db.runAsync(
         'UPDATE expenses SET exchange_rate = ?, converted_amount = ? WHERE id = ?',
         rate, round2(r.amount * rate), r.id,
@@ -728,6 +769,15 @@ export async function changeGroupHomeCurrency(
     // Settlements are stored as home-currency balance values.
     await db.runAsync(
       'UPDATE settlements SET amount = ROUND(amount * ?, 2) WHERE group_id = ?',
+      factor, groupId,
+    );
+    // Planned budgets are stated in the home currency as well.
+    await db.runAsync(
+      'UPDATE groups SET budget_per_person = ROUND(budget_per_person * ?, 2) WHERE id = ? AND budget_per_person IS NOT NULL',
+      factor, groupId,
+    );
+    await db.runAsync(
+      'UPDATE budget_items SET planned_amount = ROUND(planned_amount * ?, 2) WHERE group_id = ?',
       factor, groupId,
     );
     await db.runAsync('UPDATE groups SET currency = ? WHERE id = ?', newCurrency, groupId);
@@ -1085,6 +1135,8 @@ export async function getExpensesForMonth(
 
 export type GroupSummary = Group & {
   totalSpent: number;
+  /** Expenses left out of totalSpent because no rate is known for them. */
+  unconvertedCount: number;
   members: Pick<Member, 'id' | 'name'>[];
 };
 
@@ -1107,8 +1159,8 @@ export async function getGroupSummaries(archived = false): Promise<GroupSummary[
         'SELECT amount, currency, exchange_rate, converted_amount FROM expenses WHERE group_id = ?',
         group.id,
       );
-      const totalSpent = round2(expRows.reduce((sum, e) => sum + homeAmount(e, group.currency), 0));
-      return { ...group, totalSpent, members };
+      const { total, unconvertedCount } = sumInHomeCurrency(expRows, group.currency);
+      return { ...group, totalSpent: total, unconvertedCount, members };
     }),
   );
 }
@@ -1127,8 +1179,8 @@ export async function getAllTripSummaries(): Promise<GroupSummary[]> {
         'SELECT amount, currency, exchange_rate, converted_amount FROM expenses WHERE group_id = ?',
         group.id,
       );
-      const totalSpent = round2(expRows.reduce((sum, e) => sum + homeAmount(e, group.currency), 0));
-      return { ...group, totalSpent, members };
+      const { total, unconvertedCount } = sumInHomeCurrency(expRows, group.currency);
+      return { ...group, totalSpent: total, unconvertedCount, members };
     }),
   );
 }
@@ -1254,6 +1306,37 @@ export async function createPlanTrip(
   return result.lastInsertRowId;
 }
 
+// ─── Plan trips (legacy) ──────────────────────────────────────────────────────
+// The separate "plan" tab was retired in migration v16, which cleared every
+// is_planning flag, so getPlanSummaries() now returns nothing on real data.
+// Both functions are kept because the Plan screens still reference them and are
+// still built; they define plans exactly as the retired feature did.
+
+export async function getPlanSummaries(): Promise<GroupSummary[]> {
+  const groups = await db.getAllAsync<Group>(
+    'SELECT * FROM groups WHERE is_planning = 1 AND is_archived = 0 ORDER BY id DESC',
+  );
+  return Promise.all(
+    groups.map(async (group) => {
+      const members = await db.getAllAsync<Pick<Member, 'id' | 'name'>>(
+        'SELECT id, name FROM members WHERE group_id = ? ORDER BY id ASC',
+        group.id,
+      );
+      const expRows = await db.getAllAsync<HomeAmountRow>(
+        'SELECT amount, currency, exchange_rate, converted_amount FROM expenses WHERE group_id = ?',
+        group.id,
+      );
+      const { total, unconvertedCount } = sumInHomeCurrency(expRows, group.currency);
+      return { ...group, totalSpent: total, unconvertedCount, members };
+    }),
+  );
+}
+
+/** Turns a plan into a live trip by clearing its planning flag. */
+export async function activatePlanTrip(groupId: number): Promise<void> {
+  await db.runAsync('UPDATE groups SET is_planning = 0 WHERE id = ?', groupId);
+}
+
 export type ExpenseWithSplits = Expense & { splitMemberNames: string[] };
 
 export async function getGroupExpensesWithSplits(groupId: number): Promise<ExpenseWithSplits[]> {
@@ -1297,24 +1380,34 @@ export async function getGroupDetails(groupId: number): Promise<GroupDetails | n
 
   const gc = group.currency;
 
-  // paid map: total paid by each member, in the home currency at each expense's stored rate
+  // paid map: total paid by each member, in the home currency at each expense's
+  // stored rate. An expense with no known rate is left out of the balances
+  // entirely (both sides of it), and counted so the UI can flag the gap.
   const paidMap = new Map<number, number>();
+  const unconvertible = new Set<number>();
   for (const e of expenses) {
-    paidMap.set(e.paid_by, (paidMap.get(e.paid_by) ?? 0) + homeAmount(e, gc));
+    const amount = homeAmount(e, gc);
+    if (amount === null) { unconvertible.add(e.id); continue; }
+    paidMap.set(e.paid_by, (paidMap.get(e.paid_by) ?? 0) + amount);
   }
 
   // owed map: total owed by each member via expense splits. Shares are stored in
   // the expense's own currency, so they convert at that same expense's rate.
-  type SplitRow = { member_id: number; share_amount: number; currency: string; exchange_rate: number | null };
+  type SplitRow = {
+    expense_id: number; member_id: number; share_amount: number;
+    currency: string; exchange_rate: number | null;
+  };
   const splitRows = await db.getAllAsync<SplitRow>(
-    `SELECT es.member_id, es.share_amount, e.currency, e.exchange_rate
+    `SELECT es.expense_id, es.member_id, es.share_amount, e.currency, e.exchange_rate
      FROM expense_splits es JOIN expenses e ON es.expense_id = e.id WHERE e.group_id = ?`,
     groupId,
   );
   const owedMap = new Map<number, number>();
   for (const s of splitRows) {
-    const amt = s.share_amount * rateToHome(s.currency, s.exchange_rate, gc);
-    owedMap.set(s.member_id, (owedMap.get(s.member_id) ?? 0) + amt);
+    if (unconvertible.has(s.expense_id)) continue;
+    const rate = rateToHome(s.currency, s.exchange_rate, gc);
+    if (rate === null) continue;
+    owedMap.set(s.member_id, (owedMap.get(s.member_id) ?? 0) + s.share_amount * rate);
   }
 
   // settled map: settlements are stored in group currency (balance value at settle time)
@@ -1333,7 +1426,8 @@ export async function getGroupDetails(groupId: number): Promise<GroupDetails | n
 
   return {
     ...group,
-    totalSpent: round2(expenses.reduce((sum, e) => sum + homeAmount(e, gc), 0)),
+    totalSpent: sumInHomeCurrency(expenses, gc).total,
+    unconvertedCount: unconvertible.size,
     members: members.map((m) => ({ ...m, balance: balanceMap[m.id] ?? 0 })),
     expenses,
   };
@@ -1408,6 +1502,8 @@ export type MemberExpensesData = {
   includedIn: MemberExpenseRow[];
   paidFor: MemberExpenseRow[];
   totalCharged: number;
+  /** Rows left out of totalCharged because no rate is known for them. */
+  unconvertedCount: number;
   groupCurrency: string;
 };
 
@@ -1423,7 +1519,7 @@ export async function getMemberExpenses(
   const group = await db.getFirstAsync<{ currency: string; name: string; destination_photo_url: string | null }>(
     'SELECT currency, name, destination_photo_url FROM groups WHERE id = ?', groupId,
   );
-  const gc = group?.currency ?? 'CAD';
+  const gc = group?.currency ?? DEFAULT_CURRENCY;
   const groupName = group?.name ?? '';
   const destinationPhotoUrl = group?.destination_photo_url ?? null;
 
@@ -1446,10 +1542,18 @@ export async function getMemberExpenses(
     groupId, memberId,
   );
 
-  const totalCharged = round2(includedIn.reduce((sum, e) =>
-    sum + (e.share_amount ?? 0) * rateToHome(e.currency, e.exchange_rate, gc), 0));
+  let totalCharged = 0;
+  let unconvertedCount = 0;
+  for (const e of includedIn) {
+    const rate = rateToHome(e.currency, e.exchange_rate, gc);
+    if (rate === null) { unconvertedCount++; continue; }
+    totalCharged += (e.share_amount ?? 0) * rate;
+  }
 
-  return { member, groupName, destinationPhotoUrl, includedIn, paidFor, totalCharged, groupCurrency: gc };
+  return {
+    member, groupName, destinationPhotoUrl, includedIn, paidFor,
+    totalCharged: round2(totalCharged), unconvertedCount, groupCurrency: gc,
+  };
 }
 
 // ─── Personal Trips ───────────────────────────────────────────────────────────
@@ -1521,7 +1625,7 @@ export async function getPersonalTripCategoryBudgetsWithSpent(tripId: number): P
   return db.getAllAsync<CategoryBudgetWithSpent>(
     `SELECT ptb.category,
             ptb.planned_amount AS budget_amount,
-            COALESCE(SUM(pte.amount), 0) AS spent
+            COALESCE(SUM(COALESCE(pte.converted_amount, pte.amount)), 0) AS spent
      FROM personal_trip_budgets ptb
      LEFT JOIN personal_trip_expenses pte
        ON pte.personal_trip_id = ptb.personal_trip_id AND pte.category = ptb.category
@@ -1533,14 +1637,16 @@ export async function getPersonalTripCategoryBudgetsWithSpent(tripId: number): P
 }
 
 export async function addPersonalTripExpense(
-  data: Omit<PersonalTripExpense, 'id'>,
+  data: Omit<PersonalTripExpense, 'id' | 'converted_amount'>,
 ): Promise<number> {
+  const rate = data.exchange_rate ?? 1;
   const r = await db.runAsync(
     `INSERT INTO personal_trip_expenses
-       (personal_trip_id, amount, currency, category, date, note, receipt_photo_uri)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+       (personal_trip_id, amount, currency, category, date, note, receipt_photo_uri, exchange_rate, converted_amount)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     data.personal_trip_id, data.amount, data.currency, data.category,
     data.date, data.note ?? null, data.receipt_photo_uri ?? null,
+    rate, round2(data.amount * rate),
   );
   return r.lastInsertRowId;
 }
@@ -1552,7 +1658,11 @@ export async function getPersonalTripExpenses(tripId: number): Promise<PersonalT
   );
 }
 
-export type PersonalTripSummary = PersonalTrip & { totalSpent: number };
+export type PersonalTripSummary = PersonalTrip & {
+  totalSpent: number;
+  /** Expenses left out of totalSpent because no rate is known for them. */
+  unconvertedCount: number;
+};
 
 export async function getAllPersonalTripSummaries(): Promise<PersonalTripSummary[]> {
   const trips = await db.getAllAsync<PersonalTrip>(
@@ -1560,14 +1670,12 @@ export async function getAllPersonalTripSummaries(): Promise<PersonalTripSummary
   );
   return Promise.all(
     trips.map(async (trip) => {
-      const expRows = await db.getAllAsync<{ amount: number; currency: string }>(
-        'SELECT amount, currency FROM personal_trip_expenses WHERE personal_trip_id = ?',
+      const expRows = await db.getAllAsync<HomeAmountRow>(
+        'SELECT amount, currency, exchange_rate, converted_amount FROM personal_trip_expenses WHERE personal_trip_id = ?',
         trip.id,
       );
-      const rates = getCachedRates();
-      const totalSpent = round2(expRows.reduce((sum, e) =>
-        sum + (rates ? convertAmount(e.amount, e.currency, trip.currency, rates) : e.amount), 0));
-      return { ...trip, totalSpent };
+      const { total, unconvertedCount } = sumInHomeCurrency(expRows, trip.currency);
+      return { ...trip, totalSpent: total, unconvertedCount };
     }),
   );
 }
@@ -1599,14 +1707,17 @@ export async function getPersonalTripExpense(id: number): Promise<PersonalTripEx
 
 export async function updatePersonalTripExpense(
   id: number,
-  data: Omit<PersonalTripExpense, 'id' | 'personal_trip_id'>,
+  data: Omit<PersonalTripExpense, 'id' | 'personal_trip_id' | 'converted_amount'>,
 ): Promise<void> {
+  const rate = data.exchange_rate ?? 1;
   await db.runAsync(
     `UPDATE personal_trip_expenses
-     SET amount=?, currency=?, category=?, date=?, note=?, receipt_photo_uri=?
+     SET amount=?, currency=?, category=?, date=?, note=?, receipt_photo_uri=?,
+         exchange_rate=?, converted_amount=?
      WHERE id=?`,
     data.amount, data.currency, data.category, data.date,
-    data.note ?? null, data.receipt_photo_uri ?? null, id,
+    data.note ?? null, data.receipt_photo_uri ?? null,
+    rate, round2(data.amount * rate), id,
   );
 }
 
@@ -1705,18 +1816,45 @@ export async function canCreatePersonalTrip(): Promise<boolean> {
 
 type HomeAmountRow = Pick<Expense, 'amount' | 'currency' | 'exchange_rate' | 'converted_amount'>;
 
-// Units of the home currency per 1 unit of an expense's currency. Uses the rate
-// stored with the expense; only legacy rows without one fall back to the cache.
-function rateToHome(currency: string, exchangeRate: number | null, homeCurrency: string): number {
+/**
+ * Units of the home currency per 1 unit of an expense's currency, or null when
+ * that is genuinely unknown: a legacy row saved before rates were stored, on a
+ * device that has never successfully fetched rates. Guessing 1.0 there would
+ * quietly count ¥10,000 as $10,000, so callers must handle null by leaving the
+ * amount out of the total and telling the user something is missing.
+ */
+function rateToHome(currency: string, exchangeRate: number | null, homeCurrency: string): number | null {
   if (exchangeRate != null && exchangeRate > 0) return exchangeRate;
   if (currency === homeCurrency) return 1;
-  return getCachedRate(currency, homeCurrency) ?? 1;
+  return getCachedRate(currency, homeCurrency);
 }
 
-/** An expense's amount in its trip's home currency, at the rate stored when it was entered. */
-export function homeAmount(e: HomeAmountRow, homeCurrency: string): number {
+/**
+ * An expense's amount in its trip's home currency at the rate stored when it was
+ * entered, or null when no rate is known for it. See rateToHome.
+ */
+export function homeAmount(e: HomeAmountRow, homeCurrency: string): number | null {
   if (e.converted_amount != null && e.exchange_rate != null) return e.converted_amount;
-  return round2(e.amount * rateToHome(e.currency, e.exchange_rate, homeCurrency));
+  const rate = rateToHome(e.currency, e.exchange_rate, homeCurrency);
+  return rate === null ? null : round2(e.amount * rate);
+}
+
+/**
+ * Sums what can be converted and counts what can't, so every total in the app
+ * can say "this figure is missing N expenses" instead of being silently wrong.
+ */
+export function sumInHomeCurrency(rows: HomeAmountRow[], homeCurrency: string): {
+  total: number;
+  unconvertedCount: number;
+} {
+  let total = 0;
+  let unconvertedCount = 0;
+  for (const row of rows) {
+    const amount = homeAmount(row, homeCurrency);
+    if (amount === null) unconvertedCount++;
+    else total += amount;
+  }
+  return { total: round2(total), unconvertedCount };
 }
 
 function round2(n: number): number {

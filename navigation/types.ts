@@ -19,6 +19,19 @@ export type HomeStackParamList = {
   Paywall:     undefined;
 };
 
+// Routes of the retired "plan" tab. PlanStack is no longer mounted in App.tsx,
+// but its screens are still compiled, so they still need their route types.
+export type PlanStackParamList = {
+  PlanScreen:  undefined;
+  CreatePlan:  undefined;
+  PlanDetail:  { groupId: number };
+  EditTrip:    { groupId: number };
+  Itinerary:   { groupId: number; totalDays: number };
+  PackingList: { groupId: number };
+  BudgetPlan:  { groupId: number };
+  Explore:     { groupId: number; destination: string };
+};
+
 export type InsightsStackParamList = {
   InsightsScreen: undefined;
   EditTrip:       { groupId: number };

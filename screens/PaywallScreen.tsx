@@ -23,7 +23,9 @@ import { type ColorPalette, fontSizes, radii } from '../theme';
 import { useTheme } from '../context/ThemeContext';
 import { recordPurchase, isPremium, FULL_ACCESS_PRODUCT_ID } from '../db';
 
-const FALLBACK_PRICE = '$3.99';
+// Only used when the store's localized price can't be fetched. It names the
+// currency, since "$3.99" reads as local money in a dozen countries.
+const FALLBACK_PRICE = 'US$3.99';
 
 const FEATURE_KEYS = [
   'featureUnlimitedGroupTrips',

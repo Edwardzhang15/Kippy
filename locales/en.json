@@ -8,7 +8,15 @@
     "groupNotFound": "Group not found.",
     "done": "Done",
     "remove": "Remove",
-    "ratesUnavailable": "Exchange rates unavailable - multi-currency totals may be inaccurate."
+    "ratesUnavailable": "Exchange rates unavailable - multi-currency totals may be inaccurate.",
+    "retry": "Try again",
+    "loadErrorBody": "Kippy couldn't load this. Check your connection and try again.",
+    "startupErrorTitle": "Kippy couldn't start",
+    "startupErrorBody": "Something went wrong setting up your data. Try again, and update the app if this keeps happening.",
+    "unconvertedExpenses_one": "{{count}} expense is left out: no exchange rate is known for it yet.",
+    "unconvertedExpenses_other": "{{count}} expenses are left out: no exchange rate is known for them yet.",
+    "unconvertedShort_one": "{{count}} not converted",
+    "unconvertedShort_other": "{{count}} not converted"
   },
   "tabs": {
     "home": "Group Trips",
@@ -20,7 +28,7 @@
     "title": "Your Trips",
     "tabActive": "Active",
     "tabPast": "Past Trips",
-    "totalSpent": "Total: ${{amount}} {{currency}}",
+    "totalSpent": "Total: {{symbol}}{{amount}} {{currency}}",
     "memberCount_one": "{{count}} member",
     "memberCount_other": "{{count}} members",
     "emptyActiveTitle": "No trips yet",
@@ -42,7 +50,7 @@
     "deselectAll": "Deselect All"
   },
   "groupDetail": {
-    "totalSpent": "Total spent: ${{amount}} {{currency}}",
+    "totalSpent": "Total spent: {{symbol}}{{amount}} {{currency}}",
     "conclude": "Conclude",
     "concludeTitle": "Conclude Trip",
     "concludeMsg": "Conclude this trip? You can still add expenses, but it'll move to Past Trips.",
@@ -73,7 +81,9 @@
     "expensePaidBy": "Paid by {{name}} · {{date}}",
     "receipt": "Receipt",
     "tripSummary": "Trip Summary",
-    "shareBalanceBreakdown": "Share Balance Breakdown"
+    "shareBalanceBreakdown": "Share Balance Breakdown",
+    "splitEven": "Split evenly: {{names}}",
+    "splitUneven": "Split unevenly: {{names}}"
   },
   "createGroup": {
     "title": "New Group",
@@ -374,7 +384,7 @@
     "actualAmount": "{{amount}} actual",
     "overBudgetSuffix": "over budget",
     "underBudgetSuffix": "under budget",
-    "spent": "${{amount}} spent",
+    "spent": "{{symbol}}{{amount}} spent",
     "overBudgetLabel": "Over budget",
     "underBudgetLabel": "Under budget",
     "addCategory": "Add Category",
@@ -401,9 +411,9 @@
     "totalTripCost": "Total Trip Cost",
     "outstandingBalance": "Outstanding Balance",
     "allSettledUp": "All settled up",
-    "remaining": "${{amount}} remaining",
+    "remaining": "{{symbol}}{{amount}} remaining",
     "settled": "Settled",
-    "owed": "${{amount}} owed",
+    "owed": "{{symbol}}{{amount}} owed",
     "moreMembers": "+{{count}} more",
     "dayItinerary": "Day {{day}} · Itinerary",
     "eventCount_one": "  ·  {{count}} event",
@@ -584,7 +594,9 @@
     "failed": "Couldn't fetch a live rate. Enter the rate manually.",
     "failedCached": "Couldn't fetch a live rate. Showing your last saved rate. Adjust it if needed.",
     "retry": "Retry",
-    "converted": "≈ {{sym}}{{amount}} {{currency}}"
+    "converted": "≈ {{sym}}{{amount}} {{currency}}",
+    "unknown": "≈ rate unknown",
+    "needRate": "Enter an exchange rate first."
   },
   "createSubgroup": {
     "title": "New Subgroup",

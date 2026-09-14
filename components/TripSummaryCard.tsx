@@ -126,6 +126,7 @@ const TripSummaryCard = forwardRef<View, TripSummaryCardProps>(({ group }, ref) 
               <Ionicons name="alert-circle-outline" size={16} color={SC.coral} />
               <Text style={styles.rowLabel} numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85}>
                 {t('shareCard.remaining', {
+                  symbol: sym,
                   amount: formatAmount(totalOutstanding, group.currency),
                 })}
               </Text>
